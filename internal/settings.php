@@ -31,6 +31,10 @@ $isNew = ($siteConfig['name'] === '');
                 <input class="form-control" type="text" name="blogName" required value="<?= e($siteConfig['name']) ?>" />
                 <label><?php i18n("settings_blog_info"); ?></label>
                 <input class="form-control" type="text" name="blogInfo" value="<?= e($siteConfig['info']) ?>" />
+                <label><?php i18n("settings_default_author"); ?></label>
+                <input class="form-control" type="text" name="blogAuthor"
+                       placeholder="<?php i18n("settings_default_author_placeholder"); ?>"
+                       value="<?= e($siteConfig['author']) ?>" />
                 <label><?php i18n("settings_blog_domain"); ?></label>
                 <input class="form-control" type="url" name="blogDomain" required
                        placeholder="<?= e(($_SERVER['REQUEST_SCHEME'] ?? 'https') . '://' . ($_SERVER['HTTP_HOST'] ?? '')) ?>"

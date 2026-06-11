@@ -379,6 +379,7 @@ $router->map('GET|POST', '/settings', function () use ($configStore, $siteConfig
         $new = [
             'name'         => dpl_clean($_POST['blogName']),
             'info'         => dpl_clean($_POST['blogInfo'] ?? ''),
+            'author'       => dpl_clean($_POST['blogAuthor'] ?? ''),
             'domain'       => dpl_clean_url($_POST['blogDomain']),
             'OGImage'      => dpl_clean($_POST['blogOGImage'] ?? ''),
             'footer'       => dpl_clean($_POST['blogFooter'] ?? ''),

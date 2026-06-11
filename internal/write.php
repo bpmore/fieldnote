@@ -24,7 +24,7 @@ $uploadLimitMb = rtrim(rtrim(number_format($uploadLimit / 1048576, 1), '0'), '.'
                value="<?= e($post['title'] ?? '') ?>" />
         <input type="text" name="blogPostAuthor" class="blogPostAuthor form-control my-2"
                placeholder="<?php i18n("write_post_author_placeholder"); ?>" required
-               value="<?= e($post['author'] ?? '') ?>" />
+               value="<?= e($post['author'] ?? $siteConfig['author'] ?? '') ?>" />
         <input type="url" name="blogPostImageURL" class="blogPostImageURL form-control my-2"
                placeholder="<?php i18n("write_post_image_placeholder"); ?>"
                value="<?= e($post['imageUrl'] ?? '') ?>" />

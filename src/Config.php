@@ -20,6 +20,7 @@ final class Config
     public const DEFAULTS = [
         'name'         => '',
         'info'         => '',
+        'author'       => '',
         'domain'       => '',
         'OGImage'      => '',
         'footer'       => '',
