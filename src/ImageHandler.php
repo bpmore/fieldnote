@@ -18,7 +18,7 @@ namespace Dropplets;
  */
 final class ImageHandler
 {
-    private const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+    public const MAX_BYTES = 10 * 1024 * 1024; // 10 MB app-level cap
     private const ALLOWED   = ['jpg' => 'jpg', 'jpeg' => 'jpg', 'png' => 'png', 'gif' => 'gif'];
 
     private string $uploadDir;

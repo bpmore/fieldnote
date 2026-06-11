@@ -46,12 +46,17 @@
         });
     }
 
-    // Client-side guard matching the server's 10 MB upload cap.
+    // Client-side guard matching the server's effective upload cap, which the
+    // write view passes in via data-max-bytes (min of app cap and PHP limits).
     var upload = document.getElementById('imageUpload');
     if (upload) {
+        var maxBytes = parseInt(upload.getAttribute('data-max-bytes'), 10) || 10485760;
         upload.addEventListener('change', function () {
-            if (this.files[0] && this.files[0].size > 10485760) {
-                window.alert('Uploaded file exceeds the 10 MB maximum.');
+            if (this.files[0] && this.files[0].size > maxBytes) {
+                window.alert(
+                    'That file is ' + (this.files[0].size / 1048576).toFixed(1)
+                    + ' MB; the server accepts at most ' + (maxBytes / 1048576).toFixed(1) + ' MB.'
+                );
                 this.value = '';
             }
         });

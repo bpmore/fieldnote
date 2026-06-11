@@ -103,9 +103,26 @@ $router->map('GET', '/[i:page]', function ($page) use ($requireConfig, $siteConf
     require dpl_template_dir($siteConfig['template']) . '/home.php';
 }, 'posts');
 
-$router->map('GET|POST', '/post/[i:id]', function ($id) use ($requireConfig, $siteConfig, $blogStore, $imageStore, $router, $notFound) {
+// Legacy numeric URLs (/post/1) permanently redirect to the slug URL.
+// Registered before the slug route so numeric paths match here first; slugs
+// are guaranteed never to be purely numeric (see dpl_slugify).
+$router->map('GET|POST', '/post/[i:id]', function ($id) use ($requireConfig, $blogStore, $router, $notFound) {
     $requireConfig();
     $post = $blogStore->findById((int) $id);
+    if ($post === null || empty($post['slug'])) {
+        $notFound();
+    }
+    // Do not leak draft existence through a redirect.
+    if (!empty($post['draft']) && !Security::isAuthenticated()) {
+        $notFound();
+    }
+    header('Location: ' . $router->generate('post', ['slug' => $post['slug']]), true, 301);
+    exit;
+}, 'postById');
+
+$router->map('GET|POST', '/post/[:slug]', function ($slug) use ($requireConfig, $siteConfig, $blogStore, $imageStore, $router, $notFound) {
+    $requireConfig();
+    $post = $blogStore->findOneBy(['slug', '=', (string) $slug]);
     if ($post === null) {
         $notFound();
     }
@@ -164,7 +181,7 @@ $router->map('GET', '/feed', function () use ($requireConfig, $siteConfig, $blog
         if (!empty($post['password'])) {
             continue;
         }
-        $url = $base . $router->generate('post', ['id' => $post['_id']]);
+        $url = $base . $router->generate('post', ['slug' => $post['slug'] ?? ('post-' . $post['_id'])]);
         echo '<item>' . "\n";
         echo '<title>' . $xml($post['title']) . '</title>' . "\n";
         echo '<link>' . $xml($url) . '</link>' . "\n";
@@ -232,7 +249,12 @@ $router->map('GET|POST', '/post/[i:id]/edit', function ($id) use ($requireConfig
         if (!isset($_POST['blogPostTitle'], $_POST['blogPostContent'], $_POST['blogPostAuthor'])) {
             $redirect('editPost', ['id' => $id]);
         }
-        $post['title']   = dpl_clean($_POST['blogPostTitle']);
+        $newTitle = dpl_clean($_POST['blogPostTitle']);
+        // Re-slug when the title changes (or when a pre-slug post is saved).
+        if ($newTitle !== ($post['title'] ?? '') || empty($post['slug'])) {
+            $post['slug'] = dpl_unique_slug($blogStore, $newTitle, (int) $id);
+        }
+        $post['title']   = $newTitle;
         $post['author']  = dpl_clean($_POST['blogPostAuthor']);
         $post['content'] = (string) $_POST['blogPostContent']; // markdown stored raw, escaped at render
         $post['password'] = dpl_hash_post_password($_POST['blogPostPassword'] ?? '', $post['password'] ?? '');
@@ -261,8 +283,10 @@ $router->map('GET|POST', '/write', function () use ($requireConfig, $requireAuth
         if (!isset($_POST['blogPostTitle'], $_POST['blogPostContent'], $_POST['blogPostAuthor'])) {
             $redirect('write');
         }
+        $title = dpl_clean($_POST['blogPostTitle']);
         $post = [
-            'title'    => dpl_clean($_POST['blogPostTitle']),
+            'title'    => $title,
+            'slug'     => dpl_unique_slug($blogStore, $title),
             'date'     => time(),
             'draft'    => true,
             'author'   => dpl_clean($_POST['blogPostAuthor']),
@@ -416,6 +440,24 @@ $router->map('GET', '/dashboard', function () use ($requireConfig, $requireAuth,
 // ---------------------------------------------------------------------------
 // Dispatch
 // ---------------------------------------------------------------------------
+
+// A POST whose body exceeded post_max_size reaches PHP with $_POST and
+// $_FILES completely empty. Without this check the user would get a baffling
+// CSRF error (the token vanished with everything else) — or worse, silently
+// lose a written post. Say what actually happened.
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST'
+    && empty($_POST) && empty($_FILES)
+    && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0
+) {
+    http_response_code(413);
+    header('Content-Type: text/plain; charset=utf-8');
+    exit(sprintf(
+        "The submission was too large for the server (limit: %s including any attached image).\n"
+        . "Go back, attach a smaller image, and try again — your text is still in the previous tab.",
+        ini_get('post_max_size')
+    ));
+}
 
 // Enforce CSRF once, centrally, for every POST before any handler runs.
 Security::requireValidCsrf();

@@ -1,6 +1,7 @@
 <?php
 use function Dropplets\e;
 use function Dropplets\csrf_field;
+use function Dropplets\dpl_effective_upload_limit;
 
 $needsEditor = true; // footer loads the EasyMDE bundle only when this is set
 require __DIR__ . '/header.php';
@@ -9,6 +10,8 @@ $isEdit   = isset($post['title']);
 $action   = $isEdit
     ? $router->generate('editPost', ['id' => $post['_id']])
     : $router->generate('write');
+$uploadLimit   = dpl_effective_upload_limit();
+$uploadLimitMb = rtrim(rtrim(number_format($uploadLimit / 1048576, 1), '0'), '.');
 // Per-post passwords are now hashed and never sent back to the browser. The
 // field is shown blank; leaving it blank on edit keeps the existing password.
 ?>
@@ -26,9 +29,10 @@ $action   = $isEdit
                placeholder="<?php i18n("write_post_image_placeholder"); ?>"
                value="<?= e($post['imageUrl'] ?? '') ?>" />
         <input type="file" name="imageUpload" accept="image/png,image/jpeg,image/gif"
+               data-max-bytes="<?= (int) $uploadLimit ?>"
                class="blogPostImage form-control form-control-sm my-2" id="imageUpload" />
         <label for="imageUpload">
-            <?= $isEdit ? 'Uploading a file replaces the existing image. (10 MB max)' : 'Choose a file to upload (10 MB max)' ?>
+            <?= $isEdit ? "Uploading a file replaces the existing image. ({$uploadLimitMb} MB max)" : "Choose a file to upload ({$uploadLimitMb} MB max)" ?>
         </label>
         <input type="password" name="blogPostPassword" class="form-control my-2" autocomplete="new-password"
                placeholder="<?php i18n("write_post_password_placeholder"); ?>" />

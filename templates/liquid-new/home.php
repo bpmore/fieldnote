@@ -19,7 +19,7 @@ $dateFormat = i18n('dateformat', false);
                 <?php endif; ?>
                 <div class="card-body">
                     <h2 class="card-title">
-                        <a href="<?= e($router->generate('post', ['id' => $p['_id']])) ?>"><?= e($p['title']) ?></a>
+                        <a href="<?= e($router->generate('post', ['slug' => $p['slug'] ?? ('post-' . $p['_id'])])) ?>"><?= e($p['title']) ?></a>
                     </h2>
                     <?php if (!empty($p['password'])): ?>
                         <p class="card-meta">Protected post &middot; <?= e(date($dateFormat, (int) $p['date'])) ?></p>
