@@ -1,0 +1,14 @@
+# Dependencies
+/vendor/
+
+# Site data (config, posts, throttle state) — data/.gitignore handles contents
+# Uploaded media is content, not code
+/public/uploads/*
+!/public/uploads/.gitkeep
+!/public/uploads/.htaccess
+
+# Old version kept for reference, not part of the codebase
+/version 2.2/
+
+# OS noise
+.DS_Store

@@ -1,0 +1,7 @@
+# Uploaded files are data, never code.
+php_admin_flag engine off
+RemoveHandler .php .phtml .phar .phps
+<FilesMatch "(?i)\.(php|phtml|phar|phps)$">
+    SetHandler none
+</FilesMatch>
+Options -ExecCGI

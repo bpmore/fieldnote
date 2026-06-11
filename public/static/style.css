@@ -1,0 +1,86 @@
+/* Dropplets admin styles. System font stack: no webfont request. */
+
+/* ========== General ========== */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-weight: 400;
+    color: #343a40;
+    background: #fff;
+    font-size: 16px;
+}
+
+h1 {
+    color: #303549;
+    font-weight: 700;
+    margin: 20px 0;
+    text-transform: uppercase;
+    font-size: 28px;
+}
+
+label {
+    font-weight: 500;
+    color: #6c757d;
+}
+
+a {
+    text-decoration: none;
+    color: #2f9e44;
+    transition: color .2s ease-in-out;
+}
+
+a:hover {
+    color: #237a35;
+}
+
+span.headerLogo {
+    background: url('../logo.svg') center center no-repeat;
+    background-size: contain;
+    display: inline-block;
+    width: 25px;
+    height: 35px;
+    vertical-align: sub;
+}
+
+span.droppletsName {
+    padding-left: 12px;
+}
+
+/* ========== Header ========== */
+div.setupHeader {
+    padding: 30px;
+    text-align: center;
+}
+
+div.setupHeader a {
+    font-size: 25px;
+    text-transform: uppercase;
+    text-decoration: none;
+    line-height: 35px;
+    color: #2f9e44;
+    letter-spacing: 1px;
+}
+
+/* ========== Forms ========== */
+.form-control,
+.form-select {
+    margin: 8px 0 18px;
+}
+
+input.blogPostTitle {
+    font-size: 18px;
+}
+
+/* Tall editor area only for the post-content field (EasyMDE replaces it,
+   but this keeps a usable fallback if JS is unavailable). */
+textarea#blogPostContent {
+    height: 420px;
+    width: 100%;
+}
+
+p.details {
+    color: #495057;
+}
+
+h2 {
+    margin: 1rem 0;
+}

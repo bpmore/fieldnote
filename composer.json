@@ -1,0 +1,29 @@
+{
+    "name": "bpmore/dropplets",
+    "description": "A minimalist markdown blogging platform. Modernized and hardened fork.",
+    "type": "project",
+    "license": "GPL-3.0-or-later",
+    "require": {
+        "php": ">=8.1",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-gd": "*",
+        "ext-curl": "*",
+        "altorouter/altorouter": "^2.0",
+        "erusev/parsedown": "^1.7",
+        "erusev/parsedown-extra": "^0.8",
+        "rakibtg/sleekdb": "^2.14"
+    },
+    "autoload": {
+        "psr-4": {
+            "Dropplets\\": "src/"
+        },
+        "files": [
+            "src/i18n.php"
+        ]
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    }
+}
