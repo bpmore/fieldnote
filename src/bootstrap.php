@@ -55,6 +55,21 @@ if (!is_file($slugMarker) && is_dir(DPL_DB_DIR . '/blog')) {
     @touch($slugMarker);
 }
 
+// One-time migration: posts published before publishedAt existed keep their
+// current date as the publish date, so hide/re-publish never moves their URL.
+$pubMarker = DPL_DATA_DIR . '/.pubdate-v1';
+if (!is_file($pubMarker) && is_dir(DPL_DB_DIR . '/blog')) {
+    foreach ($blogStore->findBy(['draft', '=', false]) as $existingPost) {
+        if (empty($existingPost['publishedAt'])) {
+            $blogStore->updateById(
+                (int) $existingPost['_id'],
+                ['publishedAt' => (int) ($existingPost['date'] ?? 0)]
+            );
+        }
+    }
+    @touch($pubMarker);
+}
+
 /**
  * Parse a php.ini shorthand size ("2M", "512K") into bytes.
  */

@@ -224,10 +224,19 @@ $router->map('GET', '/feed', function () use ($requireConfig, $siteConfig, $blog
 $router->map('POST', '/post/[i:id]/publish', function ($id) use ($requireConfig, $requireAuth, $blogStore, $redirect, $notFound) {
     $requireConfig();
     $requireAuth();
-    if ($blogStore->findById((int) $id) === null) {
+    $post = $blogStore->findById((int) $id);
+    if ($post === null) {
         $notFound();
     }
-    $blogStore->updateById((int) $id, ['draft' => false]);
+    $update = ['draft' => false];
+    // First publish stamps the post's date (which the permalink embeds).
+    // Hiding and re-publishing later must not move it, so remember it.
+    if (empty($post['publishedAt'])) {
+        $now = time();
+        $update['date']        = $now;
+        $update['publishedAt'] = $now;
+    }
+    $blogStore->updateById((int) $id, $update);
     $redirect('dashboard');
 }, 'publish');
 
