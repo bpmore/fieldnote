@@ -1,6 +1,7 @@
 <?php
 use function Dropplets\e;
 use function Dropplets\csrf_field;
+use function Dropplets\dpl_post_url;
 require __DIR__ . '/header.php';
 setlocale(LC_ALL, i18n('locale', false));
 
@@ -31,7 +32,7 @@ $renderList = function (array $posts, bool $isDraft) use ($router, $renderAction
         <?php foreach ($posts as $p): ?>
             <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
                 <div>
-                    <a class="fs-5 fw-semibold text-decoration-none" href="<?= e($router->generate('post', ['slug' => $p['slug'] ?? ('post-' . $p['_id'])])) ?>"><?= e($p['title']) ?></a>
+                    <a class="fs-5 fw-semibold text-decoration-none" href="<?= e(dpl_post_url($router, $p)) ?>"><?= e($p['title']) ?></a>
                     <div class="text-muted small">
                         <?php i18n("dashboard_posted_by"); ?> <?= e($p['author']) ?> &middot; <?= e(date(i18n('dashboard_post_fulldate', false), (int) $p['date'])) ?>
                     </div>

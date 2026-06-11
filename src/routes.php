@@ -103,9 +103,9 @@ $router->map('GET', '/[i:page]', function ($page) use ($requireConfig, $siteConf
     require dpl_template_dir($siteConfig['template']) . '/home.php';
 }, 'posts');
 
-// Legacy numeric URLs (/post/1) permanently redirect to the slug URL.
-// Registered before the slug route so numeric paths match here first; slugs
-// are guaranteed never to be purely numeric (see dpl_slugify).
+// Legacy numeric URLs (/post/1) permanently redirect to the canonical
+// dated slug URL. Registered before the slug form so numeric paths match
+// here first; slugs are guaranteed never purely numeric (see dpl_slugify).
 $router->map('GET|POST', '/post/[i:id]', function ($id) use ($requireConfig, $blogStore, $router, $notFound) {
     $requireConfig();
     $post = $blogStore->findById((int) $id);
@@ -116,11 +116,25 @@ $router->map('GET|POST', '/post/[i:id]', function ($id) use ($requireConfig, $bl
     if (!empty($post['draft']) && !Security::isAuthenticated()) {
         $notFound();
     }
-    header('Location: ' . $router->generate('post', ['slug' => $post['slug']]), true, 301);
+    header('Location: ' . dpl_post_url($router, $post), true, 301);
     exit;
 }, 'postById');
 
-$router->map('GET|POST', '/post/[:slug]', function ($slug) use ($requireConfig, $siteConfig, $blogStore, $imageStore, $router, $notFound) {
+// Legacy undated slug URLs (/post/title) also redirect to the dated form.
+$router->map('GET|POST', '/post/[:slug]', function ($slug) use ($requireConfig, $blogStore, $router, $notFound) {
+    $requireConfig();
+    $post = $blogStore->findOneBy(['slug', '=', (string) $slug]);
+    if ($post === null) {
+        $notFound();
+    }
+    if (!empty($post['draft']) && !Security::isAuthenticated()) {
+        $notFound();
+    }
+    header('Location: ' . dpl_post_url($router, $post), true, 301);
+    exit;
+}, 'postBySlug');
+
+$router->map('GET|POST', '/[i:year]/[i:month]/[:slug]', function ($year, $month, $slug) use ($requireConfig, $siteConfig, $blogStore, $imageStore, $router, $notFound) {
     $requireConfig();
     $post = $blogStore->findOneBy(['slug', '=', (string) $slug]);
     if ($post === null) {
@@ -130,6 +144,15 @@ $router->map('GET|POST', '/post/[:slug]', function ($slug) use ($requireConfig, 
     // by ID regardless of draft status; only the admin may preview drafts.
     if (!empty($post['draft']) && !Security::isAuthenticated()) {
         $notFound();
+    }
+
+    // Wrong or unpadded date segments 301 to the canonical URL so each post
+    // has exactly one address.
+    $canonical = dpl_post_url($router, $post);
+    $requested = $router->generate('post', ['year' => $year, 'month' => $month, 'slug' => $slug]);
+    if ($requested !== $canonical) {
+        header('Location: ' . $canonical, true, 301);
+        exit;
     }
 
     // Per-post password is now hashed. Submitted only via POST (never logged
@@ -181,7 +204,7 @@ $router->map('GET', '/feed', function () use ($requireConfig, $siteConfig, $blog
         if (!empty($post['password'])) {
             continue;
         }
-        $url = $base . $router->generate('post', ['slug' => $post['slug'] ?? ('post-' . $post['_id'])]);
+        $url = $base . dpl_post_url($router, $post);
         echo '<item>' . "\n";
         echo '<title>' . $xml($post['title']) . '</title>' . "\n";
         echo '<link>' . $xml($url) . '</link>' . "\n";

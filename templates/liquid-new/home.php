@@ -1,5 +1,6 @@
 <?php
 use function Dropplets\e;
+use function Dropplets\dpl_post_url;
 require __DIR__ . '/header.php';
 
 $dateFormat = i18n('dateformat', false);
@@ -19,7 +20,7 @@ $dateFormat = i18n('dateformat', false);
                 <?php endif; ?>
                 <div class="card-body">
                     <h2 class="card-title">
-                        <a href="<?= e($router->generate('post', ['slug' => $p['slug'] ?? ('post-' . $p['_id'])])) ?>"><?= e($p['title']) ?></a>
+                        <a href="<?= e(dpl_post_url($router, $p)) ?>"><?= e($p['title']) ?></a>
                     </h2>
                     <?php if (!empty($p['password'])): ?>
                         <p class="card-meta">Protected post &middot; <?= e(date($dateFormat, (int) $p['date'])) ?></p>

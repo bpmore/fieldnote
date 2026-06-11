@@ -129,6 +129,20 @@ function dpl_unique_slug(Store $blogStore, string $title, ?int $excludeId = null
 }
 
 /**
+ * Canonical URL for a post: /{year}/{month}/{slug}, dated from the post's
+ * publish timestamp in the site's configured timezone.
+ */
+function dpl_post_url(\AltoRouter $router, array $post): string
+{
+    $ts = (int) ($post['date'] ?? 0);
+    return $router->generate('post', [
+        'year'  => date('Y', $ts),
+        'month' => date('m', $ts),
+        'slug'  => $post['slug'] ?? ('post-' . ($post['_id'] ?? 0)),
+    ]);
+}
+
+/**
  * Resolve a stored template name to a real, existing template directory.
  * Defends against path traversal: only a bare directory name that actually
  * exists under templates/ is accepted; anything else falls back to liquid-new.
