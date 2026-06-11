@@ -26,7 +26,7 @@ final class Config
         'footer'       => '',
         'headerInject' => '',
         'password'     => '',
-        'template'     => 'liquid-new',
+        'template'     => 'gazette',
         'postsPerPage' => 6,
         'basePath'     => '',
         'timezone'     => 'America/New_York',
