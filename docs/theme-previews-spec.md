@@ -1,6 +1,9 @@
 # Spec: Theme previews in the admin area
 
-Status: proposed (not yet implemented)
+Status: implemented (June 2026) — see /admin/themes. One deviation: gallery
+iframes use `sandbox="allow-same-origin"` (still no scripts/forms/navigation)
+because a fully sandboxed frame gets an opaque origin, drops the session
+cookie, and the auth-gated preview would render the login page instead.
 
 ## Problem
 

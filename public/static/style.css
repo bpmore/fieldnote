@@ -117,3 +117,49 @@ p.details {
 h2 {
     margin: 1rem 0;
 }
+
+/* Theme gallery (internal/themes.php). Each preview is the real homepage
+   rendered at desktop width inside an iframe, miniaturized with a transform.
+   Lives here because the admin CSP forbids inline styles. */
+.theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(700px, 100%), 1fr));
+    gap: 1rem;
+}
+
+.theme-previews {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+.theme-frame {
+    position: relative;
+    width: 320px;
+    height: 240px;
+    overflow: hidden;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.theme-frame iframe {
+    width: 1280px;
+    height: 960px;
+    border: 0;
+    transform: scale(.25);
+    transform-origin: 0 0;
+    /* Previews are pictures, not pages: no stray clicks into the miniature. */
+    pointer-events: none;
+}
+
+.theme-frame-label {
+    position: absolute;
+    right: .25rem;
+    bottom: .25rem;
+    font-size: .75rem;
+    padding: 0 .4rem;
+    background: rgba(0, 0, 0, .65);
+    color: #fff;
+    border-radius: 3px;
+}

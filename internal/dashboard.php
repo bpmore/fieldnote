@@ -47,6 +47,7 @@ $renderList = function (array $posts, bool $isDraft) use ($router, $renderAction
 <h1 class="setupH1 setup text-center"><?php i18n("dashboard_title"); ?></h1>
 <div class="text-center">
     <a href="<?= e($router->generate('write')) ?>" class="btn btn-primary"><?php i18n("dashboard_write_post"); ?></a>
+    <a href="<?= e($router->generate('themes')) ?>" class="btn btn-secondary">Themes</a>
     <a href="<?= e($router->generate('settings')) ?>" class="btn btn-secondary"><?php i18n("dashboard_settings"); ?></a>
     <form method="post" action="<?= e($router->generate('logout')) ?>" class="d-inline">
         <?= csrf_field() ?>

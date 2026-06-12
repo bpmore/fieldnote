@@ -224,7 +224,7 @@ function fn_pagination(\AltoRouter $router, int $page, int $numPages): void
  * @param array<string,mixed>      $siteConfig
  * @param array<string,mixed>|null $post Current post on single-post pages.
  */
-function fn_render_head(array $siteConfig, \AltoRouter $router, string $pageTitle, ?array $post, string $themeCssHref): void
+function fn_render_head(array $siteConfig, \AltoRouter $router, string $pageTitle, ?array $post, string $themeCssHref, ?string $schemeOverrideCss = null): void
 {
     $siteName  = $siteConfig['name'] !== '' ? $siteConfig['name'] : 'Fieldnote';
     $fullTitle = $siteName . ' | ' . $pageTitle;
@@ -247,6 +247,16 @@ function fn_render_head(array $siteConfig, \AltoRouter $router, string $pageTitl
     echo '<title>' . e($fullTitle) . '</title>' . "\n";
     echo '<style>' . fn_a11y_base_css() . '</style>' . "\n";
     echo '<link rel="stylesheet" href="' . e($themeCssHref) . '">' . "\n";
+    // Admin theme previews force a color scheme by re-declaring the token
+    // block AFTER the stylesheet, where it outranks the theme's own
+    // prefers-color-scheme override. Themes don't pass this parameter; the
+    // preview route hands it over via $GLOBALS so 70 headers stay untouched.
+    // Content comes only from templates/<name>/assets/theme.css (admin-
+    // controlled files already served verbatim), never from user input.
+    $schemeOverrideCss ??= $GLOBALS['fnSchemeOverrideCss'] ?? null;
+    if ($schemeOverrideCss !== null && $schemeOverrideCss !== '') {
+        echo '<style>' . $schemeOverrideCss . '</style>' . "\n";
+    }
     echo '<link rel="icon" href="' . $base . '/logo.svg" type="image/svg+xml">' . "\n";
     echo '<link rel="alternate" type="application/rss+xml" title="' . e($siteName) . '" href="' . e($router->generate('feed')) . '">' . "\n";
     if ($canonical !== '') {
@@ -273,6 +283,32 @@ function fn_render_head(array $siteConfig, \AltoRouter $router, string $pageTitl
     if (!empty($siteConfig['headerInject'])) {
         echo $siteConfig['headerInject'] . "\n";
     }
+}
+
+/**
+ * Render the homepage (page 1) through a given template directory. Shared by
+ * the public home route and the admin theme preview so the preview always
+ * renders exactly what the theme would show live.
+ *
+ * @param array<string,mixed> $siteConfig
+ */
+function fn_render_home(
+    array $siteConfig,
+    \AltoRouter $router,
+    Store $blogStore,
+    Store $imageStore,
+    string $templateDir,
+    int $postsPerPage,
+    int $numPages
+): void {
+    $page  = 1;
+    $limit = $postsPerPage;
+    $allPosts = array_map(
+        fn ($p) => fn_with_image($p, $imageStore),
+        $blogStore->findBy(['draft', '=', false], ['date' => 'desc'], $postsPerPage)
+    );
+    $pageTitle = 'Home';
+    require $templateDir . '/home.php';
 }
 
 /**

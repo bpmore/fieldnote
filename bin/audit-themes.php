@@ -24,6 +24,10 @@ if (PHP_SAPI !== 'cli') {
     exit(1);
 }
 
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+use Fieldnote\CssTokens;
+
 const REQUIRED_TOKENS = ['--bg', '--surface', '--text', '--muted', '--accent', '--accent-contrast', '--line', '--focus'];
 
 // [foreground, background, minimum ratio]
@@ -78,62 +82,8 @@ function contrast(array $a, array $b): float
     return ($hi + 0.05) / ($lo + 0.05);
 }
 
-/**
- * Extract custom-property declarations from a CSS block body.
- * Resolves one level of var() indirection within the same map.
- *
- * @return array<string,string>
- */
-function extractTokens(string $blockBody): array
-{
-    $tokens = [];
-    if (preg_match_all('/(--[a-z0-9-]+)\s*:\s*([^;]+);/i', $blockBody, $m, PREG_SET_ORDER)) {
-        foreach ($m as $decl) {
-            $tokens[$decl[1]] = trim($decl[2]);
-        }
-    }
-    // Resolve var() aliases (up to 3 hops).
-    for ($i = 0; $i < 3; $i++) {
-        foreach ($tokens as $name => $value) {
-            if (preg_match('/^var\(\s*(--[a-z0-9-]+)\s*\)$/i', $value, $m) && isset($tokens[$m[1]])) {
-                $tokens[$name] = $tokens[$m[1]];
-            }
-        }
-    }
-    return $tokens;
-}
-
-/** Find the body of `:root { ... }` inside an (optional) wrapping string. */
-function rootBlock(string $css): ?string
-{
-    if (preg_match('/:root\s*\{([^}]*)\}/s', $css, $m)) {
-        return $m[1];
-    }
-    return null;
-}
-
-/** Body of the :root block inside a prefers-color-scheme media query. */
-function schemeBlock(string $css, string $scheme): ?string
-{
-    if (preg_match('/@media[^{]*prefers-color-scheme\s*:\s*' . $scheme . '[^{]*\{(.*)$/s', $css, $m)) {
-        // Walk braces to find the end of the media block.
-        $depth = 1;
-        $body = '';
-        foreach (str_split($m[1]) as $ch) {
-            if ($ch === '{') {
-                $depth++;
-            } elseif ($ch === '}') {
-                $depth--;
-                if ($depth === 0) {
-                    break;
-                }
-            }
-            $body .= $ch;
-        }
-        return rootBlock($body);
-    }
-    return null;
-}
+// Token-block parsing lives in Fieldnote\CssTokens, shared with the admin
+// theme preview so the two never drift.
 
 $themes = [];
 foreach (glob($templatesDir . '/*', GLOB_ONLYDIR) ?: [] as $dir) {
@@ -156,10 +106,10 @@ foreach ($themes as $name => $dir) {
     } else {
         $css = (string) file_get_contents($cssPath);
 
-        $rootBody = rootBlock($css);
-        $light = $rootBody !== null ? extractTokens($rootBody) : [];
-        $darkBody = schemeBlock($css, 'dark');
-        $lightBody = schemeBlock($css, 'light');
+        $rootBody = CssTokens::rootBlock($css);
+        $light = $rootBody !== null ? CssTokens::extractTokens($rootBody) : [];
+        $darkBody = CssTokens::schemeBlock($css, 'dark');
+        $lightBody = CssTokens::schemeBlock($css, 'light');
 
         if ($rootBody === null) {
             $problems[] = 'no :root token block';
@@ -168,7 +118,7 @@ foreach ($themes as $name => $dir) {
         } else {
             // Default polarity: :root + dark override. Dark-default themes:
             // :root + light override.
-            $override = extractTokens((string) ($darkBody ?? $lightBody));
+            $override = CssTokens::extractTokens((string) ($darkBody ?? $lightBody));
             $schemes = [
                 'default' => $light,
                 ($darkBody !== null ? 'dark' : 'light') => array_merge($light, $override),
@@ -213,7 +163,7 @@ foreach ($themes as $name => $dir) {
             $stripped = str_replace($rootBody, '', $stripped);
         }
         foreach (['dark', 'light'] as $s) {
-            $b = schemeBlock($css, $s);
+            $b = CssTokens::schemeBlock($css, $s);
             if ($b !== null) {
                 $stripped = str_replace($b, '', $stripped);
             }

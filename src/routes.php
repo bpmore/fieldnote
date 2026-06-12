@@ -78,14 +78,7 @@ $notFound = static function (): void {
 
 $router->map('GET', '/', function () use ($requireConfig, $siteConfig, $blogStore, $imageStore, $postsPerPage, $numPages, $router) {
     $requireConfig();
-    $page  = 1;
-    $limit = $postsPerPage;
-    $allPosts = array_map(
-        fn ($p) => fn_with_image($p, $imageStore),
-        $blogStore->findBy(['draft', '=', false], ['date' => 'desc'], $postsPerPage)
-    );
-    $pageTitle = 'Home';
-    require fn_template_dir($siteConfig['template']) . '/home.php';
+    fn_render_home($siteConfig, $router, $blogStore, $imageStore, fn_template_dir($siteConfig['template']), $postsPerPage, $numPages);
 }, 'home');
 
 $router->map('GET', '/[i:page]', function ($page) use ($requireConfig, $siteConfig, $blogStore, $imageStore, $postsPerPage, $numPages, $router, $notFound) {
@@ -578,6 +571,70 @@ $router->map('GET|POST', '/settings/2fa', function () use ($requireConfig, $requ
 
     require FN_INTERNAL_DIR . '/twofactor.php';
 }, 'twofactor');
+
+// ---------------------------------------------------------------------------
+// Theme gallery (docs/theme-previews-spec.md)
+// ---------------------------------------------------------------------------
+
+$router->map('GET', '/admin/themes', function () use ($requireConfig, $requireAuth, $siteConfig, $router) {
+    $requireConfig();
+    $requireAuth();
+    $pageTitle = 'Themes';
+    require FN_INTERNAL_DIR . '/themes.php';
+}, 'themes');
+
+// The real homepage rendered through any installed theme, for the gallery's
+// iframes. Admin-only: not because it leaks anything (published posts only),
+// but to keep preview rendering from being an anonymous resource sink.
+$router->map('GET', '/admin/themes/preview/[:theme]', function ($theme) use ($requireConfig, $requireAuth, $siteConfig, $blogStore, $imageStore, $postsPerPage, $numPages, $router, $notFound) {
+    $requireConfig();
+    $requireAuth();
+    $name = basename((string) $theme);
+    if (!in_array($name, fn_template_names(), true)) {
+        $notFound();
+    }
+
+    // ?scheme=light|dark forces a palette regardless of the OS preference:
+    // re-declare the matching token block after the stylesheet (later in the
+    // cascade beats the theme's own prefers-color-scheme override). When the
+    // requested scheme IS the theme's default, the :root block is replayed
+    // instead, which cancels an active media-query override the same way.
+    $scheme = (string) ($_GET['scheme'] ?? '');
+    if (in_array($scheme, ['light', 'dark'], true)) {
+        $css  = (string) @file_get_contents(fn_template_dir($name) . '/assets/theme.css');
+        $body = CssTokens::schemeBlock($css, $scheme) ?? CssTokens::rootBlock($css);
+        if ($body !== null) {
+            $GLOBALS['fnSchemeOverrideCss'] = ':root{' . trim($body) . ';color-scheme:' . $scheme . '}';
+        }
+    }
+
+    header('X-Robots-Tag: noindex');
+    header("Content-Security-Policy: frame-ancestors 'self'");
+    fn_render_home(
+        $siteConfig,
+        $router,
+        $blogStore,
+        $imageStore,
+        fn_template_dir($name),
+        min(3, $postsPerPage), // a taste is enough; 140 iframes of full grid is not
+        $numPages
+    );
+}, 'themePreview');
+
+$router->map('POST', '/admin/themes/apply', function () use ($requireConfig, $requireAuth, $configStore, $siteConfig, $redirect, $notFound) {
+    $requireConfig();
+    $requireAuth();
+    $name = basename((string) ($_POST['theme'] ?? ''));
+    if (!in_array($name, fn_template_names(), true)) {
+        $notFound();
+    }
+    $siteConfig['template'] = $name;
+    if (!$configStore->save($siteConfig)) {
+        http_response_code(500);
+        exit('Unable to write configuration. Check that the data/ directory is writable.');
+    }
+    $redirect('themes');
+}, 'applyTheme');
 
 $router->map('POST', '/logout', function () use ($redirect) {
     $_SESSION = [];

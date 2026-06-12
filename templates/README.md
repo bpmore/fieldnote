@@ -46,6 +46,10 @@ Dark-identity themes (terminal, noir, midnight, neon) invert: dark in
 `:root`, light overrides in `@media (prefers-color-scheme: light)`, and
 `color-scheme: dark light`.
 
+Keep every scheme difference inside the `:root` token blocks: the admin
+theme gallery forces a scheme by replaying the matching token block, so
+rules placed elsewhere in the media query won't flip in previews.
+
 Required tokens and the contrast matrix the auditor checks in both schemes:
 
 | Token | Role | Must hit |
