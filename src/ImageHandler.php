@@ -26,8 +26,11 @@ final class ImageHandler
 
     /**
      * @param string $uploadDir  Absolute filesystem path to the uploads dir.
-     * @param string $publicBase Public URL prefix that maps to $uploadDir
-     *                           (for example "https://blog.example.com/uploads").
+     * @param string $publicBase Site-relative URL prefix that maps to
+     *                           $uploadDir (for example "/uploads" or
+     *                           "/blog/uploads"). Kept relative on purpose:
+     *                           absolute stored URLs broke every existing
+     *                           image whenever the domain changed.
      */
     public function __construct(string $uploadDir, string $publicBase)
     {
@@ -39,7 +42,7 @@ final class ImageHandler
      * Validate and store an uploaded file.
      *
      * @param array{name:string,tmp_name:string,size:int,error:int} $file
-     * @return array{0:string,1:string}|null [publicUrl, filesystemPath] or null on failure
+     * @return array{0:string,1:string}|null [siteRelativeUrl, uploadRelativePath] or null on failure
      */
     public function storeUpload(array $file): ?array
     {
@@ -55,7 +58,7 @@ final class ImageHandler
     /**
      * Safely download a remote image and store it.
      *
-     * @return array{0:string,1:string}|null [publicUrl, filesystemPath] or null on failure
+     * @return array{0:string,1:string}|null [siteRelativeUrl, uploadRelativePath] or null on failure
      */
     public function storeFromUrl(string $url): ?array
     {
@@ -151,8 +154,12 @@ final class ImageHandler
         }
         @chmod($path, 0644);
 
+        // Return both halves relative: URL relative to the site root, path
+        // relative to the uploads dir. The store must survive domain changes
+        // and project-folder moves; absolute values rot the moment either
+        // happens (callers re-anchor the path against FN_UPLOAD_DIR).
         $relative = substr($path, strlen($this->uploadDir));
-        return [$this->publicBase . $relative, $path];
+        return [$this->publicBase . $relative, ltrim($relative, '/')];
     }
 
     /**

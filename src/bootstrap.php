@@ -70,6 +70,31 @@ if (!is_file($pubMarker) && is_dir(FN_DB_DIR . '/blog')) {
     @touch($pubMarker);
 }
 
+// One-time migration: image records used to store the absolute public URL
+// (embedding the configured domain) and the absolute disk path (embedding
+// the project folder), so renaming either silently broke every existing
+// image. Re-store both relative: URL relative to the site root, path
+// relative to public/uploads/.
+$imgMarker = FN_DATA_DIR . '/.imgrel-v1';
+if (!is_file($imgMarker) && is_dir(FN_DB_DIR . '/images')) {
+    foreach ($imageStore->findAll() as $imageRecord) {
+        $update = [];
+        $url = (string) ($imageRecord['url'] ?? '');
+        if (preg_match('#^https?://#i', $url)) {
+            $update['url'] = (string) (parse_url($url, PHP_URL_PATH) ?: $url);
+        }
+        $path = (string) ($imageRecord['path'] ?? '');
+        $pos  = strpos($path, '/public/uploads/');
+        if ($pos !== false) {
+            $update['path'] = substr($path, $pos + strlen('/public/uploads/'));
+        }
+        if ($update !== []) {
+            $imageStore->updateById((int) $imageRecord['_id'], $update);
+        }
+    }
+    @touch($imgMarker);
+}
+
 /**
  * Parse a php.ini shorthand size ("2M", "512K") into bytes.
  */
@@ -238,6 +263,14 @@ function fn_render_head(array $siteConfig, \AltoRouter $router, string $pageTitl
     $socialImage = (isset($post['imageUrl']) && $post['imageUrl'] !== '' && empty($post['password']))
         ? (string) $post['imageUrl']
         : (string) $siteConfig['OGImage'];
+    // Upload URLs are stored site-relative; social scrapers want og:image
+    // absolute, so qualify it with the configured domain when there is one.
+    if (
+        str_starts_with($socialImage, '/') && !str_starts_with($socialImage, '//')
+        && $siteConfig['domain'] !== ''
+    ) {
+        $socialImage = rtrim((string) $siteConfig['domain'], '/') . $socialImage;
+    }
     $ogType = isset($post['title']) ? 'article' : 'website';
     $base   = e((string) $siteConfig['basePath']);
 

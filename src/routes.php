@@ -37,7 +37,9 @@ if ($postsPerPage < 1) {
 $publishedCount = count($blogStore->findBy(['draft', '=', false]));
 $numPages = max(1, (int) ceil($publishedCount / $postsPerPage));
 
-$uploadPublicBase = rtrim((string) $siteConfig['domain'], '/') . '/uploads';
+// Site-relative on purpose: records once embedded the configured domain,
+// which broke every existing image whenever the domain (or dev host) changed.
+$uploadPublicBase = rtrim((string) $siteConfig['basePath'], '/') . '/uploads';
 $images = new ImageHandler(FN_UPLOAD_DIR, $uploadPublicBase);
 $twoFactor = new TwoFactor(FN_DATA_DIR);
 
@@ -278,11 +280,16 @@ $router->map('POST', '/post/[i:id]/delete', function ($id) use ($requireConfig, 
     if ($post === null) {
         $notFound();
     }
-    // Clean up the linked image record and its file on disk.
+    // Clean up the linked image record and its file on disk. Stored paths
+    // are relative to uploads/ (absolute = a pre-migration record).
     if (isset($post['image']) && is_numeric($post['image'])) {
         $record = $imageStore->findById((int) $post['image']);
-        if ($record && !empty($record['path']) && is_file($record['path'])) {
-            @unlink($record['path']);
+        $imagePath = (string) ($record['path'] ?? '');
+        if ($imagePath !== '' && !str_starts_with($imagePath, '/')) {
+            $imagePath = FN_UPLOAD_DIR . '/' . $imagePath;
+        }
+        if ($imagePath !== '' && is_file($imagePath)) {
+            @unlink($imagePath);
         }
         $imageStore->deleteById((int) $post['image']);
     }

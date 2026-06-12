@@ -25,9 +25,17 @@ $uploadLimitMb = rtrim(rtrim(number_format($uploadLimit / 1048576, 1), '0'), '.'
         <input type="text" name="blogPostAuthor" class="blogPostAuthor form-control my-2"
                placeholder="<?php i18n("write_post_author_placeholder"); ?>" required
                value="<?= e($post['author'] ?? $siteConfig['author'] ?? '') ?>" />
+        <?php /* Deliberately never pre-filled: stored URLs are site-relative
+                 (rejected by type="url"), and round-tripping the old absolute
+                 URL made every save re-download and duplicate the image. */ ?>
         <input type="url" name="blogPostImageURL" class="blogPostImageURL form-control my-2"
-               placeholder="<?php i18n("write_post_image_placeholder"); ?>"
-               value="<?= e($post['imageUrl'] ?? '') ?>" />
+               placeholder="<?php i18n("write_post_image_placeholder"); ?>" />
+        <?php if ($isEdit && !empty($post['imageUrl'])): ?>
+            <p class="my-2">
+                <img class="write-current-image" src="<?= e($post['imageUrl']) ?>" alt="">
+                <small class="text-muted">Current featured image — upload a file or paste a URL to replace it.</small>
+            </p>
+        <?php endif; ?>
         <input type="file" name="imageUpload" accept="image/png,image/jpeg,image/gif"
                data-max-bytes="<?= (int) $uploadLimit ?>"
                class="blogPostImage form-control form-control-sm my-2" id="imageUpload" />

@@ -163,3 +163,10 @@ h2 {
     color: #fff;
     border-radius: 3px;
 }
+
+.write-current-image {
+    max-height: 72px;
+    border-radius: 4px;
+    vertical-align: middle;
+    margin-right: .5rem;
+}
