@@ -33,7 +33,7 @@ a:hover {
 }
 
 span.headerLogo {
-    background: url('../logo.svg') center center no-repeat;
+    background: url('../logo.svg?v=2') center center no-repeat;
     background-size: contain;
     display: inline-block;
     width: 25px;

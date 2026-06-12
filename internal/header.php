@@ -15,7 +15,7 @@ $base = e($siteConfig['basePath']);
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <title>Fieldnote | <?= e($pageTitle ?? '') ?></title>
-    <link rel="icon" href="<?= $base ?>/logo.svg" type="image/svg+xml">
+    <link rel="icon" href="<?= $base ?>/logo.svg?v=<?= (int) @filemtime(FN_ROOT . '/public/logo.svg') ?>" type="image/svg+xml">
     <link rel="stylesheet" href="<?= $base ?>/static/vendor/bootstrap.min.css">
     <?php if (!empty($needsEditor)): ?>
         <link rel="stylesheet" href="<?= $base ?>/static/vendor/easymde.min.css">

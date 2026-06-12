@@ -441,7 +441,7 @@ function fn_render_head(array $siteConfig, \AltoRouter $router, string $pageTitl
     if ($schemeOverrideCss !== null && $schemeOverrideCss !== '') {
         echo '<style>' . $schemeOverrideCss . '</style>' . "\n";
     }
-    echo '<link rel="icon" href="' . $base . '/logo.svg" type="image/svg+xml">' . "\n";
+    echo '<link rel="icon" href="' . $base . '/logo.svg?v=' . (int) @filemtime(FN_ROOT . '/public/logo.svg') . '" type="image/svg+xml">' . "\n";
     echo '<link rel="alternate" type="application/rss+xml" title="' . e($siteName) . '" href="' . e($router->generate('feed')) . '">' . "\n";
     echo '<link rel="alternate" type="application/feed+json" title="' . e($siteName) . '" href="' . e($router->generate('jsonFeed')) . '">' . "\n";
     if ($canonical !== '') {
