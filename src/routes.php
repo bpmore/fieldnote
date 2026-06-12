@@ -699,6 +699,13 @@ $router->map('GET|POST', '/settings', function () use ($configStore, $siteConfig
             $password = $siteConfig['password'];
         }
 
+        // A new password mints a new session epoch: every other logged-in
+        // device dies with the credential it was minted under. The session
+        // submitting this form is re-stamped below so the admin stays in.
+        $sessionEpoch = ($firstRun || !empty($_POST['blogPassword']))
+            ? bin2hex(random_bytes(16))
+            : (string) ($siteConfig['sessionEpoch'] ?? '');
+
         $postsPerPage = (int) ($_POST['blogPostsPerPage'] ?? 1);
         if ($postsPerPage < 1) {
             $postsPerPage = 1;
@@ -715,6 +722,7 @@ $router->map('GET|POST', '/settings', function () use ($configStore, $siteConfig
             // ever writable by an authenticated admin and now CSRF-protected.
             'headerInject' => (string) ($_POST['blogHeaderInject'] ?? ''),
             'password'     => $password,
+            'sessionEpoch' => $sessionEpoch,
             'template'     => basename(fn_clean($_POST['blogTemplate'])),
             // Not part of this form; carried over or it would vanish on
             // every settings save. (Theme-keyed: inert after a switch.)
@@ -738,6 +746,8 @@ $router->map('GET|POST', '/settings', function () use ($configStore, $siteConfig
             Security::regenerate();
             $_SESSION['isAuthenticated'] = true;
         }
+        Security::setSessionEpoch($sessionEpoch);
+        Security::stampSessionEpoch();
         $redirect('dashboard');
     }
 
@@ -777,6 +787,7 @@ $router->map('GET|POST', '/login', function () use ($configStore, $siteConfig, $
             }
             Security::clearLoginFailures(FN_DATA_DIR);
             $_SESSION['isAuthenticated'] = true;
+            Security::stampSessionEpoch();
             $redirect('dashboard');
         }
         // Generic failure: do not reveal whether the password was close.
@@ -819,6 +830,7 @@ $router->map('GET|POST', '/login/verify', function () use ($siteConfig, $twoFact
             Security::clearLoginFailures(FN_DATA_DIR);
             Security::regenerate();
             $_SESSION['isAuthenticated'] = true;
+            Security::stampSessionEpoch();
             $redirect('dashboard');
         }
         Security::recordLoginFailure(FN_DATA_DIR);

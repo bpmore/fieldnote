@@ -26,6 +26,7 @@ final class Config
         'footer'       => '',
         'headerInject' => '',
         'password'     => '',
+        'sessionEpoch' => '',
         'template'     => 'gazette',
         'paletteOverrides' => [],
         'searchEnabled' => true,

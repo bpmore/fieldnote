@@ -248,9 +248,35 @@ final class Security
         }
     }
 
+    /** Current session epoch from config, set at bootstrap. */
+    private static string $sessionEpoch = '';
+
+    public static function setSessionEpoch(string $epoch): void
+    {
+        self::$sessionEpoch = $epoch;
+    }
+
+    /** Stamp this session as belonging to the current epoch (call at login). */
+    public static function stampSessionEpoch(): void
+    {
+        $_SESSION['sessionEpoch'] = self::$sessionEpoch;
+    }
+
+    /**
+     * A session authenticates only if it carries the current epoch. The
+     * epoch rotates whenever the admin password changes, so rotating the
+     * password really does log out every other device — without this,
+     * a stolen session outlives the credential it was minted with.
+     * Empty epoch (pre-feature installs) enforces nothing until the first
+     * password change generates one.
+     */
     public static function isAuthenticated(): bool
     {
-        return !empty($_SESSION['isAuthenticated']);
+        if (empty($_SESSION['isAuthenticated'])) {
+            return false;
+        }
+        return self::$sessionEpoch === ''
+            || hash_equals(self::$sessionEpoch, (string) ($_SESSION['sessionEpoch'] ?? ''));
     }
 
     /**

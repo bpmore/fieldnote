@@ -408,6 +408,34 @@ preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
 [, , $b2] = req('GET', "$base/");
 check('palette reset clears overrides', $s === 302 && !str_contains($b2, 'palette.css?v='), "status $s");
 
+// ----------------------------------------- session epoch (password change) --
+
+// Changing the password must log out every OTHER session while the session
+// that changed it stays in. Run last: it rewrites the fixture config.
+[, , $b] = req('GET', "$base/settings", $authed);
+preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+[$s] = req('POST', "$base/settings", $authed + ['body' => http_build_query([
+    'csrf_token'   => $m[1],
+    'blogName'     => 'Smoke',
+    'blogInfo'     => 'Smoke-test fixture',
+    'blogDomain'   => 'http://smoke.example',
+    'blogTemplate' => 'gazette',
+    'blogTimezone' => 'UTC',
+    'blogI18N'     => 'en_US',
+    'blogPostsPerPage' => '6',
+    'blogSearchEnabled' => '1',
+    'blogStatsEnabled'  => '1',
+    'blogPassword' => 'rotated-password',
+])]);
+[$s2] = req('GET', "$base/dashboard", $authed);
+check('password change keeps the changing session', $s === 302 && $s2 === 200, "save $s, dashboard $s2");
+
+$staleSid = 'fnsmoke' . bin2hex(random_bytes(8));
+file_put_contents("$sessionDir/sess_$staleSid", 'isAuthenticated|b:1;');
+[$s, $h] = req('GET', "$base/dashboard", ['cookie' => 'fieldnote_sess=' . $staleSid]);
+@unlink("$sessionDir/sess_$staleSid");
+check('password change logs out other sessions', $s === 302 && str_contains($h['location'] ?? '', '/login'), "status $s");
+
 // ---------------------------------------------------------------- summary --
 
 echo "\n" . ($failures === 0 ? 'All checks passed.' : "$failures check(s) FAILED.") . "\n";

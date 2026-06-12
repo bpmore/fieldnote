@@ -42,6 +42,7 @@ Security::setTrustedProxies(array_values(array_filter(array_map(
     'trim',
     explode(',', (string) ($siteConfig['trustedProxies'] ?? ''))
 ))));
+Security::setSessionEpoch((string) ($siteConfig['sessionEpoch'] ?? ''));
 
 $dbOptions = ['timeout' => false];
 $blogStore  = new Store('blog', FN_DB_DIR, $dbOptions);
