@@ -44,9 +44,14 @@ register a **passkey** (Touch ID, Face ID, a security key) in Settings and
 sign in with that — phishing-proof, with the password always available as
 a fallback. Changing the password logs out every other device.
 
-**Flat files you can grep.** Posts live in a flat-file store, config is a
-PHP array, images are files on disk. Back up your blog with `cp -R`.
-Migrate it with `rsync`. No database server to run, tune, or lose.
+**Flat files you can grep — and a real escape hatch.** Posts live in a
+flat-file store, config is a PHP array, images are files on disk. Back up
+your blog with `cp -R`, or hit **Export** on the dashboard for a zip of
+markdown files with frontmatter plus your images. **Import** takes that
+zip back — or any archive of `.md` files with Jekyll/Hugo/Bear-style
+frontmatter — with a dry-run screen first and a no-duplicates guarantee
+(existing slugs are always skipped, never overwritten). Your writing is
+never locked in.
 
 **Hardened where it counts.** CSRF tokens on every form, markdown rendered
 in safe mode (raw HTML and `javascript:` URLs neutralized), SSRF-safe

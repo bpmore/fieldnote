@@ -15,6 +15,9 @@
         "lbuchs/webauthn": "^2.2",
         "rakibtg/sleekdb": "^2.14"
     },
+    "suggest": {
+        "ext-zip": "Required for the markdown export/import feature (/admin/export, /admin/import)"
+    },
     "autoload": {
         "psr-4": {
             "Fieldnote\\": "src/"

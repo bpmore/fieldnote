@@ -265,7 +265,7 @@ already set this precedent).
 
 ## Phase 3 — writer trust and retention
 
-### 3.1 Markdown export / import (L)
+### 3.1 Markdown export / import (L) — SHIPPED
 
 "Flat files you can grep" deserves a real escape hatch — migration *in*
 drives adoption, credible migration *out* drives it harder.

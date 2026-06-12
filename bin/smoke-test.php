@@ -370,6 +370,64 @@ preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
 $json = json_decode($b, true);
 check('passkey create options exclude existing credential', $s === 200 && count($json['publicKey']['excludeCredentials'] ?? []) === 1 && ($json['publicKey']['authenticatorSelection']['requireResidentKey'] ?? false) === true, "status $s");
 
+// --------------------------------------------------------- export / import --
+
+if (!class_exists(ZipArchive::class)) {
+    echo "! ext-zip missing — export/import checks skipped\n";
+} else {
+    [$s, , $b] = req('GET', "$base/admin/export", $authed);
+    file_put_contents("$tmp/export.zip", $b);
+    $zipRead = new ZipArchive();
+    $names   = [];
+    if ($zipRead->open("$tmp/export.zip") === true) {
+        for ($i = 0; $i < $zipRead->numFiles; $i++) {
+            $names[] = (string) $zipRead->getNameIndex($i);
+        }
+    }
+    check('export is a zip with posts and site.yaml', $s === 200 && in_array('site.yaml', $names, true) && count(preg_grep('#^posts/.+\.md$#', $names)) >= 4, "status $s");
+    $helloEntry = array_values(preg_grep('#hello-world\.md$#', $names));
+    $helloMd    = $helloEntry ? (string) $zipRead->getFromName($helloEntry[0]) : '';
+    check('export frontmatter round-trips title and tags', str_contains($helloMd, 'title: "Hello World"') && str_contains($helloMd, '"notes"'));
+    $zipRead->close();
+
+    // A foreign, Jekyll-shaped archive with a featured image.
+    $jekyllZip = "$tmp/jekyll.zip";
+    $zipWrite  = new ZipArchive();
+    $zipWrite->open($jekyllZip, ZipArchive::CREATE);
+    $zipWrite->addFromString(
+        '_posts/2024-03-05-imported-note.md',
+        "---\ntitle: Imported Note\ntags:\n  - imported\nimage: /images/pic.png\n---\n\nBody from another platform.\n"
+    );
+    $im = imagecreatetruecolor(8, 8);
+    ob_start();
+    imagepng($im);
+    $zipWrite->addFromString('images/pic.png', (string) ob_get_clean());
+    $zipWrite->close();
+
+    [, , $b] = req('GET', "$base/dashboard", $authed);
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+    [$s, , $b] = req('POST', "$base/admin/import", $authed + ['body' => [
+        'csrf_token' => $m[1],
+        'importZip'  => new CURLFile($jekyllZip, 'application/zip', 'jekyll.zip'),
+    ]]);
+    check('import dry-run inspects without writing', $s === 200 && str_contains($b, 'imported-note') && str_contains($b, 'Nothing has been written'), "status $s");
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+    [$s] = req('POST', "$base/admin/import/confirm", $authed + ['body' => 'csrf_token=' . $m[1]]);
+    [$s2, , $b2] = req('GET', "$base/2024/03/imported-note");
+    check('confirmed import publishes the post with its image', $s === 302 && $s2 === 200 && str_contains($b2, 'Body from another platform') && str_contains($b2, '/uploads/'), "post page $s2");
+    [, , $b2] = req('GET', "$base/tag/imported");
+    check('imported tags work', str_contains($b2, 'Imported Note'));
+
+    // Same archive again: collision = skip, never duplicate.
+    [, , $b] = req('GET', "$base/dashboard", $authed);
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+    [$s, , $b] = req('POST', "$base/admin/import", $authed + ['body' => [
+        'csrf_token' => $m[1],
+        'importZip'  => new CURLFile($jekyllZip, 'application/zip', 'jekyll.zip'),
+    ]]);
+    check('re-import skips existing slugs', $s === 200 && str_contains($b, 'skip — exists'), "status $s");
+}
+
 // ---------------------------------------------------------- theme gallery --
 
 [$s, , $b] = req('GET', "$base/admin/themes", $authed);

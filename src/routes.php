@@ -1095,6 +1095,86 @@ $router->map('POST', '/admin/themes/apply', function () use ($requireConfig, $re
 }, 'applyTheme');
 
 // ---------------------------------------------------------------------------
+// Export / import (roadmap 3.1)
+// ---------------------------------------------------------------------------
+
+$fnRequireZip = static function (): void {
+    if (!class_exists(\ZipArchive::class)) {
+        http_response_code(500);
+        header('Content-Type: text/plain; charset=utf-8');
+        exit("Export/import needs PHP's zip extension (ext-zip). Install it and reload.");
+    }
+};
+
+$router->map('GET', '/admin/export', function () use ($requireConfig, $requireAuth, $fnRequireZip, $siteConfig, $blogStore, $imageStore, $images) {
+    $requireConfig();
+    $requireAuth();
+    $fnRequireZip();
+    $porter = new Porter($blogStore, $imageStore, $images, FN_UPLOAD_DIR);
+    $zipPath = $porter->exportZip($siteConfig);
+    if ($zipPath === null) {
+        http_response_code(500);
+        exit('Could not build the export. Check that data/cache is writable.');
+    }
+    header('Content-Type: application/zip');
+    header('Content-Disposition: attachment; filename="fieldnote-export-' . date('Y-m-d') . '.zip"');
+    header('Content-Length: ' . (string) filesize($zipPath));
+    readfile($zipPath);
+    @unlink($zipPath);
+    exit;
+}, 'export');
+
+$router->map('GET|POST', '/admin/import', function () use ($requireConfig, $requireAuth, $fnRequireZip, $siteConfig, $blogStore, $imageStore, $images, $router) {
+    $requireConfig();
+    $requireAuth();
+    $fnRequireZip();
+
+    $analysis = null;
+    $importError = '';
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $file = $_FILES['importZip'] ?? null;
+        if ($file === null || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
+            $importError = 'Choose a .zip file to upload.';
+        } else {
+            $cacheDir = FN_DATA_DIR . '/cache';
+            if (!is_dir($cacheDir)) {
+                @mkdir($cacheDir, 0750, true);
+            }
+            $stored = $cacheDir . '/import-' . bin2hex(random_bytes(6)) . '.zip';
+            move_uploaded_file($file['tmp_name'], $stored);
+            $porter   = new Porter($blogStore, $imageStore, $images, FN_UPLOAD_DIR);
+            $analysis = $porter->analyze($stored);
+            if ($analysis['posts'] === []) {
+                $importError = implode(' ', $analysis['errors']) ?: 'Nothing importable found.';
+                $analysis = null;
+                @unlink($stored);
+            } else {
+                // The dry-run screen confirms against exactly this archive.
+                $_SESSION['import_pending'] = ['path' => $stored, 'exp' => time() + 900];
+            }
+        }
+    }
+
+    $pageTitle = 'Import';
+    require FN_INTERNAL_DIR . '/import.php';
+}, 'import');
+
+$router->map('POST', '/admin/import/confirm', function () use ($requireConfig, $requireAuth, $fnRequireZip, $siteConfig, $blogStore, $imageStore, $images, $redirect) {
+    $requireConfig();
+    $requireAuth();
+    $fnRequireZip();
+    $pending = $_SESSION['import_pending'] ?? null;
+    unset($_SESSION['import_pending']);
+    if (!is_array($pending) || $pending['exp'] < time() || !is_file($pending['path'])) {
+        $redirect('import');
+    }
+    $porter = new Porter($blogStore, $imageStore, $images, FN_UPLOAD_DIR);
+    $_SESSION['import_result'] = $porter->import($pending['path'], $siteConfig);
+    @unlink($pending['path']);
+    $redirect('dashboard');
+}, 'importConfirm');
+
+// ---------------------------------------------------------------------------
 // Passkeys (docs/passkeys-spec.md). All POST, so the central CSRF gate covers
 // them; the JS reads the token from the page it lives on.
 // ---------------------------------------------------------------------------

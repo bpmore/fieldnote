@@ -60,6 +60,19 @@ $renderList = function (array $posts, bool $isDraft) use ($router, $renderAction
 ?>
 <h1 class="setupH1 setup text-center"><?php i18n("dashboard_title"); ?></h1>
 <?php
+$importResult = $_SESSION['import_result'] ?? null;
+unset($_SESSION['import_result']);
+if (is_array($importResult)): ?>
+    <div class="alert alert-success mt-3" role="status">
+        Import finished: <?= (int) $importResult['created'] ?> created,
+        <?= (int) $importResult['images'] ?> image(s),
+        <?= (int) $importResult['skipped'] ?> skipped (already existed).
+        <?php if (!empty($importResult['errors'])): ?>
+            <ul class="mb-0 mt-1"><?php foreach ((array) $importResult['errors'] as $err): ?><li><?= e((string) $err) ?></li><?php endforeach; ?></ul>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
+<?php
 $contentLint = $_SESSION['content_lint'] ?? null;
 unset($_SESSION['content_lint']);
 if (is_array($contentLint) && !empty($contentLint['warnings'])): ?>
@@ -76,6 +89,8 @@ if (is_array($contentLint) && !empty($contentLint['warnings'])): ?>
     <a href="<?= e($router->generate('write')) ?>" class="btn btn-primary"><?php i18n("dashboard_write_post"); ?></a>
     <a href="<?= e($router->generate('themes')) ?>" class="btn btn-secondary">Themes</a>
     <a href="<?= e($router->generate('settings')) ?>" class="btn btn-secondary"><?php i18n("dashboard_settings"); ?></a>
+    <a href="<?= e($router->generate('export')) ?>" class="btn btn-outline-secondary">Export</a>
+    <a href="<?= e($router->generate('import')) ?>" class="btn btn-outline-secondary">Import</a>
     <form method="post" action="<?= e($router->generate('logout')) ?>" class="d-inline">
         <?= csrf_field() ?>
         <button type="submit" class="btn btn-outline-danger"><?php i18n("dashboard_logout"); ?></button>

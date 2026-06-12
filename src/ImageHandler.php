@@ -56,6 +56,21 @@ final class ImageHandler
     }
 
     /**
+     * Store an image from a local file (the import path). Same pipeline as
+     * uploads: everything is re-encoded through GD, so a zip can't smuggle
+     * polyglot bytes into uploads/.
+     *
+     * @return array{0:string,1:string}|null [siteRelativeUrl, uploadRelativePath] or null on failure
+     */
+    public function storeLocalFile(string $path): ?array
+    {
+        if (!is_file($path) || (int) filesize($path) > self::MAX_BYTES) {
+            return null;
+        }
+        return $this->ingest($path);
+    }
+
+    /**
      * Safely download a remote image and store it.
      *
      * @return array{0:string,1:string}|null [siteRelativeUrl, uploadRelativePath] or null on failure
