@@ -220,6 +220,21 @@ function fn_tag_links(\AltoRouter $router, array $post): void
 }
 
 /**
+ * Run the content accessibility lint on a just-saved post and flash any
+ * suggestions for the next dashboard render. Suggestions, not gates: the
+ * post is already saved when this runs.
+ */
+function fn_flash_content_lint(string $title, string $markdown): void
+{
+    $warnings = ContentLint::check($markdown);
+    if ($warnings === []) {
+        unset($_SESSION['content_lint']);
+        return;
+    }
+    $_SESSION['content_lint'] = ['title' => $title, 'warnings' => $warnings];
+}
+
+/**
  * Visitor search form (GET, zero-JS). Themes opt in by calling it wherever
  * fits their layout; the sr-only label keeps it accessible unstyled.
  */

@@ -161,7 +161,7 @@ be saved and shows a passing suggestion; a passing override renders on the
 public site in both schemes; clearing restores stock; audit still 70/70
 (theme files untouched).
 
-### 1.2 Accessibility lint for post content (M)
+### 1.2 Accessibility lint for post content (M) — SHIPPED
 
 Themes are enforced; the writing isn't. Lint the rendered post on save.
 
@@ -180,7 +180,7 @@ blocks publishing.
 two warnings after save; a clean post shows none; warnings survive the
 redirect (flash pattern, same as `login_error`).
 
-### 1.3 Public proof: /accessibility page + badge (S)
+### 1.3 Public proof: /accessibility page + badge (S) — SHIPPED (page; badge deferred)
 
 Turn the gate into marketing. A public route `/accessibility` (rendered
 through the active theme like a post) stating what is machine-checked —

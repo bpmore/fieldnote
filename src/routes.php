@@ -343,6 +343,66 @@ $router->map('GET', '/robots.txt', function () use ($siteConfig, $router) {
     exit;
 }, 'robots');
 
+// Public accessibility statement, generated from the same Wcag constants the
+// auditor enforces — the page cannot drift from what the code actually checks.
+$router->map('GET', '/accessibility', function () use ($requireConfig, $siteConfig, $router) {
+    $requireConfig();
+
+    $pairs = '';
+    foreach (Wcag::PAIR_MATRIX as [$fgTok, $bgTok, $min]) {
+        $pairs .= sprintf(
+            "- `%s` (%s) on `%s`: at least %.1f:1\n",
+            $fgTok,
+            strtolower(Wcag::TOKEN_ROLES[$fgTok]),
+            $bgTok,
+            $min
+        );
+    }
+
+    $content = <<<MD
+This site runs on [Fieldnote](https://github.com/bpmore/fieldnote), where
+accessibility is enforced by machine, not promised by policy. Every theme —
+including this one — must pass an automated WCAG 2.2 AA audit before it can
+ship, in the light **and** dark color scheme.
+
+## What is checked, mechanically
+
+**Color contrast** over every one of these token pairs, in both schemes:
+
+{$pairs}
+**Structure and interaction**, on every theme:
+
+- A skip-to-content link as the first focusable element
+- A visible focus indicator on everything interactive (removing it fails the audit)
+- Exactly one `<h1>` per page
+- Pagination targets at least 24×24 px (WCAG 2.5.8)
+- Animation and transitions stop under `prefers-reduced-motion`
+- Layouts reflow at 320 px wide with no horizontal scrolling (400% zoom)
+
+## Enforced end to end
+
+The audit gates the project's CI — a theme that slips below AA cannot merge.
+The same contrast math runs when this site's owner customizes colors: a
+palette that fails any pair above cannot be saved, only corrected. And every
+page is plain HTML with one small stylesheet — no JavaScript is required to
+read, navigate, or search this site.
+
+Found something inaccessible anyway? Tell the site's owner — and if it's a
+theme bug, [report it upstream](https://github.com/bpmore/fieldnote/issues).
+MD;
+
+    $post = [
+        'title'    => 'Accessibility',
+        'author'   => $siteConfig['name'] !== '' ? $siteConfig['name'] : 'Fieldnote',
+        'date'     => time(),
+        'content'  => $content,
+        'imageUrl' => '',
+        'tags'     => [],
+    ];
+    $pageTitle = 'Accessibility';
+    require fn_template_dir($siteConfig['template']) . '/post.php';
+}, 'accessibility');
+
 // Zero-JS visitor search: a server-rendered scan of published posts through
 // the theme's home view. Title matches outrank body matches; protected post
 // bodies are never searched (their titles are public, so titles still match).
@@ -480,6 +540,7 @@ $router->map('GET|POST', '/post/[i:id]/edit', function ($id) use ($requireConfig
         }
 
         $blogStore->update($post);
+        fn_flash_content_lint((string) $post['title'], (string) $post['content']);
         $redirect('dashboard');
     }
 
@@ -516,6 +577,7 @@ $router->map('GET|POST', '/write', function () use ($requireConfig, $requireAuth
         }
 
         $blogStore->insert($post);
+        fn_flash_content_lint((string) $post['title'], (string) $post['content']);
         $redirect('dashboard');
     }
 

@@ -200,6 +200,9 @@ check('unknown URL 404s', $s === 404, "status $s");
 [, , $b] = req('GET', "$base/");
 check('past-due scheduled draft auto-published', str_contains($b, 'Scheduled Post'));
 
+[$s, , $b] = req('GET', "$base/accessibility");
+check('accessibility statement renders from Wcag constants', $s === 200 && str_contains($b, '4.5:1') && str_contains($b, 'prefers-reduced-motion'), "status $s");
+
 // ----------------------------------------------------------------- search --
 
 [$s, , $b] = req('GET', "$base/search?q=published");
@@ -254,6 +257,21 @@ check('authed dashboard renders', $s === 200 && str_contains($b, 'Hello World'),
 [$s, , $b] = req('GET', "$base/login/verify", $pending);
 check('2FA verify page renders', $s === 200 && str_contains($b, 'Two-Factor Verification'), "status $s");
 check('2FA verify page free of PHP warnings', !str_contains($b, 'Undefined variable') && !str_contains($b, 'Warning:'));
+
+// ----------------------------------------------------------- content lint --
+
+[, , $b] = req('GET', "$base/dashboard", $authed);
+preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+[$s] = req('POST', "$base/write", $authed + ['body' => http_build_query([
+    'csrf_token'      => $m[1],
+    'blogPostTitle'   => 'Lint Me',
+    'blogPostAuthor'  => 'Tester',
+    'blogPostContent' => "Intro.\n\n#### Skipped levels\n\nSee [click here](https://example.com).",
+])]);
+[, , $b] = req('GET', "$base/dashboard", $authed);
+check('content lint flashes suggestions after save', $s === 302 && str_contains($b, 'Accessibility suggestions') && str_contains($b, 'click here'), "status $s");
+[, , $b] = req('GET', "$base/dashboard", $authed);
+check('lint flash shows exactly once', !str_contains($b, 'Accessibility suggestions'));
 
 // ---------------------------------------------------------- theme gallery --
 

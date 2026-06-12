@@ -48,6 +48,19 @@ $renderList = function (array $posts, bool $isDraft) use ($router, $renderAction
 };
 ?>
 <h1 class="setupH1 setup text-center"><?php i18n("dashboard_title"); ?></h1>
+<?php
+$contentLint = $_SESSION['content_lint'] ?? null;
+unset($_SESSION['content_lint']);
+if (is_array($contentLint) && !empty($contentLint['warnings'])): ?>
+    <div class="alert alert-warning mt-3" role="status">
+        <strong>Saved.</strong> Accessibility suggestions for &ldquo;<?= e((string) $contentLint['title']) ?>&rdquo;:
+        <ul class="mb-0 mt-2">
+            <?php foreach ((array) $contentLint['warnings'] as $w): ?>
+                <li><?= e((string) $w) ?></li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+<?php endif; ?>
 <div class="text-center">
     <a href="<?= e($router->generate('write')) ?>" class="btn btn-primary"><?php i18n("dashboard_write_post"); ?></a>
     <a href="<?= e($router->generate('themes')) ?>" class="btn btn-secondary">Themes</a>
