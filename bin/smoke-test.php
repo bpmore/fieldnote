@@ -72,6 +72,11 @@ $blog->insert([
     'date' => time(), 'draft' => true,
     'content' => 'SENTINEL-DRAFT-BODY', 'password' => '',
 ]);
+$blog->insert([
+    'title' => 'Scheduled Post', 'slug' => 'scheduled-post', 'author' => 'Tester',
+    'date' => time(), 'draft' => true, 'scheduledFor' => time() - 30,
+    'content' => 'Came from the scheduler.', 'password' => '',
+]);
 
 // ----------------------------------------------------------------- server --
 
@@ -190,6 +195,22 @@ check('protected post shows form, not body', $s === 200 && str_contains($b, 'pas
 [$s] = req('GET', "$base/no-such-page");
 check('unknown URL 404s', $s === 404, "status $s");
 
+// The lazy publisher must have flipped the past-due scheduled draft on the
+// first request of this run.
+[, , $b] = req('GET', "$base/");
+check('past-due scheduled draft auto-published', str_contains($b, 'Scheduled Post'));
+
+// ----------------------------------------------------------------- search --
+
+[$s, , $b] = req('GET', "$base/search?q=published");
+check('search finds body matches', $s === 200 && str_contains($b, 'Hello World'), "status $s");
+[, , $b] = req('GET', "$base/search?q=SENTINEL-PROTECTED-BODY");
+check('search never reads protected bodies', !str_contains($b, 'Locked Post'));
+[, , $b] = req('GET', "$base/search?q=Locked");
+check('search matches protected titles', str_contains($b, 'Locked Post'));
+[, , $b] = req('GET', "$base/search?q=x");
+check('single-char query returns nothing', !str_contains($b, 'Hello World'));
+
 // ------------------------------------------------------------------- feed --
 
 [$s, $h, $b] = req('GET', "$base/feed");
@@ -209,7 +230,8 @@ check('unknown tag 404s', $s === 404, "status $s");
 [$s, , $b] = req('GET', "$base/feed.json");
 $json = json_decode($b, true);
 check('JSON feed valid with items', $s === 200 && ($json['version'] ?? '') === 'https://jsonfeed.org/version/1.1' && count($json['items'] ?? []) >= 1, "status $s");
-check('JSON feed excludes protected, includes tags', !str_contains($b, 'SENTINEL-PROTECTED-BODY') && in_array('notes', $json['items'][0]['tags'] ?? [], true));
+$taggedItem = array_values(array_filter($json['items'] ?? [], static fn (array $i): bool => str_contains($i['url'] ?? '', 'hello-world')));
+check('JSON feed excludes protected, includes tags', !str_contains($b, 'SENTINEL-PROTECTED-BODY') && in_array('notes', $taggedItem[0]['tags'] ?? [], true));
 
 [$s, , $b] = req('GET', "$base/sitemap.xml");
 check('sitemap lists posts, omits protected', $s === 200 && str_contains($b, 'hello-world') && !str_contains($b, 'locked-post'), "status $s");

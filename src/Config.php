@@ -28,6 +28,7 @@ final class Config
         'password'     => '',
         'template'     => 'gazette',
         'paletteOverrides' => [],
+        'searchEnabled' => true,
         'postsPerPage' => 6,
         'basePath'     => '',
         'timezone'     => 'America/New_York',

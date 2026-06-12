@@ -35,6 +35,9 @@ $renderList = function (array $posts, bool $isDraft) use ($router, $renderAction
                     <a class="fs-5 fw-semibold text-decoration-none" href="<?= e(fn_post_url($router, $p)) ?>"><?= e($p['title']) ?></a>
                     <div class="text-muted small">
                         <?php i18n("dashboard_posted_by"); ?> <?= e($p['author']) ?> &middot; <?= e(date(i18n('dashboard_post_fulldate', false), (int) $p['date'])) ?>
+                        <?php if ($isDraft && !empty($p['scheduledFor'])): ?>
+                            &middot; <span class="badge text-bg-info">publishes <?= e(date('M j, H:i', (int) $p['scheduledFor'])) ?></span>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <div class="d-flex gap-1 flex-wrap"><?= $renderActions($p, $isDraft) ?></div>

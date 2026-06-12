@@ -213,7 +213,7 @@ Feed items gain `<category>` elements. The home query is unchanged.
 drafts never leak into tag pages; feed shows categories; untagged posts and
 unmodified themes behave exactly as today.
 
-### 2.2 Zero-JS search (M)
+### 2.2 Zero-JS search (M) — SHIPPED
 
 **Plan:** `GET /search?q=` (public, config-gated `searchEnabled`, default
 on). Scan published posts with `mb_stripos` over title + content (no regex
@@ -230,7 +230,7 @@ content is excluded from matching (titles still match — they're public).
 empty state, no scan; protected post bodies never match; `q` is escaped
 everywhere it echoes.
 
-### 2.3 Scheduled publishing without cron (M)
+### 2.3 Scheduled publishing without cron (M) — SHIPPED
 
 "Schedule posts on $3 shared hosting" — Ghost needs a daemon for this.
 

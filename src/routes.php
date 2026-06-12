@@ -343,6 +343,36 @@ $router->map('GET', '/robots.txt', function () use ($siteConfig, $router) {
     exit;
 }, 'robots');
 
+// Zero-JS visitor search: a server-rendered scan of published posts through
+// the theme's home view. Title matches outrank body matches; protected post
+// bodies are never searched (their titles are public, so titles still match).
+$router->map('GET', '/search', function () use ($requireConfig, $siteConfig, $blogStore, $imageStore, $router, $notFound) {
+    $requireConfig();
+    if (empty($siteConfig['searchEnabled'])) {
+        $notFound();
+    }
+    $q = trim((string) ($_GET['q'] ?? ''));
+    $results = [];
+    if (mb_strlen($q) >= 2) {
+        foreach ($blogStore->findBy(['draft', '=', false], ['date' => 'desc']) as $p) {
+            $inTitle = mb_stripos((string) ($p['title'] ?? ''), $q) !== false;
+            $inBody  = empty($p['password']) && mb_stripos((string) ($p['content'] ?? ''), $q) !== false;
+            if ($inTitle || $inBody) {
+                $results[] = ['rank' => $inTitle ? 0 : 1, 'post' => $p];
+            }
+        }
+        usort($results, static fn (array $a, array $b): int =>
+            [$a['rank'], -(int) $a['post']['date']] <=> [$b['rank'], -(int) $b['post']['date']]);
+        $results = array_slice($results, 0, 50);
+    }
+    $allPosts = array_map(fn ($r) => fn_with_image($r['post'], $imageStore), $results);
+    $page      = 1;
+    $numPages  = 1;
+    $limit     = count($allPosts);
+    $pageTitle = $q === '' ? 'Search' : 'Search: ' . $q;
+    require fn_template_dir($siteConfig['template']) . '/home.php';
+}, 'search');
+
 // Tag pages: published posts carrying the tag, rendered through the theme's
 // home view (same shape as the homepage; tags are slugs, so URLs stay clean).
 $router->map('GET', '/tag/[:tag]', function ($tag) use ($requireConfig, $siteConfig, $blogStore, $imageStore, $router, $notFound) {
@@ -374,7 +404,7 @@ $router->map('POST', '/post/[i:id]/publish', function ($id) use ($requireConfig,
     if ($post === null) {
         $notFound();
     }
-    $update = ['draft' => false];
+    $update = ['draft' => false, 'scheduledFor' => 0]; // manual publish supersedes a schedule
     // First publish stamps the post's date (which the permalink embeds).
     // Hiding and re-publishing later must not move it, so remember it.
     if (empty($post['publishedAt'])) {
@@ -432,6 +462,11 @@ $router->map('GET|POST', '/post/[i:id]/edit', function ($id) use ($requireConfig
         $post['title']   = $newTitle;
         $post['author']  = fn_clean($_POST['blogPostAuthor']);
         $post['tags']    = fn_parse_tags((string) ($_POST['blogPostTags'] ?? ''));
+        // Scheduling only matters while the post is a draft; the lazy
+        // publisher in bootstrap flips it when the time passes.
+        $post['scheduledFor'] = !empty($post['draft'])
+            ? max(0, (int) strtotime((string) ($_POST['blogPostScheduledFor'] ?? '')))
+            : 0;
         $post['content'] = (string) $_POST['blogPostContent']; // markdown stored raw, escaped at render
         $post['password'] = fn_hash_post_password($_POST['blogPostPassword'] ?? '', $post['password'] ?? '');
 
@@ -469,6 +504,7 @@ $router->map('GET|POST', '/write', function () use ($requireConfig, $requireAuth
             'draft'    => true,
             'author'   => fn_clean($_POST['blogPostAuthor']),
             'tags'     => fn_parse_tags((string) ($_POST['blogPostTags'] ?? '')),
+            'scheduledFor' => max(0, (int) strtotime((string) ($_POST['blogPostScheduledFor'] ?? ''))),
             'content'  => (string) $_POST['blogPostContent'],
             'password' => fn_hash_post_password($_POST['blogPostPassword'] ?? '', ''),
         ];
@@ -537,6 +573,7 @@ $router->map('GET|POST', '/settings', function () use ($configStore, $siteConfig
             // Not part of this form; carried over or it would vanish on
             // every settings save. (Theme-keyed: inert after a switch.)
             'paletteOverrides' => $siteConfig['paletteOverrides'] ?? [],
+            'searchEnabled' => !empty($_POST['blogSearchEnabled']),
             'postsPerPage' => $postsPerPage,
             'basePath'     => fn_clean($_POST['blogBase'] ?? ''),
             'timezone'     => fn_clean($_POST['blogTimezone']),

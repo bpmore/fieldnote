@@ -52,6 +52,11 @@ $isNew = ($siteConfig['name'] === '');
                         <option value="<?= e($tplName) ?>" <?= $siteConfig['template'] === $tplName ? 'selected' : '' ?>><?= e($tplName) ?></option>
                     <?php endforeach; ?>
                 </select>
+                <div class="form-check my-2">
+                    <input class="form-check-input" type="checkbox" name="blogSearchEnabled" id="blogSearchEnabled"
+                           <?= !empty($siteConfig['searchEnabled']) ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="blogSearchEnabled">Visitor search at /search</label>
+                </div>
                 <label><?php i18n("settings_posts_per_page"); ?></label>
                 <input class="form-control" type="number" name="blogPostsPerPage" min="1" required value="<?= e((string) $siteConfig['postsPerPage']) ?>" />
                 <label><?php i18n("settings_timezone"); ?></label>

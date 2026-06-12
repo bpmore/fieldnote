@@ -346,3 +346,28 @@ input[type="password"].field:focus {
 .site-footer p { margin: .25rem 0; }
 .site-footer a { color: var(--text-muted); text-decoration: underline; }
 .site-footer a:hover { color: var(--accent); }
+
+/* Visitor search (fn_search_form) — tokens only, per the theme contract. */
+.search-form {
+    display: flex;
+    gap: .5rem;
+    justify-content: center;
+    margin-top: .75rem;
+}
+
+.search-form input {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: .3rem .6rem;
+}
+
+.search-form button {
+    background: var(--accent);
+    color: var(--accent-contrast);
+    border: 0;
+    border-radius: 6px;
+    padding: .3rem .8rem;
+    min-height: 24px;
+}

@@ -72,6 +72,29 @@ if (!is_file($pubMarker) && is_dir(FN_DB_DIR . '/blog')) {
     @touch($pubMarker);
 }
 
+// Scheduled publishing without cron: drafts whose scheduledFor time has
+// passed are published by the first request to arrive afterward. The marker
+// file caps the draft scan at once per minute; everything between scans is
+// a single stat() call.
+$schedMarker = FN_DATA_DIR . '/.schedule-check';
+if ((!is_file($schedMarker) || (int) filemtime($schedMarker) < time() - 60) && is_dir(FN_DB_DIR . '/blog')) {
+    @touch($schedMarker);
+    foreach ($blogStore->findBy(['draft', '=', true]) as $scheduledPost) {
+        $at = (int) ($scheduledPost['scheduledFor'] ?? 0);
+        if ($at > 0 && $at <= time()) {
+            $update = ['draft' => false, 'scheduledFor' => 0];
+            // Same first-publish stamping as the manual publish route: the
+            // permalink embeds the date, so it is set once and never moves.
+            if (empty($scheduledPost['publishedAt'])) {
+                $update['date']        = $at;
+                $update['publishedAt'] = $at;
+            }
+            $blogStore->updateById((int) $scheduledPost['_id'], $update);
+            fn_invalidate_published_count();
+        }
+    }
+}
+
 // One-time migration: image records used to store the absolute public URL
 // (embedding the configured domain) and the absolute disk path (embedding
 // the project folder), so renaming either silently broke every existing
@@ -194,6 +217,19 @@ function fn_tag_links(\AltoRouter $router, array $post): void
         echo '<li><a href="' . e($router->generate('tag', ['tag' => $tag])) . '">' . e($tag) . '</a></li>' . "\n";
     }
     echo '</ul></nav>' . "\n";
+}
+
+/**
+ * Visitor search form (GET, zero-JS). Themes opt in by calling it wherever
+ * fits their layout; the sr-only label keeps it accessible unstyled.
+ */
+function fn_search_form(\AltoRouter $router, string $value = ''): void
+{
+    echo '<form role="search" method="get" action="' . e($router->generate('search')) . '" class="search-form">' . "\n"
+        . '<label class="sr-only" for="fn-search-q">Search</label>' . "\n"
+        . '<input type="search" id="fn-search-q" name="q" value="' . e($value) . '" placeholder="Search&hellip;">' . "\n"
+        . '<button type="submit">Search</button>' . "\n"
+        . '</form>' . "\n";
 }
 
 /**

@@ -108,6 +108,14 @@ fall back to password-only login.
 Posts take comma-separated **tags**; each tag gets a page at `/tag/<name>`,
 and tags flow into both feeds as categories.
 
+**Scheduled publishing, no cron required.** Give a draft a publish time and
+the first visitor to arrive after that moment publishes it — with the
+permalink dated to the scheduled time. Works on any shared host.
+
+**Visitor search** lives at `/search` (server-rendered, zero JS, toggleable
+in Settings). Title matches rank first; password-protected post bodies are
+never searched.
+
 Syndication and discovery come built in: RSS at `/feed`, a JSON Feed at
 `/feed.json`, a sitemap at `/sitemap.xml` (referenced from `/robots.txt`) —
 all answering conditional requests with 304s so feed readers and crawlers

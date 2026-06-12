@@ -47,6 +47,12 @@ $uploadLimitMb = rtrim(rtrim(number_format($uploadLimit / 1048576, 1), '0'), '.'
         </label>
         <input type="password" name="blogPostPassword" class="form-control my-2" autocomplete="new-password"
                placeholder="<?php i18n("write_post_password_placeholder"); ?>" />
+        <?php if (!$isEdit || !empty($post['draft'])): ?>
+            <label for="blogPostScheduledFor" class="mt-1">Publish automatically at (optional — drafts only)</label>
+            <input type="datetime-local" name="blogPostScheduledFor" id="blogPostScheduledFor"
+                   class="form-control my-2"
+                   value="<?= !empty($post['scheduledFor']) ? e(date('Y-m-d\TH:i', (int) $post['scheduledFor'])) : '' ?>" />
+        <?php endif; ?>
         <textarea name="blogPostContent" id="blogPostContent"
                   placeholder="<?php i18n("write_post_markdown_placeholder"); ?>"><?= e($post['content'] ?? '') ?></textarea>
     </fieldset>
