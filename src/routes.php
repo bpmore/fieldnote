@@ -1296,7 +1296,13 @@ $fnCanonical = parse_url((string) $siteConfig['domain']);
 if (!empty($fnCanonical['host']) && in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) {
     $canonicalHostPort = strtolower($fnCanonical['host'] . (isset($fnCanonical['port']) ? ':' . $fnCanonical['port'] : ''));
     $requestHostPort   = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
-    if ($requestHostPort !== '' && $requestHostPort !== $canonicalHostPort) {
+    // Scheme counts too: an https:// domain upgrades plain-HTTP requests.
+    // X-Forwarded-Proto is honored so a TLS-terminating proxy doesn't loop —
+    // a proxy that strips that header should keep the domain as http://.
+    $requestIsHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+    $schemeMismatch = ($fnCanonical['scheme'] ?? '') === 'https' && !$requestIsHttps;
+    if ($requestHostPort !== '' && ($requestHostPort !== $canonicalHostPort || $schemeMismatch)) {
         header('Location: ' . rtrim((string) $siteConfig['domain'], '/') . ($_SERVER['REQUEST_URI'] ?? '/'), true, 301);
         exit;
     }
