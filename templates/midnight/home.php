@@ -1,10 +1,12 @@
 <?php
 use function Dropplets\e;
 use function Dropplets\dpl_post_url;
+use function Dropplets\dpl_pagination;
 require __DIR__ . '/header.php';
 
 $dateFormat = i18n('dateformat', false);
 ?>
+<h1 class="sr-only"><?= e($siteName) ?></h1>
 <?php if (empty($allPosts)): ?>
     <p class="empty-state">Nothing here yet. Check back soon!</p>
 <?php else: ?>
@@ -33,23 +35,5 @@ $dateFormat = i18n('dateformat', false);
     </div>
 <?php endif; ?>
 
-<?php if ($numPages > 1): ?>
-    <nav aria-label="Pages">
-        <ul class="pagination">
-            <?php if ($page > 1): ?>
-                <li><a href="<?= e($page === 2 ? $router->generate('home') : $router->generate('posts', ['page' => $page - 1])) ?>" rel="prev">&larr;</a></li>
-            <?php endif; ?>
-            <?php for ($p = 1; $p <= $numPages; $p++): ?>
-                <?php if ($p === $page): ?>
-                    <li><span class="current" aria-current="page"><?= $p ?></span></li>
-                <?php else: ?>
-                    <li><a href="<?= e($p === 1 ? $router->generate('home') : $router->generate('posts', ['page' => $p])) ?>"><?= $p ?></a></li>
-                <?php endif; ?>
-            <?php endfor; ?>
-            <?php if ($page < $numPages): ?>
-                <li><a href="<?= e($router->generate('posts', ['page' => $page + 1])) ?>" rel="next">&rarr;</a></li>
-            <?php endif; ?>
-        </ul>
-    </nav>
-<?php endif; ?>
+<?php dpl_pagination($router, $page, $numPages); ?>
 <?php require __DIR__ . '/footer.php'; ?>

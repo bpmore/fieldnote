@@ -1,0 +1,223 @@
+/* Dropplets "vapor" — vaporwave sunset. Dark-identity: violet night with
+   pink/teal neon in :root, pastel mall daylight under light scheme. */
+
+:root {
+    color-scheme: dark light;
+    --bg: #150b22;
+    --surface: #20103a;
+    --text: #eee4fb;
+    --muted: #b2a1cd;
+    --accent: #ff80d5;
+    --accent-contrast: #43062e;
+    --line: #7e64a8;
+    --focus: #5ce0d6;
+    --teal: #5ce0d6;
+    --sun-1: #ff80d5;
+    --sun-2: #8a5cf5;
+    --sun-3: #5ce0d6;
+    --grid: rgba(92, 224, 214, .28);
+    --chrome-hi: rgba(238, 228, 251, .9);
+    --chrome-lo: rgba(92, 224, 214, .55);
+    --case-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg: #f6eaf2;
+        --surface: #fdf5fa;
+        --text: #2d1a3e;
+        --muted: #5f4a74;
+        --accent: #a4146e;
+        --accent-contrast: #ffffff;
+        --line: #97799f;
+        --focus: #0c6b63;
+        --teal: #0c6b63;
+        --sun-1: #f4afd9;
+        --sun-2: #c3aef2;
+        --sun-3: #9fdfd8;
+        --grid: rgba(12, 107, 99, .22);
+        --chrome-hi: rgba(255, 255, 255, .9);
+        --chrome-lo: rgba(12, 107, 99, .35);
+        --case-shadow: 0 3px 12px rgba(45, 26, 62, .14);
+    }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 1.0625rem; line-height: 1.65;
+    color: var(--text); background: var(--bg);
+}
+
+img { max-width: 100%; height: auto; display: block; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+a:focus-visible,
+.button:focus-visible {
+    outline: 2px solid transparent;
+    box-shadow: 0 0 0 2px var(--bg), 0 0 0 5px var(--focus);
+}
+
+/* ---- Masthead with sunset horizon band ---- */
+.masthead { text-align: center; padding: 3.5rem 1.25rem 0; }
+
+.site-title {
+    display: inline-block; padding: .25rem .5rem;
+    font-size: clamp(1.5rem, 5vw, 2.6rem); font-weight: 800;
+    letter-spacing: .3em; text-transform: uppercase; color: var(--text);
+    text-shadow: 0 1px 0 var(--chrome-hi), 0 4px 0 var(--chrome-lo), 0 8px 18px var(--chrome-lo);
+}
+
+.site-title:hover { color: var(--accent); text-decoration: none; }
+
+.site-info {
+    margin: .6rem auto 0; max-width: 36rem; color: var(--muted);
+    font-size: .9rem; letter-spacing: .14em; text-transform: uppercase;
+}
+
+.horizon {
+    height: .7rem; margin-top: 2.25rem;
+    background: linear-gradient(90deg, var(--sun-1) 0%, var(--sun-2) 50%, var(--sun-3) 100%);
+}
+
+/* ---- Cassette shelf (home) ---- */
+.wrap { max-width: 46rem; margin: 0 auto; padding: 2.5rem 1.25rem 0; }
+
+.shelf { list-style: none; counter-reset: tape; margin: 0; padding: 0; display: grid; gap: 1.1rem; }
+
+.cassette {
+    counter-increment: tape; position: relative;
+    display: flex; align-items: stretch;
+    background: var(--surface); border: 1px solid var(--line);
+    box-shadow: var(--case-shadow), inset 0 0 0 1px var(--bg);
+}
+
+/* Cassette label spine: sunset stripes. */
+.spine {
+    flex: 0 0 .9rem; border-right: 1px solid var(--line);
+    background: linear-gradient(180deg, var(--sun-1) 0%, var(--sun-2) 50%, var(--sun-3) 100%);
+}
+
+.cassette-body { flex: 1 1 auto; min-width: 0; padding: 1rem 1.2rem 1.1rem; }
+
+.cassette-title { margin: 0 0 .3rem; font-size: 1.2rem; line-height: 1.35; font-weight: 700; }
+
+.cassette-title::before {
+    content: "Side A · No. " counter(tape, decimal-leading-zero);
+    display: block; margin-bottom: .35rem;
+    font-size: .68rem; font-weight: 600; letter-spacing: .28em;
+    text-transform: uppercase; color: var(--teal);
+}
+
+.cassette-title a { color: var(--accent); }
+.cassette-title a::after { content: ""; position: absolute; inset: 0; }
+.cassette-title a:hover { color: var(--text); text-decoration: none; }
+
+.cassette-meta { margin: 0; font-size: .85rem; color: var(--muted); letter-spacing: .05em; }
+
+.empty-state {
+    text-align: center; color: var(--muted); padding: 4.5rem 0;
+    letter-spacing: .12em; text-transform: uppercase;
+}
+
+/* ---- Pagination ---- */
+.pagination {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: .45rem; margin: 2.5rem 0 0; padding: 0; list-style: none;
+}
+
+.pagination a,
+.pagination .current {
+    min-width: 2.4rem; padding: .3rem .7rem; text-align: center;
+    border: 1px solid var(--line); color: var(--text); background: var(--surface);
+}
+
+.pagination a:hover { border-color: var(--teal); color: var(--teal); text-decoration: none; }
+
+.pagination .current { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); font-weight: 700; }
+
+/* ---- Single post ---- */
+.post { max-width: 42rem; margin: 0 auto; }
+
+.post-header { margin-bottom: 1.9rem; text-align: center; }
+
+.post-title {
+    margin: 0 0 .6rem; font-size: clamp(1.5rem, 4.5vw, 2.3rem);
+    font-weight: 800; line-height: 1.2; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--accent);
+    text-shadow: 0 2px 0 var(--chrome-lo);
+}
+
+.post-meta {
+    margin: 0; color: var(--muted); font-size: .85rem;
+    letter-spacing: .12em; text-transform: uppercase;
+}
+
+.post-hero { width: 100%; border: 1px solid var(--line); box-shadow: var(--case-shadow); margin-bottom: 2rem; }
+
+.post-content h2, .post-content h3, .post-content h4 { margin: 2.1rem 0 .7rem; line-height: 1.3; color: var(--teal); }
+.post-content p { margin: 0 0 1.15rem; }
+.post-content a { text-decoration: underline; text-underline-offset: 2px; }
+.post-content img { border: 1px solid var(--line); }
+.post-content blockquote {
+    margin: 1.6rem 0; padding: .35rem 0 .35rem 1.15rem;
+    border-left: 3px solid var(--sun-2); color: var(--muted);
+}
+.post-content code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .9em; background: var(--surface);
+    border: 1px solid var(--line); padding: .1em .35em;
+}
+.post-content pre {
+    background: var(--surface); border: 1px solid var(--line);
+    padding: 1rem 1.2rem; overflow-x: auto; line-height: 1.55;
+}
+.post-content pre code { background: none; border: 0; padding: 0; }
+.post-content hr {
+    border: 0; height: 3px; margin: 2.5rem 0;
+    background: linear-gradient(90deg, var(--sun-1), var(--sun-2), var(--sun-3));
+}
+.post-content table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; }
+.post-content th, .post-content td { border: 1px solid var(--line); padding: .5rem .75rem; text-align: left; }
+
+.post-back { max-width: 42rem; margin: 3rem auto 0; padding-top: 1.25rem; border-top: 1px solid var(--line); }
+.post-back a { display: inline-block; padding: .5rem 0; letter-spacing: .08em; text-transform: uppercase; font-size: .85rem; }
+
+/* ---- 404 ---- */
+.center-page { max-width: 26rem; margin: 3.5rem auto; text-align: center; }
+
+.center-page .display {
+    margin: 0; font-size: 6rem; font-weight: 800; line-height: 1;
+    letter-spacing: .1em; color: var(--accent);
+    text-shadow: 0 3px 0 var(--chrome-lo), 0 8px 20px var(--chrome-lo);
+}
+
+.lost-note { color: var(--muted); letter-spacing: .1em; text-transform: uppercase; font-size: .9rem; }
+
+.button {
+    display: inline-block; padding: .65rem 1.6rem;
+    font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--accent-contrast); background: var(--accent);
+    border: 1px solid var(--accent);
+}
+
+.button:hover { text-decoration: none; color: var(--accent-contrast); opacity: .88; }
+
+/* ---- Grid-floor footer ---- */
+.site-footer {
+    margin-top: 3.5rem; border-top: 2px solid var(--line);
+    background:
+        repeating-linear-gradient(0deg, var(--grid) 0 1px, transparent 1px 26px),
+        repeating-linear-gradient(90deg, var(--grid) 0 1px, transparent 1px 26px);
+}
+
+.footer-inner { text-align: center; padding: 2.5rem 1.25rem 3rem; font-size: .85rem; color: var(--muted); }
+
+.site-footer p { margin: .25rem 0; }
+.site-footer a { color: var(--muted); text-decoration: underline; }
+.site-footer a:hover { color: var(--accent); }
+.footer-link { display: inline-block; padding: .5rem .75rem; letter-spacing: .2em; text-transform: uppercase; }

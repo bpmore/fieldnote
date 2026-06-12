@@ -1,0 +1,12 @@
+<?php use function Dropplets\e; ?>
+    </main>
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <?php if (!empty($siteConfig['footer'])): ?>
+                <p><?= e($siteConfig['footer']) ?></p>
+            <?php endif; ?>
+            <p><a class="rss-link" href="<?= e($router->generate('feed')) ?>">Subscribe via RSS</a></p>
+        </div>
+    </footer>
+</body>
+</html>

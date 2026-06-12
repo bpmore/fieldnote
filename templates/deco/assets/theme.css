@@ -1,0 +1,127 @@
+/* Dropplets "deco" theme — art deco programme.
+   Champagne & bronze by day, midnight green & gold by night.
+   Symmetric centered layout, stepped fan ornaments, double-framed plates. */
+
+:root { color-scheme: light dark; --bg: #f3e9d5; --surface: #faf3e3; --text: #1c352a; --muted: #54624f; --accent: #7a5613; --accent-contrast: #faf3e3; --line: #8d7440; --focus: #1c4a36; --shadow: 0 2px 10px rgba(28, 53, 42, .12); }
+
+@media (prefers-color-scheme: dark) { :root { --bg: #0b1813; --surface: #10231b; --text: #ecdcae; --muted: #b5ab8c; --accent: #d4af37; --accent-contrast: #1a1404; --line: #82754a; --focus: #d4af37; --shadow: 0 2px 14px rgba(0, 0, 0, .55); } }
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body { margin: 0; font-family: Optima, Candara, "Gill Sans", "Gill Sans MT", Calibri, "Segoe UI", Roboto, sans-serif; font-size: 1.0625rem; line-height: 1.7; color: var(--text); background: var(--bg); }
+
+img { max-width: 100%; height: auto; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ========== Ornaments ========== */
+.fan { height: 1.1rem; margin: 0 auto; max-width: 16rem; background: linear-gradient(var(--accent), var(--accent)) top center / 12rem 2px no-repeat, linear-gradient(var(--accent), var(--accent)) center center / 7rem 2px no-repeat, linear-gradient(var(--accent), var(--accent)) bottom center / 3rem 2px no-repeat; }
+
+.fan-down { transform: scaleY(-1); }
+
+.rule { height: 1px; margin: 1rem auto; background: linear-gradient(var(--line), var(--line)) center / 60% 1px no-repeat; }
+
+/* ========== Masthead ========== */
+.masthead { text-align: center; padding: 3rem 1.25rem 2.25rem; border-bottom: 3px double var(--line); }
+
+.site-title { display: inline-block; margin: 1.4rem 0 .4rem; font-size: clamp(1.5rem, 5vw, 2.4rem); font-weight: 600; text-transform: uppercase; letter-spacing: .35em; text-indent: .35em; color: var(--text); }
+
+.site-title:hover { color: var(--accent); text-decoration: none; }
+
+.site-info { margin: 0 auto 1.4rem; max-width: 34rem; color: var(--muted); font-style: italic; letter-spacing: .04em; }
+
+.masthead .fan-down { margin-top: .4rem; }
+
+/* ========== Layout ========== */
+.wrap { max-width: 40rem; margin: 0 auto; padding: 2.75rem 1.25rem; }
+
+/* ========== Plates (framed cards) ========== */
+.plate { border: 1px solid var(--line); padding: .4rem; background: var(--surface); box-shadow: var(--shadow); }
+
+.plate-inner { border: 1px solid var(--line); padding: 1.6rem 1.4rem; text-align: center; }
+
+.plate-list { display: grid; gap: 2.25rem; }
+
+.plate-list .plate { position: relative; transition: border-color .15s ease; }
+.plate-list .plate:hover { border-color: var(--accent); }
+.plate-list .plate:hover .plate-inner { border-color: var(--accent); }
+
+.plate-image { display: block; width: 100%; aspect-ratio: 21 / 9; object-fit: cover; margin-bottom: .4rem; }
+
+.plate-lock { display: flex; align-items: center; justify-content: center; aspect-ratio: 21 / 9; font-size: 2.2rem; border: 1px solid var(--line); margin-bottom: .4rem; }
+
+.plate-title { margin: .4rem 0; font-size: 1.35rem; line-height: 1.35; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; }
+
+.plate-title a { color: var(--text); }
+.plate-title a::after { content: ""; position: absolute; inset: 0; }
+.plate:hover .plate-title a { color: var(--accent); text-decoration: none; }
+
+.plate-meta { margin: .3rem 0; font-size: .85rem; color: var(--muted); font-variant: small-caps; letter-spacing: .18em; }
+
+.empty-state { text-align: center; color: var(--muted); padding: 4rem 0; font-style: italic; }
+
+/* ========== Pagination ========== */
+.pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin: 3rem 0 0; padding: 0; list-style: none; }
+
+.pagination a,
+.pagination .current { display: inline-block; min-width: 2.4rem; padding: .35rem .7rem; text-align: center; border: 1px solid var(--line); box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--line); color: var(--text); letter-spacing: .08em; }
+
+.pagination a:hover { border-color: var(--accent); box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--accent); color: var(--accent); text-decoration: none; }
+
+.pagination .current { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); font-weight: 600; }
+
+/* ========== Single post ========== */
+.post-header { margin-bottom: 2rem; }
+
+.post-title { margin: 1.2rem 0 .6rem; font-size: clamp(1.6rem, 5vw, 2.3rem); line-height: 1.25; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; }
+
+.post-meta { margin: 0 0 1.2rem; color: var(--muted); font-variant: small-caps; letter-spacing: .2em; font-size: .9rem; }
+
+.post-hero-frame { margin-bottom: 2rem; }
+.post-hero-frame .plate-inner { padding: .4rem; }
+.post-hero { display: block; width: 100%; }
+
+.post-content { font-size: 1.075rem; }
+
+.post-content h1, .post-content h2, .post-content h3,
+.post-content h4, .post-content h5 { margin: 2.3rem 0 .8rem; line-height: 1.3; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; text-align: center; }
+
+.post-content h2::after, .post-content h3::after { content: ""; display: block; height: 1px; margin: .5rem auto 0; background: linear-gradient(var(--line), var(--line)) center / 5rem 1px no-repeat; }
+
+.post-content p { margin: 0 0 1.2rem; }
+.post-content a { text-decoration: underline; text-underline-offset: 2px; }
+
+.post-content blockquote { margin: 1.75rem 0; padding: 1rem 1.4rem; border: 1px solid var(--line); color: var(--muted); font-style: italic; text-align: center; }
+
+.post-content code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9em; background: var(--surface); border: 1px solid var(--line); padding: .1em .35em; }
+
+.post-content pre { background: var(--surface); border: 1px solid var(--line); padding: 1rem 1.25rem; overflow-x: auto; line-height: 1.55; }
+
+.post-content pre code { border: 0; background: none; padding: 0; }
+.post-content hr { border: 0; height: 1.1rem; margin: 2.5rem auto; max-width: 16rem; background: linear-gradient(var(--line), var(--line)) top center / 12rem 1px no-repeat, linear-gradient(var(--line), var(--line)) center center / 7rem 1px no-repeat, linear-gradient(var(--line), var(--line)) bottom center / 3rem 1px no-repeat; }
+.post-content table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; }
+.post-content th, .post-content td { border: 1px solid var(--line); padding: .5rem .75rem; text-align: left; }
+
+.post-footer { margin-top: 3rem; text-align: center; }
+
+.back-link { display: inline-block; padding: .55rem 1rem; font-variant: small-caps; letter-spacing: .18em; }
+
+/* ========== 404 ========== */
+.center-page { max-width: 26rem; margin: 2rem auto; }
+
+.center-page .display { margin: .5rem 0; font-size: 4.5rem; line-height: 1; font-weight: 600; letter-spacing: .2em; text-indent: .2em; color: var(--accent); }
+
+.button { display: inline-block; margin-top: .75rem; padding: .6rem 1.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; color: var(--accent-contrast); background: var(--accent); border: 1px solid var(--accent); }
+
+.button:hover { filter: brightness(1.08); text-decoration: none; }
+
+/* ========== Footer ========== */
+.site-footer { margin-top: 3rem; padding: 2.25rem 1.25rem 2.75rem; border-top: 3px double var(--line); text-align: center; color: var(--muted); font-size: .9rem; }
+
+.site-footer .fan { margin-bottom: 1.25rem; }
+.site-footer p { margin: .25rem 0; }
+
+.rss-link { display: inline-block; padding: .5rem .9rem; color: var(--muted); text-decoration: underline; letter-spacing: .18em; font-variant: small-caps; }
+
+.rss-link:hover { color: var(--accent); }

@@ -1,0 +1,343 @@
+/* Dropplets "chord" — gig-poster energy. Huge condensed uppercase titles,
+   tour-date listing rows, thick rules, one electric magenta accent.
+   Light = poster paper, dark = vinyl black. */
+
+:root {
+    color-scheme: light dark;
+    --bg: #faf6ee;
+    --surface: #ffffff;
+    --text: #131313;
+    --muted: #564f4a;
+    --accent: #b00060;
+    --accent-contrast: #ffffff;
+    --line: #131313;
+    --focus: #b00060;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #0e0d10;
+        --surface: #17161b;
+        --text: #f3f1f5;
+        --muted: #aaa3b2;
+        --accent: #ff4fa3;
+        --accent-contrast: #1c0210;
+        --line: #f3f1f5;
+        --focus: #ff4fa3;
+    }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+    margin: 0;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--bg);
+}
+
+img { max-width: 100%; height: auto; display: block; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.condensed,
+.site-title,
+.row-title,
+.poster-title,
+.display {
+    font-family: "Avenir Next Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+    font-stretch: condensed;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -.01em;
+}
+
+/* ---- Marquee (masthead) ---- */
+.marquee {
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: 2.75rem 1.25rem 0;
+}
+
+.site-title {
+    display: inline-block;
+    padding: .1rem 0;
+    font-size: clamp(2.4rem, 9vw, 5rem);
+    line-height: .95;
+    color: var(--text);
+}
+
+.site-title:hover { color: var(--accent); text-decoration: none; }
+
+.site-info {
+    margin: 1rem 0 0;
+    padding: .45rem .9rem;
+    display: inline-block;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+}
+
+/* ---- Setlist (home rows: date | title | author) ---- */
+.setlist {
+    max-width: 56rem;
+    margin: 2rem auto 0;
+    padding: 0 1.25rem;
+    border-top: 5px solid var(--line);
+}
+
+.row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 8.5rem 1fr auto;
+    gap: .15rem 1.5rem;
+    align-items: baseline;
+    padding: 1.2rem 0;
+    border-bottom: 2px solid var(--line);
+}
+
+@media (max-width: 40rem) {
+    .row { grid-template-columns: 1fr; }
+}
+
+.row-date {
+    margin: 0;
+    font-size: .82rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.row-title {
+    margin: 0;
+    font-size: clamp(1.5rem, 4.5vw, 2.4rem);
+    line-height: 1;
+}
+
+.row-title a { color: var(--text); }
+.row-title a::after { content: ""; position: absolute; inset: 0; }
+.row-title a:hover { text-decoration: none; }
+.row:hover { background: var(--accent); }
+.row:hover .row-title a,
+.row:hover .row-date,
+.row:hover .row-author,
+.row:hover .row-tag { color: var(--accent-contrast); }
+.row:hover .row-tag { border-color: var(--accent-contrast); }
+
+.row-tag {
+    display: inline-block;
+    vertical-align: .35em;
+    margin-left: .5rem;
+    padding: .12rem .5rem;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: .65rem;
+    font-weight: 700;
+    letter-spacing: .15em;
+}
+
+.row-author {
+    margin: 0;
+    font-size: .82rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: right;
+}
+
+@media (max-width: 40rem) {
+    .row-author { text-align: left; }
+}
+
+.empty-state {
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: 4rem 1.25rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+/* ---- Pagination: ticket stubs ---- */
+.pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .5rem;
+    margin: 2.5rem auto 0;
+    padding: 0 1.25rem;
+    list-style: none;
+    max-width: 56rem;
+}
+
+.pagination a,
+.pagination .current {
+    padding: .3rem .85rem;
+    border: 2px solid var(--line);
+    color: var(--text);
+    font-weight: 700;
+}
+
+.pagination a:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-contrast);
+    text-decoration: none;
+}
+
+.pagination .current {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-contrast);
+}
+
+/* ---- Single post: poster header ---- */
+.post {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 2.5rem 1.25rem 0;
+}
+
+.poster-head {
+    border-top: 5px solid var(--line);
+    padding-top: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.poster-title {
+    margin: 0 0 1rem;
+    font-size: clamp(2rem, 8vw, 4rem);
+    line-height: .95;
+}
+
+.poster-band {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: .25rem 1.5rem;
+    margin: 0;
+    padding: .5rem .9rem;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+}
+
+.post-hero { width: 100%; border: 3px solid var(--line); margin-bottom: 2rem; }
+
+.post-content { font-size: 1.0625rem; }
+.post-content h2, .post-content h3, .post-content h4 {
+    margin: 2.2rem 0 .7rem;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+    line-height: 1.15;
+    font-weight: 900;
+}
+.post-content p { margin: 0 0 1.15rem; }
+.post-content a { text-decoration: underline; text-underline-offset: 2px; }
+.post-content blockquote {
+    margin: 1.6rem 0;
+    padding: .3rem 0 .3rem 1.1rem;
+    border-left: 5px solid var(--accent);
+    font-weight: 600;
+}
+.post-content code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .9em;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: .1em .35em;
+}
+.post-content pre {
+    background: var(--surface);
+    border: 2px solid var(--line);
+    padding: 1rem 1.2rem;
+    overflow-x: auto;
+    line-height: 1.55;
+}
+.post-content pre code { background: none; border: 0; padding: 0; }
+.post-content hr { border: 0; border-top: 2px solid var(--line); margin: 2.5rem 0; }
+.post-content table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; }
+.post-content th, .post-content td {
+    border: 2px solid var(--line);
+    padding: .5rem .75rem;
+    text-align: left;
+}
+
+.post-back { margin: 3rem 0 0; }
+.post-back a {
+    display: inline-block;
+    padding: .55rem 0;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+/* ---- 404 ---- */
+.center-page {
+    max-width: 34rem;
+    margin: 0 auto;
+    padding: 4rem 1.25rem;
+    text-align: center;
+}
+
+.center-page .display {
+    margin: 0;
+    font-size: clamp(5rem, 22vw, 9rem);
+    line-height: .9;
+    color: var(--accent);
+}
+
+.lost-note {
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.button {
+    display: inline-block;
+    padding: .7rem 1.6rem;
+    background: var(--accent);
+    border: 2px solid var(--accent);
+    color: var(--accent-contrast);
+    font-weight: 900;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.button:hover {
+    background: var(--bg);
+    color: var(--accent);
+    text-decoration: none;
+}
+
+/* ---- Footer ---- */
+.site-footer {
+    max-width: 56rem;
+    margin: 3.5rem auto 0;
+    padding: 1.5rem 1.25rem 2.5rem;
+    border-top: 5px solid var(--line);
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.site-footer p { margin: .3rem 0; }
+.site-footer a { color: var(--text); text-decoration: underline; }
+.site-footer a:hover { color: var(--accent); }
+.footer-link { display: inline-block; padding: .5rem .5rem .5rem 0; }

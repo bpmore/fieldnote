@@ -1,0 +1,117 @@
+/* Dropplets "bauhaus" theme — 1920s exhibition plates.
+ Primary circles, squares, triangles; numbered plates; off-white gallery ground. */
+
+:root { color-scheme: light dark; --bg: #f4f1ea; --surface: #fbf9f4; --text: #191714; --muted: #5a564d; --accent: #1741a6; --accent-contrast: #ffffff; --line: #8a857a; --focus: #1741a6; --red: #c22f21; --blue: #1741a6; --yellow: #f2c317; }
+
+@media (prefers-color-scheme: dark) { :root { --bg: #121214; --surface: #1b1b1e; --text: #f0ede6; --muted: #b1ada3; --accent: #8caaff; --accent-contrast: #0b1538; --line: #6d6d74; --focus: #8caaff; --red: #ff6f61; --blue: #5c7fe6; --yellow: #ffd23f; } }
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body { margin: 0; font-family: Futura, "Avenir Next", "Century Gothic", "Segoe UI", -apple-system, sans-serif; font-size: 1.0625rem; line-height: 1.6; color: var(--text); background: var(--bg); }
+
+img { max-width: 100%; height: auto; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+:focus-visible { outline: 2px solid transparent; border-radius: .2rem; box-shadow: 0 0 0 2px var(--bg), 0 0 0 5px var(--focus); }
+
+/* ===== Masthead: asymmetric diagonal arrangement ===== */
+.masthead { position: relative; overflow: hidden; max-width: 46rem; margin: 0 auto; padding: 4rem 1.25rem 2.75rem 2.5rem; }
+
+.masthead::after { content: ""; position: absolute; left: -8%; bottom: 1.1rem; width: 70%; height: .5rem; background: var(--red); transform: rotate(-4deg); }
+
+.masthead-text { position: relative; }
+
+.masthead .site-title { display: inline-block; font-size: clamp(1.9rem, 6vw, 3rem); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text); transform: rotate(-2deg); transform-origin: left bottom; }
+
+.masthead .site-title:hover { color: var(--accent); text-decoration: none; }
+
+.masthead .site-info { margin: .9rem 0 0 14%; max-width: 26rem; color: var(--muted); letter-spacing: .04em; }
+
+/* Staggered diagonal of the three primaries */
+.masthead-shapes { position: absolute; inset: 0; pointer-events: none; }
+.shape { position: absolute; display: block; }
+.shape-circle { width: 3.4rem; height: 3.4rem; border-radius: 50%; background: var(--red); top: .8rem; right: 22%; }
+.shape-square { width: 2.6rem; height: 2.6rem; background: var(--blue); top: 2.9rem; right: 11%; transform: rotate(14deg); }
+.shape-triangle { width: 2.9rem; height: 2.6rem; background: var(--yellow); clip-path: polygon(50% 0, 100% 100%, 0 100%); top: 5.4rem; right: 3%; }
+
+/* ===== Layout ===== */
+.wrap { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1.25rem 2.5rem; }
+
+/* ===== Home: numbered plates ===== */
+.plates { list-style: none; counter-reset: plate; margin: 0; padding: 0; }
+
+.plate { counter-increment: plate; position: relative; display: flex; align-items: flex-start; gap: 1.1rem; background: var(--surface); border-top: 3px solid var(--text); padding: 1.4rem 1.25rem 1.4rem 1rem; margin: 0 0 1.4rem; }
+
+.plate::before { content: counter(plate, decimal-leading-zero); font-size: 2.4rem; font-weight: 800; line-height: 1; letter-spacing: .02em; color: var(--muted); min-width: 3.2rem; }
+
+.plate-marker { flex: none; width: 1.6rem; height: 1.6rem; margin-top: .35rem; }
+
+/* Shape marker cycles: circle / square / triangle */
+.plate:nth-child(3n + 1) .plate-marker { background: var(--red); border-radius: 50%; }
+.plate:nth-child(3n + 2) .plate-marker { background: var(--blue); transform: rotate(10deg); }
+.plate:nth-child(3n) .plate-marker { background: var(--yellow); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+
+.plate-marker.is-locked { background: none; border-radius: 0; clip-path: none; transform: none; width: auto; font-size: 1.25rem; line-height: 1; }
+
+.plate-body { min-width: 0; }
+
+.plate-title { margin: 0 0 .3rem; font-size: 1.35rem; line-height: 1.25; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
+
+.plate-title a { color: var(--text); }
+.plate-title a::after { content: ""; position: absolute; inset: 0; }
+.plate:hover .plate-title a { color: var(--accent); }
+.plate-title a:hover { text-decoration: none; }
+
+.plate-meta { margin: 0; font-size: .875rem; color: var(--muted); letter-spacing: .03em; }
+
+.empty-state { text-align: center; color: var(--muted); padding: 4rem 0; }
+
+/* ===== Pagination ===== */
+.pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem; margin: 2.5rem 0 0; padding: 0; list-style: none; }
+.pagination a, .pagination .current { display: inline-block; min-width: 2.4rem; padding: .35rem .7rem; text-align: center; border: 2px solid var(--text); color: var(--text); }
+.pagination a:hover { background: var(--yellow); color: var(--text); text-decoration: none; }
+.pagination .current { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); font-weight: 700; }
+
+/* ===== Single post ===== */
+.post-header { border-top: 3px solid var(--text); padding-top: 1.4rem; margin-bottom: 1.75rem; position: relative; }
+
+.post-header::before { content: ""; position: absolute; top: 1.5rem; right: 0; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--red); }
+
+.post-title { margin: 0 0 .5rem; padding-right: 2.4rem; font-size: clamp(1.7rem, 5vw, 2.4rem); line-height: 1.15; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; }
+
+.post-meta { margin: 0; color: var(--muted); font-size: .95rem; letter-spacing: .03em; }
+
+.post-hero { width: 100%; margin-bottom: 2rem; border: 3px solid var(--text); }
+
+.post-content h1, .post-content h2, .post-content h3,
+.post-content h4, .post-content h5 { line-height: 1.25; margin: 2.2rem 0 .8rem; letter-spacing: .02em; }
+.post-content p { margin: 0 0 1.15rem; }
+.post-content a { text-decoration: underline; text-underline-offset: 2px; }
+.post-content blockquote { margin: 1.5rem 0; padding: .25rem 0 .25rem 1.25rem; border-left: .5rem solid var(--yellow); color: var(--muted); }
+.post-content code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9em; background: var(--surface); border: 1px solid var(--line); padding: .1em .35em; }
+.post-content pre { background: var(--surface); border: 2px solid var(--text); padding: 1rem 1.25rem; overflow-x: auto; line-height: 1.55; }
+.post-content pre code { background: none; border: 0; padding: 0; }
+.post-content hr { border: 0; border-top: 3px solid var(--text); margin: 2.5rem 0; }
+.post-content table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; }
+.post-content th, .post-content td { border: 1px solid var(--line); padding: .5rem .75rem; text-align: left; }
+
+.post-footer { margin-top: 3rem; padding-top: 1.25rem; border-top: 3px solid var(--text); }
+
+.back-link { display: inline-block; padding: .4rem 0; font-weight: 700; letter-spacing: .03em; }
+
+/* ===== 404 ===== */
+.center-page { max-width: 28rem; margin: 0 auto; text-align: center; padding: 3rem 0; }
+.center-page .display { font-size: 5.5rem; font-weight: 800; margin: 0; line-height: 1; color: var(--accent); letter-spacing: .05em; }
+
+.button { display: inline-block; margin-top: 1rem; padding: .55rem 1.6rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--accent-contrast); background: var(--accent); border: 2px solid var(--accent); }
+.button:hover { background: var(--text); border-color: var(--text); color: var(--bg); text-decoration: none; }
+
+input[type="password"].field { width: 100%; padding: .6rem .9rem; font-size: 1rem; color: var(--text); background: var(--surface); border: 2px solid var(--text); margin: .75rem 0 1rem; }
+
+/* ===== Footer ===== */
+.site-footer { max-width: 46rem; margin: 2rem auto 0; padding: 1.75rem 1.25rem 2.5rem; border-top: 3px solid var(--text); color: var(--muted); font-size: .9rem; letter-spacing: .03em; }
+.site-footer p { margin: .25rem 0; }
+.rss-link { display: inline-block; padding: .4rem .9rem; border: 2px solid var(--text); color: var(--text); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.rss-link:hover { background: var(--yellow); text-decoration: none; }

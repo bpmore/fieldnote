@@ -1,0 +1,78 @@
+/* Dropplets "memphis" — 80s Memphis Group: confetti, squiggles, pastels + ink. */
+:root { color-scheme: light dark; --bg: #fdf6ee; --surface: #ffffff; --text: #221b2a; --muted: #5e5468; --accent: #9c2360; --accent-contrast: #ffffff; --line: #221b2a; --focus: #0a6b60; --ink: #221b2a; --pink: #f9b4d0; --teal: #8fe3d9; --yellow: #ffe177; --lilac: #cfb9f2; }
+@media (prefers-color-scheme: dark) { :root { --bg: #1d1430; --surface: #2a1d42; --text: #f5effc; --muted: #c0b1d6; --accent: #74e6d8; --accent-contrast: #0d2f2a; --line: #b39ed1; --focus: #74e6d8; --ink: #f5effc; --pink: #e878ad; --teal: #2fbfae; --yellow: #d9a92f; --lilac: #8f6cd9; } }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; font-family: "Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif; font-size: 1.0625rem; line-height: 1.65; color: var(--text); background: var(--bg); }
+img { max-width: 100%; height: auto; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+:focus-visible { outline: 2px solid transparent; border-radius: .4rem; box-shadow: 0 0 0 2px var(--bg), 0 0 0 5px var(--focus); }
+.masthead { text-align: center; padding: 4rem 1.25rem 3rem; background-image:
+ radial-gradient(circle, var(--pink) 0 .35rem, transparent .4rem),
+ radial-gradient(circle, var(--teal) 0 .3rem, transparent .35rem),
+ radial-gradient(circle, var(--yellow) 0 .4rem, transparent .45rem),
+ conic-gradient(from 200deg at 50% 45%, var(--teal) 0 35deg, transparent 35deg),
+ conic-gradient(from 80deg at 50% 40%, var(--pink) 0 38deg, transparent 38deg); background-repeat: no-repeat; background-size:
+ 1rem 1rem, .9rem .9rem, 1.1rem 1.1rem,
+ 2.2rem 2.2rem, 2rem 2rem; background-position:
+ 12% 28%, 85% 22%, 28% 78%,
+ 6% 62%, 92% 64%; }
+.masthead .site-title { display: inline-block; font-size: clamp(2rem, 6vw, 3rem); font-weight: 800; color: var(--text); background: var(--yellow); border: 3px solid var(--ink); border-radius: 1.2rem; padding: .35rem 1.2rem; transform: rotate(-1.5deg); box-shadow: .35rem .35rem 0 var(--pink); }
+.masthead .site-title:hover { text-decoration: none; transform: rotate(1deg); }
+.masthead .site-info { margin: 1.1rem auto 0; max-width: 34rem; color: var(--muted); }
+.squiggle { height: .8rem; background-image:
+ radial-gradient(circle at 50% 125%, transparent 0 .3rem, var(--teal) .3rem .55rem, transparent .6rem),
+ radial-gradient(circle at 50% -25%, transparent 0 .3rem, var(--pink) .3rem .55rem, transparent .6rem); background-size: 1.6rem .8rem; background-position: 0 0, .8rem 0; background-repeat: repeat-x; margin: 0 auto; max-width: 60rem; }
+.squiggle-foot { margin-top: 2.5rem; }
+.wrap { max-width: 60rem; margin: 0 auto; padding: 2.5rem 1.25rem; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 2rem; align-items: start; }
+.card { position: relative; background: var(--surface); border: 3px solid var(--ink); border-radius: 1.1rem; overflow: hidden; }
+.card:nth-child(odd) { transform: rotate(.5deg); box-shadow: .4rem .4rem 0 var(--teal); }
+.card:nth-child(even) { transform: rotate(-.5deg); box-shadow: -.4rem .4rem 0 var(--lilac); }
+.card:nth-child(odd):hover, .card:nth-child(even):hover { transform: rotate(0deg) translateY(-2px); }
+.card-image { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover; border-bottom: 3px solid var(--ink); }
+.card-lock { display: flex; align-items: center; justify-content: center; aspect-ratio: 3 / 2; font-size: 2.5rem; background: var(--yellow); border-bottom: 3px solid var(--ink); }
+.card-body { padding: 1.1rem 1.25rem 1.25rem; }
+.card-title { margin: 0 0 .35rem; font-size: 1.25rem; line-height: 1.3; font-weight: 800; }
+.card-title a { color: var(--text); }
+.card-title a::after { content: ""; position: absolute; inset: 0; }
+.card:hover .card-title a { color: var(--accent); }
+.card-title a:hover { text-decoration: none; }
+.card-meta { margin: 0; font-size: .875rem; color: var(--muted); font-weight: 600; }
+.empty-state { text-align: center; color: var(--muted); padding: 4rem 0; }
+.pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin: 3rem 0 0; padding: 0; list-style: none; }
+.pagination a, .pagination .current { display: inline-block; min-width: 2.5rem; padding: .35rem .75rem; text-align: center; border: 3px solid var(--ink); border-radius: .9rem; color: var(--text); font-weight: 700; }
+.pagination a:hover { background: var(--teal); color: var(--ink); text-decoration: none; }
+.pagination .current { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
+.post { max-width: 42rem; margin: 0 auto; }
+.post-header { margin-bottom: 1.75rem; }
+.post-title { display: inline-block; margin: 0 0 .6rem; font-size: clamp(1.7rem, 4.5vw, 2.4rem); line-height: 1.2; font-weight: 800; background: var(--pink); border: 3px solid var(--ink); border-radius: 1rem; padding: .3rem .9rem; transform: rotate(-.5deg); }
+.post-meta { margin: 0; color: var(--muted); font-size: .95rem; }
+.post-hero { width: 100%; margin-bottom: 2rem; border: 3px solid var(--ink); border-radius: 1rem; box-shadow: .4rem .4rem 0 var(--yellow); }
+.post-content h1, .post-content h2, .post-content h3,
+.post-content h4, .post-content h5 { line-height: 1.3; margin: 2.2rem 0 .8rem; font-weight: 800; }
+.post-content p { margin: 0 0 1.15rem; }
+.post-content a { text-decoration: underline; text-underline-offset: 2px; }
+.post-content img { border: 3px solid var(--ink); border-radius: .8rem; }
+.post-content blockquote { margin: 1.5rem 0; padding: .5rem 1rem .5rem 1.25rem; border: 3px solid var(--ink); border-radius: .8rem; background: var(--surface); color: var(--muted); box-shadow: -.35rem .35rem 0 var(--lilac); }
+.post-content code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .9em; background: var(--surface); border: 1px solid var(--line); border-radius: .35rem; padding: .12em .35em; }
+.post-content pre { background: var(--surface); border: 3px solid var(--ink); border-radius: .8rem; padding: 1rem 1.25rem; overflow-x: auto; line-height: 1.55; }
+.post-content pre code { background: none; border: 0; padding: 0; }
+.post-content hr { border: 0; height: .8rem; background: none; }
+.post-content table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; }
+.post-content th, .post-content td { border: 2px solid var(--ink); padding: .5rem .75rem; text-align: left; }
+.post-footer { max-width: 42rem; margin: 3rem auto 0; }
+.back-link { display: inline-block; padding: .45rem 1rem; border: 3px solid var(--ink); border-radius: .9rem; color: var(--text); font-weight: 700; }
+.back-link:hover { background: var(--yellow); text-decoration: none; }
+.center-page { max-width: 28rem; margin: 0 auto; text-align: center; padding: 3rem 0; }
+.center-page .display { display: inline-block; font-size: 4.5rem; font-weight: 800; margin: 0; line-height: 1.1; background: var(--teal); border: 3px solid var(--ink); border-radius: 1.2rem; padding: .2rem 1.4rem; transform: rotate(-2deg); color: var(--text); box-shadow: .4rem .4rem 0 var(--pink); }
+.button { display: inline-block; margin-top: 1rem; padding: .55rem 1.5rem; font-weight: 800; color: var(--accent-contrast); background: var(--accent); border: 3px solid var(--accent); border-radius: .9rem; cursor: pointer; }
+.button:hover { transform: rotate(1deg); text-decoration: none; }
+input.field { width: 100%; padding: .6rem .9rem; font-size: 1rem; color: var(--text); background: var(--surface); border: 3px solid var(--ink); border-radius: .9rem; margin: .75rem 0 1rem; }
+.site-footer { text-align: center; color: var(--muted); font-size: .9rem; font-weight: 600; padding: 2rem 1.25rem 3rem; }
+.site-footer p { margin: .35rem 0; }
+.rss-link { display: inline-block; padding: .4rem 1rem; border: 3px solid var(--ink); border-radius: .9rem; color: var(--text); font-weight: 800; }
+.rss-link:hover { background: var(--pink); text-decoration: none; }
+@media (prefers-color-scheme: dark) { .masthead .site-title, .post-title, .center-page .display { color: var(--accent-contrast); }
+ .pagination a:hover, .back-link:hover, .rss-link:hover { color: var(--accent-contrast); } }

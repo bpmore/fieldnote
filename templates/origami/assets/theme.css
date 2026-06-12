@@ -1,0 +1,115 @@
+/* Dropplets "origami" theme — folded paper.
+ Faceted gradient ground, clipped-corner cards, hairline creases, crane red. */
+
+:root { color-scheme: light dark; --bg: #f7f5f1; --surface: #ffffff; --text: #25242a; --muted: #5e5c64; --accent: #b0271f; --accent-contrast: #ffffff; --line: #88847b; --focus: #b0271f; --fold-1: #efece6; --fold-2: #e6e2da; --fold-3: #dcd7cc; --crease: #d4cfc4; }
+
+@media (prefers-color-scheme: dark) { :root { --bg: #14131a; --surface: #1d1c24; --text: #ebeaef; --muted: #a8a5b2; --accent: #ff918a; --accent-contrast: #46100c; --line: #716e7b; --focus: #ff918a; --fold-1: #181720; --fold-2: #201e29; --fold-3: #282633; --crease: #34323f; } }
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body { margin: 0; font-family: "Helvetica Neue", "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif; font-size: 1.0625rem; line-height: 1.65; color: var(--text); /* Faceted paper ground: hard-stop fold planes */
+ background:
+ linear-gradient(112deg, var(--fold-2) 0 22%, transparent 22%),
+ linear-gradient(248deg, var(--fold-1) 0 18%, transparent 18%),
+ linear-gradient(160deg, var(--fold-1) 0 40%, var(--bg) 40%); background-attachment: fixed; background-color: var(--bg); min-height: 100vh; }
+
+img { max-width: 100%; height: auto; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+:focus-visible { outline: 2px solid transparent; border-radius: .2rem; box-shadow: 0 0 0 2px var(--bg), 0 0 0 5px var(--focus); }
+
+/* ===== Masthead: folded crest ===== */
+.masthead { text-align: center; padding: 3.75rem 1.25rem 2.5rem; border-bottom: 1px solid var(--crease); }
+
+/* Paper crane abstraction: two folded triangles */
+.crane { display: block; width: 3.2rem; height: 2.2rem; margin: 0 auto 1rem; background:
+ conic-gradient(from 250deg at 35% 100%, var(--accent) 0 55deg, transparent 55deg),
+ conic-gradient(from 180deg at 80% 100%, var(--fold-3) 0 45deg, transparent 45deg); }
+
+.masthead .site-title { font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 300; letter-spacing: .22em; text-transform: uppercase; color: var(--text); }
+
+.masthead .site-title:hover { color: var(--accent); text-decoration: none; }
+
+.masthead .site-info { margin: .75rem auto 0; max-width: 36rem; color: var(--muted); letter-spacing: .04em; }
+
+/* ===== Layout ===== */
+.wrap { max-width: 64rem; margin: 0 auto; padding: 2.5rem 1.25rem; }
+
+/* ===== Home: clipped-corner fold cards ===== */
+.fold-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 1.75rem; align-items: start; }
+
+.fold-card { position: relative; background: var(--surface); border: 1px solid var(--crease); clip-path: polygon(0 0, calc(100% - 1.6rem) 0, 100% 1.6rem, 100% 100%, 0 100%); }
+
+/* The turned-back corner */
+.fold-card::after { content: ""; position: absolute; top: 0; right: 0; width: 1.6rem; height: 1.6rem; background: linear-gradient(225deg, transparent 0 50%, var(--fold-3) 50%); }
+
+/* Alternate cards clip the opposite corner */
+.fold-card:nth-child(even) { clip-path: polygon(1.6rem 0, 100% 0, 100% 100%, 0 100%, 0 1.6rem); }
+.fold-card:nth-child(even)::after { right: auto; left: 0; background: linear-gradient(135deg, transparent 0 50%, var(--fold-3) 50%); }
+
+.card-image { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover; border-bottom: 1px solid var(--crease); }
+
+.card-lock { display: flex; align-items: center; justify-content: center; aspect-ratio: 3 / 2; font-size: 2.5rem; background: var(--fold-1); border-bottom: 1px solid var(--crease); }
+
+.card-body { padding: 1.1rem 1.25rem 1.25rem; }
+
+.card-title { margin: 0 0 .35rem; font-size: 1.2rem; line-height: 1.35; font-weight: 600; }
+.card-title a { color: var(--text); }
+.card-title a::after { content: ""; position: absolute; inset: 0; }
+.fold-card:hover .card-title a { color: var(--accent); }
+.card-title a:hover { text-decoration: none; }
+
+.card-meta { margin: 0; font-size: .875rem; color: var(--muted); }
+
+.empty-state { text-align: center; color: var(--muted); padding: 4rem 0; }
+
+/* ===== Pagination ===== */
+.pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem; margin: 3rem 0 0; padding: 0; list-style: none; }
+.pagination a, .pagination .current { display: inline-block; min-width: 2.4rem; padding: .35rem .75rem; text-align: center; border: 1px solid var(--line); color: var(--text); border-top-right-radius: .55rem; }
+.pagination a:hover { background: var(--fold-2); color: var(--text); text-decoration: none; }
+.pagination .current { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); font-weight: 600; }
+
+/* ===== Single post ===== */
+.post { max-width: 42rem; margin: 0 auto; background: var(--surface); border: 1px solid var(--crease); padding: 2rem 1.5rem; clip-path: polygon(0 0, calc(100% - 2.2rem) 0, 100% 2.2rem, 100% 100%, 0 100%); position: relative; }
+
+.post::after { content: ""; position: absolute; top: 0; right: 0; width: 2.2rem; height: 2.2rem; background: linear-gradient(225deg, transparent 0 50%, var(--fold-3) 50%); }
+
+.post-header { margin-bottom: 1.75rem; border-bottom: 1px solid var(--crease); padding-bottom: 1.25rem; }
+
+.post-title { margin: 0 0 .5rem; padding-right: 2rem; font-size: clamp(1.7rem, 4.5vw, 2.4rem); line-height: 1.2; font-weight: 300; letter-spacing: .02em; }
+
+.post-meta { margin: 0; color: var(--muted); font-size: .95rem; }
+
+.post-hero { width: 100%; margin-bottom: 2rem; border: 1px solid var(--crease); }
+
+.post-content h1, .post-content h2, .post-content h3,
+.post-content h4, .post-content h5 { line-height: 1.3; margin: 2.2rem 0 .8rem; font-weight: 600; }
+.post-content p { margin: 0 0 1.15rem; }
+.post-content a { text-decoration: underline; text-underline-offset: 2px; }
+.post-content blockquote { margin: 1.5rem 0; padding: .25rem 0 .25rem 1.25rem; border-left: 3px solid var(--accent); color: var(--muted); }
+.post-content code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9em; background: var(--fold-1); padding: .12em .35em; }
+.post-content pre { background: var(--fold-1); border: 1px solid var(--crease); padding: 1rem 1.25rem; overflow-x: auto; line-height: 1.55; }
+.post-content pre code { background: none; padding: 0; }
+.post-content hr { border: 0; border-top: 1px dashed var(--line); margin: 2.5rem 0; }
+.post-content table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; }
+.post-content th, .post-content td { border: 1px solid var(--crease); padding: .5rem .75rem; text-align: left; }
+
+.post-footer { max-width: 42rem; margin: 2rem auto 0; }
+.back-link { display: inline-block; padding: .45rem .2rem; font-weight: 600; }
+
+/* ===== 404 ===== */
+.center-page { max-width: 28rem; margin: 0 auto; text-align: center; padding: 3rem 0; }
+.center-page .display { font-size: 5rem; font-weight: 300; letter-spacing: .15em; color: var(--accent); margin: 0; line-height: 1; }
+
+.button { display: inline-block; margin-top: 1rem; padding: .55rem 1.6rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: .9rem; color: var(--accent-contrast); background: var(--accent); border: 1px solid var(--accent); border-top-right-radius: .7rem; }
+.button:hover { color: var(--accent-contrast); text-decoration: none; }
+
+input[type="password"].field { width: 100%; padding: .6rem .9rem; font-size: 1rem; color: var(--text); background: var(--surface); border: 1px solid var(--line); margin: .75rem 0 1rem; }
+
+/* ===== Footer ===== */
+.site-footer { text-align: center; color: var(--muted); font-size: .9rem; padding: 2.25rem 1.25rem 3rem; border-top: 1px solid var(--crease); margin-top: 3rem; }
+.site-footer p { margin: .35rem 0; }
+.rss-link { display: inline-block; padding: .4rem 1rem; border: 1px solid var(--line); color: var(--text); letter-spacing: .12em; font-weight: 600; border-top-right-radius: .55rem; }
+.rss-link:hover { background: var(--fold-2); text-decoration: none; }

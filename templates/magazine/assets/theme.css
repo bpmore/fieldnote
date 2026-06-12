@@ -2,23 +2,32 @@
    tight grid. Original theme. */
 
 :root {
+    color-scheme: light dark;
     --bg: #ffffff;
+    --surface: #ffffff;
     --text: #232323;
     --heading: #0d0d0d;
-    --muted: #8a8a8a;
-    --rule: #e6e6e6;
+    --muted: #6b6b6b;
+    --line: #767676;
+    --rule: #e6e6e6; /* decorative hairline only */
     --accent: #d92e29;
+    --accent-contrast: #ffffff;
+    --focus: #d92e29;
     --sans: "Helvetica Neue", -apple-system, Arial, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
         --bg: #131313;
+        --surface: #131313;
         --text: #d6d6d6;
         --heading: #fafafa;
-        --muted: #828282;
+        --muted: #989898;
+        --line: #8a8a8a;
         --rule: #2b2b2b;
         --accent: #ff5a54;
+        --accent-contrast: #131313;
+        --focus: #ff5a54;
     }
 }
 
@@ -55,9 +64,10 @@ img { max-width: 100%; height: auto; }
 
 .empty-state { text-align: center; color: var(--muted); padding: 4rem 0; }
 
-.pagination { display: flex; justify-content: space-between; gap: 1rem; list-style: none; margin: 3rem 0 0; padding: .8rem 0 0; border-top: 3px solid var(--heading); font-size: .85rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
-.pagination a:hover { color: var(--accent); }
-.page-state { color: var(--muted); margin: 0 auto; }
+.pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; list-style: none; margin: 3rem 0 0; padding: 1rem 0 0; border-top: 3px solid var(--heading); font-size: .85rem; font-weight: 700; letter-spacing: .05em; }
+.pagination a, .pagination .current { padding: .3rem .75rem; border: 1px solid var(--line); color: var(--heading); }
+.pagination a:hover { color: var(--accent); border-color: var(--accent); }
+.pagination .current { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
 
 .post { max-width: 46rem; margin: 0 auto; }
 .post-header { margin: 2rem 0 1.5rem; }
@@ -76,12 +86,14 @@ img { max-width: 100%; height: auto; }
 .post-content hr { border: 0; border-top: 1px solid var(--rule); margin: 2.5rem 0; }
 
 .post-footer { max-width: 46rem; margin: 3rem auto 0; padding-top: .8rem; border-top: 3px solid var(--heading); font-size: .85rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
+.post-footer a { display: inline-block; padding: .25rem 0; }
 .post-footer a:hover { color: var(--accent); }
 
 .center-page { text-align: center; padding: 4rem 0; }
 .center-page .display { font-size: clamp(5rem, 16vw, 9rem); font-weight: 900; color: var(--accent); margin: 0; line-height: 1; }
-.button { font-weight: 700; text-transform: uppercase; border-bottom: 2px solid var(--accent); }
+.button { display: inline-block; padding: .3rem .25rem; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid var(--accent); }
 
 .site-footer { max-width: 74rem; margin: 0 auto; color: var(--muted); font-size: .8rem; padding: 1rem 1.5rem 3rem; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .site-footer p { margin: 0; }
+.site-footer a { display: inline-block; padding: .3rem 0; }
 .site-footer a:hover { color: var(--accent); }

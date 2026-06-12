@@ -1,20 +1,30 @@
 /* zen — almost nothing. Original theme. */
 
 :root {
+    color-scheme: light dark;
     --bg: #fcfcfa;
-    --text: #444;
+    --surface: #fcfcfa;
+    --text: #444444;
     --heading: #1a1a1a;
-    --muted: #b0b0aa;
+    --muted: #6f6f6a;
     --accent: #1a1a1a;
+    --accent-contrast: #fcfcfa;
+    --line: #8a8a85;
+    --focus: #1a1a1a;
+    --code-bg: rgba(127, 127, 127, .07);
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
         --bg: #161616;
+        --surface: #161616;
         --text: #b5b5b0;
-        --heading: #eee;
-        --muted: #555;
-        --accent: #eee;
+        --heading: #eeeeee;
+        --muted: #8c8c87;
+        --accent: #eeeeee;
+        --accent-contrast: #161616;
+        --line: #6f6f6f;
+        --focus: #eeeeee;
     }
 }
 
@@ -48,9 +58,9 @@ img { max-width: 100%; height: auto; }
 
 .empty-state { text-align: center; color: var(--muted); }
 
-.pagination { display: flex; justify-content: center; gap: 2rem; list-style: none; margin: 4rem 0 0; padding: 0; font-size: .9rem; }
+.pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem 1.25rem; list-style: none; margin: 4rem 0 0; padding: 0; font-size: .9rem; }
 .pagination a { border: 0; }
-.page-state { color: var(--muted); }
+.pagination .current { color: var(--heading); font-weight: 500; border-bottom: 1px solid var(--heading); }
 
 .post-header { margin: 0 0 3rem; text-align: center; }
 .post-title { color: var(--heading); font-weight: 300; font-size: 1.9rem; line-height: 1.35; margin: 0 0 .75rem; letter-spacing: .01em; }
@@ -61,7 +71,7 @@ img { max-width: 100%; height: auto; }
 .post-content p { margin: 0 0 1.4rem; }
 .post-content blockquote { margin: 2rem 0; padding: 0 1.5rem; color: var(--muted); font-style: italic; border: 0; text-align: center; }
 .post-content code { font-family: ui-monospace, Menlo, monospace; font-size: .85em; color: var(--heading); }
-.post-content pre { background: rgba(127,127,127,.07); padding: 1rem 1.25rem; overflow-x: auto; border-radius: 2px; }
+.post-content pre { background: var(--code-bg); padding: 1rem 1.25rem; overflow-x: auto; border-radius: 2px; }
 .post-content hr { border: 0; text-align: center; margin: 3rem 0; }
 .post-content hr::after { content: "· · ·"; color: var(--muted); letter-spacing: .6em; }
 
@@ -75,3 +85,6 @@ img { max-width: 100%; height: auto; }
 .site-footer { text-align: center; color: var(--muted); font-size: .75rem; letter-spacing: .1em; padding: 0 1.5rem 5rem; }
 .site-footer a { color: var(--muted); border: 0; }
 .site-footer a:hover { color: var(--heading); }
+
+/* WCAG 2.5.8: standalone links get a 24px target. */
+.post-footer a, .site-footer a, .center-page a { display: inline-block; padding: .3rem .4rem; }

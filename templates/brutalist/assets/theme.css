@@ -1,12 +1,50 @@
-/* brutalist — hard borders, offset shadows, highlighter yellow. Original theme. */
+/* brutalist — hard borders, offset shadows, highlighter yellow. Original theme.
+   Light: beige paper, black ink, black offset shadows, yellow highlighter.
+   Dark: off-black, paper-white ink, yellow offset shadows, yellow links. */
 
 :root {
+    color-scheme: light dark;
     --bg: #f4f1ea;
-    --text: #111;
-    --ink: #000;
-    --paper: #fff;
-    --yellow: #ffe600;
-    --shadow: 6px 6px 0 #000;
+    --surface: #ffffff;
+    --text: #111111;
+    --muted: #3d3d3d;
+    --accent: #000000;          /* links / titles used as text */
+    --accent-contrast: #ffffff; /* text sitting on accent fills */
+    --line: #000000;            /* hard UI borders */
+    --focus: #000000;
+    --ink: var(--line);
+    --paper: var(--surface);
+    --yellow: #ffe600;          /* highlighter fill */
+    --yellow-contrast: #111111; /* text sitting on yellow fills */
+    --chip-bg: #000000;         /* inline code + 404 stamp */
+    --chip-text: #ffe600;
+    --pre-bg: #000000;
+    --pre-text: #f4f1ea;
+    --shadow-color: #000000;
+    --shadow: 6px 6px 0 var(--shadow-color);
+    --shadow-sm: 4px 4px 0 var(--shadow-color);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #111111;
+        --surface: #1c1c1c;
+        --text: #f4f1ea;
+        --muted: #c5c0b3;
+        --accent: #ffe600;
+        --accent-contrast: #111111;
+        --line: #f4f1ea;
+        --focus: #ffe600;
+        --ink: var(--line);
+        --paper: var(--surface);
+        --yellow: #ffe600;
+        --yellow-contrast: #111111;
+        --chip-bg: #ffe600;
+        --chip-text: #111111;
+        --pre-bg: #000000;
+        --pre-text: #f4f1ea;
+        --shadow-color: #ffe600;
+    }
 }
 
 * { box-sizing: border-box; }
@@ -20,7 +58,7 @@ body {
     line-height: 1.65;
 }
 
-a { color: var(--ink); text-decoration: underline; text-decoration-thickness: 2px; }
+a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 2px; }
 img { max-width: 100%; height: auto; border: 3px solid var(--ink); }
 
 .masthead { max-width: 46rem; margin: 3rem auto 0; padding: 0 1.25rem; }
@@ -36,7 +74,7 @@ img { max-width: 100%; height: auto; border: 3px solid var(--ink); }
     text-decoration: none;
     box-shadow: var(--shadow);
 }
-.site-title:hover { background: var(--yellow); color: var(--ink); }
+.site-title:hover { background: var(--yellow); color: var(--yellow-contrast); }
 .site-info { margin: 1.25rem 0 0; font-weight: 600; }
 .site-info::before { content: "→ "; }
 
@@ -45,37 +83,39 @@ img { max-width: 100%; height: auto; border: 3px solid var(--ink); }
 .entry { background: var(--paper); border: 3px solid var(--ink); box-shadow: var(--shadow); padding: 1.5rem; margin: 0 0 2rem; }
 .entry-title { margin: 0 0 .5rem; font-size: 1.6rem; font-weight: 900; line-height: 1.15; text-transform: uppercase; }
 .entry-title a { text-decoration: none; }
-.entry-title a:hover { background: var(--yellow); }
-.entry-meta, .post-meta { font-family: ui-monospace, Menlo, monospace; font-size: .78rem; text-transform: uppercase; margin: 0 0 .6rem; }
-.entry-meta::before, .post-meta::before { content: "["; } 
+.entry-title a:hover { background: var(--yellow); color: var(--yellow-contrast); }
+.entry-meta, .post-meta { font-family: ui-monospace, Menlo, monospace; font-size: .78rem; text-transform: uppercase; color: var(--muted); margin: 0 0 .6rem; }
+.entry-meta::before, .post-meta::before { content: "["; }
 .entry-meta::after, .post-meta::after { content: "]"; }
 .entry-excerpt { margin: 0; }
 .empty-state { background: var(--paper); border: 3px dashed var(--ink); padding: 2rem; text-align: center; font-weight: 700; text-transform: uppercase; }
 
-.pagination { display: flex; justify-content: space-between; gap: 1rem; list-style: none; margin: 2.5rem 0 0; padding: 0; font-weight: 700; text-transform: uppercase; font-size: .9rem; }
-.pagination a { background: var(--paper); border: 3px solid var(--ink); box-shadow: 4px 4px 0 #000; padding: .4rem .9rem; text-decoration: none; }
-.pagination a:hover { background: var(--yellow); }
-.page-state { align-self: center; margin: 0 auto; font-family: ui-monospace, Menlo, monospace; }
+.pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; list-style: none; margin: 2.5rem 0 0; padding: 0; font-weight: 700; text-transform: uppercase; font-size: .9rem; }
+.pagination a, .pagination .current { border: 3px solid var(--ink); padding: .3rem .8rem; }
+.pagination a { background: var(--paper); box-shadow: var(--shadow-sm); text-decoration: none; }
+.pagination a:hover { background: var(--yellow); color: var(--yellow-contrast); }
+.pagination .current { background: var(--yellow); color: var(--yellow-contrast); }
 
 .post-header { margin: 2.5rem 0 1.5rem; }
 .post-title { font-size: clamp(1.9rem, 5vw, 2.8rem); font-weight: 900; line-height: 1.08; text-transform: uppercase; margin: .5rem 0; }
-.post-title { background: var(--yellow); display: inline; box-decoration-break: clone; -webkit-box-decoration-break: clone; padding: 0 .25rem; }
+.post-title { background: var(--yellow); color: var(--yellow-contrast); display: inline; box-decoration-break: clone; -webkit-box-decoration-break: clone; padding: 0 .25rem; }
 .post-header .post-meta { display: block; margin-top: 1rem; }
 .post-hero { margin: 1.5rem 0 2rem; box-shadow: var(--shadow); }
 
 .post-content h1, .post-content h2, .post-content h3 { font-weight: 900; text-transform: uppercase; line-height: 1.2; margin: 2rem 0 .6rem; }
 .post-content h2 { border-bottom: 3px solid var(--ink); display: inline-block; }
 .post-content p { margin: 0 0 1.2rem; }
-.post-content mark, .post-content strong { background: var(--yellow); }
+.post-content mark, .post-content strong { background: var(--yellow); color: var(--yellow-contrast); }
 .post-content blockquote { margin: 1.5rem 0; border: 3px solid var(--ink); background: var(--paper); padding: 1rem 1.25rem; box-shadow: var(--shadow); font-weight: 600; }
-.post-content code { font-family: ui-monospace, Menlo, monospace; font-size: .85em; background: var(--ink); color: var(--yellow); padding: .12em .4em; }
-.post-content pre { background: var(--ink); color: #f4f1ea; padding: 1rem 1.25rem; overflow-x: auto; border: 3px solid var(--ink); box-shadow: var(--shadow); }
+.post-content code { font-family: ui-monospace, Menlo, monospace; font-size: .85em; background: var(--chip-bg); color: var(--chip-text); padding: .12em .4em; }
+.post-content pre { background: var(--pre-bg); color: var(--pre-text); padding: 1rem 1.25rem; overflow-x: auto; border: 3px solid var(--ink); box-shadow: var(--shadow); }
 .post-content pre code { background: none; color: inherit; padding: 0; }
 .post-content hr { border: 0; border-top: 3px solid var(--ink); margin: 2.5rem 0; }
 
 .post-footer { margin-top: 3rem; font-weight: 700; text-transform: uppercase; font-size: .9rem; }
+.post-footer a, .site-footer a, .center-page a { display: inline-block; padding: .3rem .15rem; }
 
 .center-page { text-align: center; padding: 3rem 0; }
-.center-page .display { display: inline-block; background: var(--ink); color: var(--yellow); font-size: 5rem; font-weight: 900; padding: 0 1.5rem; margin: 0; box-shadow: var(--shadow); }
+.center-page .display { display: inline-block; background: var(--chip-bg); color: var(--chip-text); font-size: 5rem; font-weight: 900; padding: 0 1.5rem; margin: 0; box-shadow: var(--shadow); }
 
 .site-footer { max-width: 46rem; margin: 0 auto; padding: 0 1.25rem 3rem; font-family: ui-monospace, Menlo, monospace; font-size: .8rem; text-transform: uppercase; }

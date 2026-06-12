@@ -1,5 +1,6 @@
 <?php
 use function Dropplets\e;
+use function Dropplets\dpl_image_alt;
 require __DIR__ . '/header.php';
 
 // Parsedown in SAFE MODE: this is the core XSS fix. Raw HTML and javascript:
@@ -14,7 +15,7 @@ $parser->setSafeMode(true);
     </header>
 
     <?php if (!empty($post['imageUrl'])): ?>
-        <img class="post-hero" src="<?= e($post['imageUrl']) ?>" alt="">
+        <img class="post-hero" src="<?= e($post['imageUrl']) ?>" alt="<?= e(dpl_image_alt($post)) ?>">
     <?php endif; ?>
 
     <div class="post-content">

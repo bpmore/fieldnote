@@ -1,0 +1,223 @@
+/* Dropplets "hearth" theme — soft, cozy, family-album warm.
+   Rounded everything, peach + sage pastels, snapshot frames,
+   humanist sans. Dark scheme: lamp-lit living room, never cold. */
+
+:root {
+    color-scheme: light dark;
+    --bg: #fbf2ec;
+    --surface: #ffffff;
+    --text: #41342c;
+    --muted: #6e6055;
+    --accent: #3f6347;
+    --accent-contrast: #ffffff;
+    --line: #9d7f6e;
+    --focus: #3f6347;
+    --frame: #f3d5c3;
+    --soft: #e9efe4;
+    --shadow: 0 3px 8px rgba(110, 75, 50, .10), 0 14px 30px rgba(110, 75, 50, .09);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #211a18;
+        --surface: #2b2220;
+        --text: #f0e4dc;
+        --muted: #c2ad9f;
+        --accent: #9ec9a3;
+        --accent-contrast: #16281a;
+        --line: #84653a;
+        --focus: #9ec9a3;
+        --frame: #41312a;
+        --soft: #2e2a22;
+        --shadow: 0 3px 10px rgba(0, 0, 0, .5);
+    }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+    margin: 0;
+    font-family: Verdana, "Trebuchet MS", "Segoe UI", Geneva, sans-serif;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--text);
+    background: var(--bg);
+}
+
+img { max-width: 100%; height: auto; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ===== Masthead: a framed card on the mantel ===== */
+.mantel { padding: 2.5rem 1.25rem 0; }
+
+.mantel-card {
+    max-width: 56rem;
+    margin: 0 auto;
+    text-align: center;
+    background: var(--surface);
+    border: 6px solid var(--frame);
+    border-radius: 2rem;
+    padding: 2rem 1.5rem;
+    box-shadow: var(--shadow);
+}
+
+.mantel-card .site-title {
+    font-size: clamp(1.7rem, 4.5vw, 2.4rem);
+    font-weight: 700;
+    color: var(--text);
+}
+.mantel-card .site-title:hover { color: var(--accent); text-decoration: none; }
+
+.mantel-card .site-info { margin: .5rem auto 0; max-width: 34rem; color: var(--muted); }
+
+/* ===== Layout ===== */
+.living-room { max-width: 56rem; margin: 0 auto; padding: 2.5rem 1.25rem 1rem; }
+
+/* ===== Snapshot cards (home) ===== */
+.album {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr));
+    gap: 2rem;
+    align-items: start;
+}
+
+.snapshot {
+    position: relative;
+    background: var(--surface);
+    border: 6px solid var(--frame);
+    border-radius: 1.75rem;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform .2s ease;
+}
+.snapshot:hover { transform: translateY(-4px); }
+
+.snapshot-photo, .snapshot-lock {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 1.1rem 1.1rem 0 0;
+}
+.snapshot-lock {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.5rem; background: var(--soft);
+}
+
+.snapshot-note { padding: 1rem 1.2rem 1.2rem; text-align: center; }
+
+.snapshot-title { margin: 0 0 .3rem; font-size: 1.15rem; line-height: 1.4; font-weight: 700; }
+.snapshot-title a { color: var(--text); }
+.snapshot-title a::after { content: ""; position: absolute; inset: 0; }
+.snapshot:hover .snapshot-title a { color: var(--accent); }
+.snapshot-title a:hover { text-decoration: none; }
+
+.snapshot-meta { margin: 0; font-size: .85rem; color: var(--muted); }
+
+.empty-state { text-align: center; color: var(--muted); padding: 4rem 0; }
+
+/* ===== Pagination ===== */
+.pagination {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: .5rem; margin: 3rem 0 0; padding: 0; list-style: none;
+}
+.pagination a, .pagination .current {
+    display: inline-block; min-width: 2.6rem; padding: .45rem .85rem;
+    text-align: center; background: var(--surface);
+    border: 2px solid var(--frame); border-radius: 1.25rem; color: var(--text);
+}
+.pagination a:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+.pagination .current { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); font-weight: 700; }
+
+/* ===== Single post: the comfy chair ===== */
+.story { max-width: 41rem; margin: 0 auto; }
+
+.story-head { text-align: center; margin-bottom: 1.75rem; }
+.story-title {
+    margin: 0 0 .5rem;
+    font-size: clamp(1.7rem, 4.5vw, 2.3rem);
+    line-height: 1.3;
+    font-weight: 700;
+}
+.story-meta { margin: 0; color: var(--muted); font-size: .9rem; }
+
+.story-photo {
+    width: 100%;
+    border: 8px solid var(--frame);
+    border-radius: 1.75rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+}
+
+.story-content { line-height: 1.85; }
+.story-content h1, .story-content h2, .story-content h3, .story-content h4 {
+    margin: 2.2rem 0 .8rem; line-height: 1.35;
+}
+.story-content p { margin: 0 0 1.2rem; }
+.story-content a { text-decoration: underline; text-underline-offset: 2px; }
+.story-content img { border: 6px solid var(--frame); border-radius: 1.25rem; }
+.story-content blockquote {
+    margin: 1.6rem 0;
+    padding: 1rem 1.4rem;
+    background: var(--soft);
+    border-radius: 1.25rem;
+    color: var(--text);
+}
+.story-content blockquote p:last-child { margin-bottom: 0; }
+.story-content code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .9em;
+    background: var(--soft);
+    border-radius: .5rem;
+    padding: .15em .4em;
+}
+.story-content pre {
+    background: var(--soft);
+    border-radius: 1.25rem;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    line-height: 1.55;
+}
+.story-content pre code { background: none; padding: 0; }
+.story-content hr { border: 0; border-top: 3px solid var(--frame); border-radius: 3px; margin: 2.5rem 0; }
+.story-content table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; }
+.story-content th, .story-content td { border: 1px solid var(--line); padding: .5rem .75rem; text-align: left; }
+
+.story-return { max-width: 41rem; margin: 2.5rem auto 0; text-align: center; }
+.back-link {
+    display: inline-block;
+    padding: .5rem 1.1rem;
+    border: 2px solid var(--frame);
+    border-radius: 1.25rem;
+    color: var(--accent);
+}
+.back-link:hover { border-color: var(--accent); text-decoration: none; }
+
+/* ===== 404 ===== */
+.missing { max-width: 28rem; margin: 0 auto; text-align: center; padding: 3rem 0; }
+.missing-code { font-size: 5rem; margin: 0; line-height: 1; color: var(--accent); }
+
+.button {
+    display: inline-block;
+    margin-top: .75rem;
+    padding: .6rem 1.6rem;
+    font-weight: 700;
+    color: var(--accent-contrast);
+    background: var(--accent);
+    border-radius: 1.5rem;
+    box-shadow: var(--shadow);
+}
+.button:hover { filter: brightness(.94); color: var(--accent-contrast); text-decoration: none; }
+
+/* ===== Footer ===== */
+.hearthstone {
+    text-align: center;
+    color: var(--muted);
+    font-size: .85rem;
+    padding: 2rem 1.25rem 3rem;
+}
+.hearthstone p { margin: .25rem 0; }
+.foot-link { display: inline-block; padding: .45rem .65rem; color: var(--muted); text-decoration: underline; }
+.foot-link:hover { color: var(--accent); }

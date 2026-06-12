@@ -1,14 +1,41 @@
 /* noir — stark black, giant numbered headlines, a single red accent.
-   Always dark. Original theme. */
+   Dark by identity: dark tokens live in :root; the light scheme is the
+   "overexposed" print — near-white paper, charcoal ink, the same grayscale
+   images and one red accent darkened to hold 4.5:1 as text.
+   All colors live in the two token blocks below. */
 
 :root {
+    color-scheme: dark light;
+
     --bg: #0a0a0a;
+    --surface: #161616;
     --text: #c9c9c9;
+    --muted: #8a8a8a;
+    --accent: #ff2b4d;
+    --accent-contrast: #0a0a0a;
+    --line: #6b6b6b;
+    --focus: #ff2b4d;
+
     --heading: #ffffff;
-    --muted: #5e5e5e;
-    --rule: #222;
-    --red: #ff2b4d;
+    --rule: #222222; /* decorative hairlines */
+    --red: var(--accent);
     --display: -apple-system, "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg: #fafafa;
+        --surface: #efefef;
+        --text: #1a1a1a;
+        --muted: #595959;
+        --accent: #c01030;
+        --accent-contrast: #ffffff;
+        --line: #8f8f8f;
+        --focus: #c01030;
+
+        --heading: #000000;
+        --rule: #d6d6d6;
+    }
 }
 
 * { box-sizing: border-box; }
@@ -23,7 +50,7 @@ body {
     counter-reset: noir;
 }
 
-::selection { background: var(--red); color: #fff; }
+::selection { background: var(--red); color: var(--accent-contrast); }
 a { color: var(--heading); text-decoration: none; }
 img { max-width: 100%; height: auto; filter: grayscale(1) contrast(1.05); }
 
@@ -45,9 +72,11 @@ img { max-width: 100%; height: auto; filter: grayscale(1) contrast(1.05); }
 .entry-excerpt { margin: 0; max-width: 44rem; color: var(--text); }
 .empty-state { color: var(--muted); padding: 4rem 0; text-transform: uppercase; letter-spacing: .2em; text-align: center; }
 
-.pagination { display: flex; justify-content: space-between; gap: 1rem; list-style: none; margin: 3rem 0 0; padding: 1.25rem 0 0; border-top: 1px solid var(--rule); font-size: .85rem; text-transform: uppercase; letter-spacing: .15em; }
-.pagination a:hover { color: var(--red); }
-.page-state { color: var(--muted); margin: 0 auto; }
+.pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: .6rem; list-style: none; margin: 3rem 0 0; padding: 1.25rem 0 0; border-top: 1px solid var(--rule); font-size: .85rem; text-transform: uppercase; letter-spacing: .15em; }
+.pagination a, .pagination .current { padding: .25rem .65rem; }
+.pagination a { border: 1px solid var(--rule); }
+.pagination a:hover { color: var(--red); border-color: var(--line); }
+.pagination .current { background: var(--accent); color: var(--accent-contrast); font-weight: 700; }
 
 .post-header { margin: 3rem 0 2rem; }
 .post-title { color: var(--heading); font-size: clamp(2rem, 6vw, 3.4rem); font-weight: 900; line-height: 1.05; letter-spacing: -.03em; text-transform: uppercase; margin: .5rem 0 .75rem; }
@@ -57,15 +86,18 @@ img { max-width: 100%; height: auto; filter: grayscale(1) contrast(1.05); }
 .post-content h1, .post-content h2, .post-content h3 { color: var(--heading); font-weight: 800; text-transform: uppercase; letter-spacing: -.01em; line-height: 1.2; margin: 2.25rem 0 .6rem; }
 .post-content p { margin: 0 0 1.25rem; }
 .post-content a { border-bottom: 2px solid var(--red); }
-.post-content a:hover { background: var(--red); color: #fff; }
+.post-content a:hover { background: var(--red); color: var(--accent-contrast); }
 .post-content blockquote { margin: 2rem 0; padding-left: 1.5rem; border-left: 4px solid var(--red); color: var(--heading); font-size: 1.2rem; font-weight: 600; }
-.post-content code { font-family: ui-monospace, Menlo, monospace; font-size: .85em; background: var(--rule); padding: .1em .35em; }
-.post-content pre { background: #111; border: 1px solid var(--rule); padding: 1rem 1.25rem; overflow-x: auto; }
+.post-content code { font-family: ui-monospace, Menlo, monospace; font-size: .85em; background: var(--surface); padding: .1em .35em; }
+.post-content pre { background: var(--surface); border: 1px solid var(--rule); padding: 1rem 1.25rem; overflow-x: auto; }
 .post-content pre code { background: none; padding: 0; }
-.post-content hr { border: 0; border-top: 1px solid var(--rule); margin: 2.5rem 0; }
+.post-content hr { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
 
 .post-footer { margin-top: 3rem; padding-top: 1.25rem; border-top: 1px solid var(--rule); font-size: .85rem; text-transform: uppercase; letter-spacing: .15em; }
 .post-footer a:hover { color: var(--red); }
+
+/* Standalone links (back-link, 404, footer RSS) get a 24px target floor. */
+.post-footer a, .center-page a, .site-footer a { display: inline-block; padding: .3rem .15rem; }
 
 .center-page { text-align: center; padding: 5rem 0; }
 .center-page .display { font-size: clamp(5rem, 18vw, 10rem); font-weight: 900; color: var(--red); margin: 0; line-height: 1; }

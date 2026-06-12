@@ -2,14 +2,20 @@
    Single small stylesheet, system fonts, no JavaScript. */
 
 :root {
-    --accent: #2f9e44;
+    color-scheme: light dark;
+    --accent: #1f7a32;
+    --accent-contrast: #ffffff;
     --accent-soft: #d3f9d8;
     --bg: #ffffff;
-    --bg-card: #ffffff;
+    --surface: #ffffff;
+    --bg-card: var(--surface);
     --bg-code: #f1f3f5;
     --text: #212529;
-    --text-muted: #6c757d;
+    --muted: #6c757d;
+    --text-muted: var(--muted);
+    --line: #6f7880;
     --border: #e9ecef;
+    --focus: #1f7a32;
     --shadow: 0 1px 3px rgba(0, 0, 0, .06), 0 8px 24px rgba(0, 0, 0, .05);
     --shadow-hover: 0 2px 6px rgba(0, 0, 0, .08), 0 16px 32px rgba(0, 0, 0, .09);
 }
@@ -17,13 +23,16 @@
 @media (prefers-color-scheme: dark) {
     :root {
         --accent: #51cf66;
+        --accent-contrast: #0c2912;
         --accent-soft: #133a1b;
         --bg: #15181c;
-        --bg-card: #1c2025;
+        --surface: #1c2025;
         --bg-code: #23282e;
         --text: #e9ecef;
-        --text-muted: #97a1ab;
+        --muted: #97a1ab;
+        --line: #8b949e;
         --border: #2b3138;
+        --focus: #51cf66;
         --shadow: 0 1px 3px rgba(0, 0, 0, .4);
         --shadow-hover: 0 4px 16px rgba(0, 0, 0, .5);
     }
@@ -178,7 +187,7 @@ a:hover { text-decoration: underline; }
 .pagination .current {
     background: var(--accent);
     border-color: var(--accent);
-    color: #fff;
+    color: var(--accent-contrast);
     font-weight: 600;
 }
 
@@ -291,15 +300,15 @@ input[type="password"].field {
     font-size: 1rem;
     color: var(--text);
     background: var(--bg-card);
-    border: 1px solid var(--border);
+    border: 1px solid var(--line);
     border-radius: .5rem;
     margin: .75rem 0 1rem;
 }
 
 input[type="password"].field:focus {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--focus);
     outline-offset: 1px;
-    border-color: var(--accent);
+    border-color: var(--focus);
 }
 
 .button {
@@ -307,14 +316,14 @@ input[type="password"].field:focus {
     padding: .5rem 1.4rem;
     font-size: 1rem;
     font-weight: 600;
-    color: #fff;
+    color: var(--accent-contrast);
     background: var(--accent);
     border: 1px solid var(--accent);
     border-radius: 2rem;
     cursor: pointer;
 }
 
-.button:hover { filter: brightness(.92); color: #fff; text-decoration: none; }
+.button:hover { filter: brightness(.92); color: var(--accent-contrast); text-decoration: none; }
 
 .button.secondary {
     background: transparent;

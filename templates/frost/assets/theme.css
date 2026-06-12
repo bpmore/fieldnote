@@ -1,0 +1,346 @@
+/* Dropplets "frost" theme — glassmorphism.
+   Translucent blurred panels over a soft gradient backdrop. --surface is
+   the OPAQUE composited equivalent of the --panel rgba over the gradient
+   midtone; the contrast audit runs against that solid value. */
+
+:root {
+    color-scheme: light dark;
+    --bg: #d6e4f2;
+    --surface: #ecf3f9;
+    --text: #1a2735;
+    --muted: #43566a;
+    --accent: #0d5c8c;
+    --accent-contrast: #ffffff;
+    --line: #5b7591;
+    --focus: #0d4f7a;
+    /* morning-sky gradient stops */
+    --g1: #dcebf8;
+    --g2: #e9e2f4;
+    --g3: #cfe6e8;
+    --g4: #d3def4;
+    /* translucent panel fill: composites to --surface over the backdrop */
+    --panel: rgba(255, 255, 255, .55);
+    --panel-line: rgba(255, 255, 255, .75);
+    --panel-shadow: 0 8px 32px rgba(26, 39, 53, .14);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #0d1524;
+        --surface: #162033;
+        --text: #e6edf7;
+        --muted: #a0b2c9;
+        --accent: #74c6ee;
+        --accent-contrast: #06243a;
+        --line: #5e7691;
+        --focus: #74c6ee;
+        /* aurora-night gradient stops */
+        --g1: #0a111e;
+        --g2: #14233e;
+        --g3: #0e2b2c;
+        --g4: #1b1733;
+        --panel: rgba(26, 37, 57, .7);
+        --panel-line: rgba(160, 178, 201, .3);
+        --panel-shadow: 0 8px 32px rgba(0, 0, 0, .5);
+    }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    color: var(--text);
+    background:
+        radial-gradient(50rem 40rem at 12% -5%, var(--g2), transparent 60%),
+        radial-gradient(45rem 35rem at 105% 20%, var(--g3), transparent 65%),
+        radial-gradient(60rem 45rem at 50% 110%, var(--g4), transparent 60%),
+        linear-gradient(var(--g1), var(--g1));
+    background-attachment: fixed;
+    min-height: 100vh;
+}
+
+img { max-width: 100%; height: auto; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ========== Glass panels ========== */
+.glass {
+    background: var(--panel);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--panel-line);
+    border-radius: 1.25rem;
+    box-shadow: var(--panel-shadow);
+}
+
+/* ========== Masthead ========== */
+.masthead {
+    max-width: 66rem;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 0;
+}
+
+.masthead-panel {
+    padding: 2rem 1.75rem;
+    text-align: center;
+}
+
+.site-title {
+    font-size: clamp(1.7rem, 4vw, 2.4rem);
+    font-weight: 750;
+    letter-spacing: -.02em;
+    color: var(--text);
+}
+
+.site-title:hover { color: var(--accent); text-decoration: none; }
+
+.site-info {
+    margin: .5rem auto 0;
+    max-width: 36rem;
+    color: var(--muted);
+}
+
+/* ========== Layout ========== */
+.wrap {
+    max-width: 66rem;
+    margin: 0 auto;
+    padding: 2.25rem 1.25rem;
+}
+
+/* ========== Floating pane grid (home) ========== */
+.pane-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    gap: 1.75rem;
+    align-items: start;
+}
+
+.pane {
+    position: relative;
+    overflow: hidden;
+    transition: transform .2s ease;
+}
+
+.pane:hover { transform: translateY(-4px); }
+
+.pane-image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-bottom: 1px solid var(--panel-line);
+}
+
+.pane-lock {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 16 / 9;
+    font-size: 2.4rem;
+    border-bottom: 1px solid var(--panel-line);
+}
+
+.pane-body { padding: 1.2rem 1.4rem 1.4rem; }
+
+.pane-title {
+    margin: 0 0 .4rem;
+    font-size: 1.2rem;
+    line-height: 1.35;
+    font-weight: 700;
+}
+
+.pane-title a { color: var(--text); }
+.pane-title a::after { content: ""; position: absolute; inset: 0; }
+.pane:hover .pane-title a { color: var(--accent); text-decoration: none; }
+
+.pane-meta {
+    margin: 0;
+    font-size: .875rem;
+    color: var(--muted);
+}
+
+.empty-state {
+    text-align: center;
+    color: var(--muted);
+    padding: 3rem 1.5rem;
+}
+
+/* ========== Pagination ========== */
+.pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .5rem;
+    margin: 2.75rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pagination a,
+.pagination .current {
+    min-width: 2.5rem;
+    padding: .4rem .8rem;
+    text-align: center;
+    background: var(--panel);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--panel-line);
+    border-radius: 999px;
+    color: var(--text);
+}
+
+.pagination a:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+
+.pagination .current {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-contrast);
+    font-weight: 600;
+}
+
+/* ========== Single post ========== */
+.post {
+    max-width: 46rem;
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+.post-hero {
+    display: block;
+    width: 100%;
+    max-height: 24rem;
+    object-fit: cover;
+    border-bottom: 1px solid var(--panel-line);
+}
+
+.post-body { padding: 2rem clamp(1.25rem, 5vw, 2.75rem) 2.5rem; }
+
+.post-header { margin-bottom: 1.75rem; }
+
+.post-title {
+    margin: 0 0 .5rem;
+    font-size: clamp(1.7rem, 4.5vw, 2.4rem);
+    line-height: 1.2;
+    letter-spacing: -.02em;
+    font-weight: 750;
+}
+
+.post-meta { margin: 0; color: var(--muted); font-size: .95rem; }
+
+.post-content p { margin: 0 0 1.15rem; }
+
+.post-content h1, .post-content h2, .post-content h3,
+.post-content h4, .post-content h5 {
+    line-height: 1.3;
+    margin: 2.2rem 0 .8rem;
+    letter-spacing: -.01em;
+}
+
+.post-content a { text-decoration: underline; text-underline-offset: 2px; }
+.post-content img { border-radius: .75rem; }
+
+.post-content blockquote {
+    margin: 1.5rem 0;
+    padding: .8rem 1.2rem;
+    border-left: 3px solid var(--accent);
+    border-radius: 0 .75rem .75rem 0;
+    background: var(--panel);
+    color: var(--muted);
+}
+
+.post-content code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .9em;
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: .4rem;
+    padding: .12em .4em;
+}
+
+.post-content pre {
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: .9rem;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    line-height: 1.55;
+}
+
+.post-content pre code { background: none; border: 0; padding: 0; }
+.post-content hr { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
+.post-content table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; }
+.post-content th, .post-content td { border: 1px solid var(--line); padding: .5rem .75rem; text-align: left; }
+
+.post-footer {
+    max-width: 46rem;
+    margin: 2rem auto 0;
+    text-align: center;
+}
+
+.back-link {
+    display: inline-block;
+    padding: .6rem 1.4rem;
+    border-radius: 999px;
+    color: var(--text);
+    font-weight: 600;
+}
+
+.back-link:hover { color: var(--accent); text-decoration: none; }
+
+/* ========== 404 ========== */
+.center-page {
+    max-width: 26rem;
+    margin: 2rem auto;
+    text-align: center;
+    padding: 2.75rem 1.5rem;
+}
+
+.center-page .display {
+    margin: 0;
+    font-size: 5rem;
+    font-weight: 750;
+    line-height: 1;
+    color: var(--accent);
+}
+
+.button {
+    display: inline-block;
+    margin-top: .75rem;
+    padding: .55rem 1.5rem;
+    font-weight: 600;
+    color: var(--accent-contrast);
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+}
+
+.button:hover { filter: brightness(.92); text-decoration: none; }
+
+/* ========== Footer ========== */
+.site-footer {
+    max-width: 66rem;
+    margin: 0 auto;
+    padding: 0 1.25rem 2.5rem;
+}
+
+.footer-panel {
+    text-align: center;
+    color: var(--muted);
+    font-size: .9rem;
+    padding: 1.25rem;
+}
+
+.footer-panel p { margin: .25rem 0; }
+
+.rss-link {
+    display: inline-block;
+    padding: .5rem .9rem;
+    color: var(--muted);
+    text-decoration: underline;
+}
+
+.rss-link:hover { color: var(--accent); }

@@ -1,0 +1,242 @@
+/* Dropplets "byline" theme — editorial broadsheet.
+   Oversized serif display headlines, pull-quote blockquotes, black on
+   white with one warm accent. Dark mode is a paper-black inversion. */
+
+:root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --surface: #f5f5f5;       /* tint panels / code */
+    --text: #111111;          /* press ink */
+    --muted: #4f4f4f;
+    --accent: #a33b00;        /* warm burnt sienna */
+    --accent-contrast: #ffffff;
+    --line: #757575;
+    --focus: #a33b00;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #121212;        /* paper-black */
+        --surface: #1c1c1c;
+        --text: #f4efe6;      /* warm newsprint white */
+        --muted: #b0a99c;
+        --accent: #ffa057;
+        --accent-contrast: #401c00;
+        --line: #8a8478;
+        --focus: #ffa057;
+    }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+    margin: 0;
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    font-size: 1.125rem;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--bg);
+}
+
+img { max-width: 100%; height: auto; }
+a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+a:hover { text-decoration-thickness: 2px; }
+
+/* ---------- Nameplate ---------- */
+.nameplate { border-bottom: 4px solid var(--text); }
+
+.nameplate-inner {
+    max-width: 64rem;
+    margin: 0 auto;
+    padding: 2.5rem 1.25rem 1.25rem;
+}
+
+.nameplate .site-title {
+    font-size: clamp(1.6rem, 4.5vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: -.015em;
+    color: var(--text);
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.nameplate .site-title:hover { color: var(--accent); }
+.nameplate .site-info {
+    margin: .25rem 0 0;
+    color: var(--muted);
+    font-style: italic;
+}
+
+/* ---------- Broadsheet column ---------- */
+.broadsheet {
+    max-width: 64rem;
+    margin: 0 auto;
+    padding: 3rem 1.25rem 1rem;
+}
+
+/* ---------- Home: headline stack ---------- */
+.headline-stack { display: grid; gap: 0; }
+
+.story { padding: 2.4rem 0; }
+.story + .story { border-top: 1px solid var(--line); }
+
+.story-meta {
+    margin: 0 0 .8rem;
+    font-size: .85rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.story-lock { letter-spacing: 0; margin-right: .25rem; }
+
+.story-headline {
+    margin: 0 0 .8rem;
+    font-size: clamp(1.9rem, 5.5vw, 3rem);
+    line-height: 1.08;
+    letter-spacing: -.02em;
+    font-weight: 800;
+    max-width: 22ch;
+}
+
+.story-lead .story-headline { font-size: clamp(2.5rem, 8vw, 4.5rem); }
+
+.story-headline a { color: var(--text); text-decoration: none; }
+.story-headline a:hover { color: var(--accent); text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 5px; }
+
+.story-standfirst {
+    margin: 0;
+    max-width: 55ch;
+    font-size: 1.15rem;
+    line-height: 1.6;
+    color: var(--muted);
+}
+
+.story-lead .story-standfirst { font-size: 1.3rem; }
+
+.empty-state { color: var(--muted); font-style: italic; padding: 3.2rem 0; }
+
+/* ---------- Single piece ---------- */
+.piece-head { padding: 0 0 1.6rem; }
+
+.piece-headline {
+    margin: 0 0 .8rem;
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    line-height: 1.05;
+    letter-spacing: -.025em;
+    font-weight: 800;
+    max-width: 18ch;
+}
+
+.piece-byline {
+    margin: 0;
+    font-size: .85rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.piece-author { color: var(--accent); font-weight: 700; }
+
+.piece-photo { margin: 0 0 2.4rem; border-top: 1px solid var(--line); padding-top: 1.6rem; }
+.piece-photo img { display: block; width: 100%; }
+
+.piece-body { max-width: 38rem; font-size: 1.1875rem; }
+.piece-body p { margin: 0 0 1.6rem; }
+.piece-body h1, .piece-body h2, .piece-body h3,
+.piece-body h4, .piece-body h5, .piece-body h6 {
+    line-height: 1.2;
+    letter-spacing: -.015em;
+    font-weight: 800;
+    margin: 2.4rem 0 .8rem;
+}
+
+/* Pull-quote energy: huge, indented, with a massive hanging quote mark. */
+.piece-body blockquote {
+    position: relative;
+    margin: 2.4rem 0 2.4rem 1.6rem;
+    padding: 0 0 0 2.4rem;
+    font-size: 1.6rem;
+    line-height: 1.35;
+    font-weight: 700;
+    font-style: italic;
+    letter-spacing: -.01em;
+    color: var(--text);
+    border-left: 4px solid var(--accent);
+}
+
+.piece-body blockquote::before {
+    content: "\201C";
+    position: absolute;
+    left: -.05em;
+    top: -.38em;
+    font-size: 4.5em;
+    line-height: 1;
+    color: var(--accent);
+    opacity: .35;
+    pointer-events: none;
+}
+
+.piece-body blockquote p { margin: 0 0 .8rem; }
+
+.piece-body code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .85em;
+    background: var(--surface);
+    padding: .1em .35em;
+}
+.piece-body pre {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: .8rem 1.1rem;
+    overflow-x: auto;
+    line-height: 1.55;
+    margin: 0 0 1.6rem;
+}
+.piece-body pre code { background: none; padding: 0; }
+.piece-body hr { border: 0; border-top: 4px solid var(--text); width: 4rem; margin: 2.4rem 0; }
+.piece-body table { border-collapse: collapse; width: 100%; margin: 0 0 1.6rem; }
+.piece-body th, .piece-body td { border: 1px solid var(--line); padding: .4rem .65rem; text-align: left; }
+
+.piece-return { margin-top: 2.4rem; border-top: 1px solid var(--line); padding-top: .8rem; }
+.return-link {
+    display: inline-block;
+    padding: .5rem 0;
+    min-height: 24px;
+    font-size: .9rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+/* ---------- 404 ---------- */
+.correction { padding: 1.6rem 0; }
+.correction .story-standfirst { margin-bottom: 1.6rem; }
+
+/* ---------- Pagination ---------- */
+.pagination { margin-top: 2.4rem; }
+.pagination .current { color: var(--accent); font-weight: 800; }
+
+/* ---------- Imprint ---------- */
+.imprint {
+    border-top: 4px solid var(--text);
+    margin-top: 2.4rem;
+}
+.imprint p {
+    max-width: 64rem;
+    margin: 0 auto;
+    padding: .4rem 1.25rem;
+    color: var(--muted);
+    font-size: .9rem;
+}
+.imprint p:first-child { padding-top: 1.6rem; }
+.imprint p:last-child { padding-bottom: 2.4rem; }
+.foot-link {
+    display: inline-block;
+    padding: .35rem .5rem;
+    margin-left: -.5rem;
+    min-height: 24px;
+    min-width: 24px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}

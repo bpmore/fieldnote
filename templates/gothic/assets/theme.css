@@ -1,0 +1,355 @@
+/* Dropplets "gothic" — candlelit cathedral. DARK-IDENTITY: dark :root,
+   light "morning cloister" overrides. Pointed-arch cards, tracery
+   hairlines, candle-gold and blood-red accents. */
+
+:root {
+    color-scheme: dark light;
+    --bg: #161219;
+    --surface: #1f1926;
+    --text: #e8e2d6;
+    --muted: #b3a98f;
+    --accent: #e3b341;
+    --accent-contrast: #241a06;
+    --line: #6d6378;
+    --focus: #e3b341;
+    --ember: #c0626a;
+    --shadow: 0 4px 18px rgba(0, 0, 0, .5);
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg: #ece8e0;
+        --surface: #f4f1ea;
+        --text: #26222b;
+        --muted: #5b5260;
+        --accent: #7a1f2b;
+        --accent-contrast: #f4f1ea;
+        --line: #837b8c;
+        --focus: #7a1f2b;
+        --ember: #7a1f2b;
+        --shadow: 0 4px 16px rgba(38, 34, 43, .14);
+    }
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+    margin: 0;
+    font-family: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    color: var(--text);
+    background: var(--bg);
+}
+
+img { max-width: 100%; height: auto; }
+
+a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+a:hover { text-decoration: none; }
+
+/* Focus ring: gap + ring. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+    outline: 2px solid transparent;
+    border-radius: .2rem;
+    box-shadow: 0 0 0 2px var(--bg), 0 0 0 5px var(--focus);
+}
+
+.ornament {
+    margin: 0;
+    color: var(--muted);
+    letter-spacing: .6em;
+    font-size: .8rem;
+}
+
+/* Masthead */
+.masthead {
+    text-align: center;
+    padding: 3rem 1.25rem 2.25rem;
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 3px 0 var(--bg), 0 4px 0 var(--line);
+}
+
+.masthead .ornament { margin-bottom: .9rem; }
+
+.site-title {
+    font-weight: 700;
+    font-size: clamp(2rem, 6vw, 3.1rem);
+    line-height: 1.05;
+    letter-spacing: .02em;
+    text-decoration: none;
+    color: var(--text);
+}
+
+.site-title:hover { color: var(--accent); }
+
+.site-info {
+    margin: .7rem auto 0;
+    max-width: 36rem;
+    color: var(--muted);
+    font-style: italic;
+}
+
+/* Layout */
+.wrap {
+    max-width: 64rem;
+    margin: 0 auto;
+    padding: 2.75rem 1.25rem;
+}
+
+/* Cloister grid (home): pointed-arch cards */
+.cloister {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    gap: 2rem;
+    align-items: start;
+}
+
+.arch {
+    background: var(--surface);
+    clip-path: polygon(0 100%, 0 4.5rem, 12% 1.6rem, 50% 0, 88% 1.6rem, 100% 4.5rem, 100% 100%);
+    padding: 4.5rem 1.4rem 1.6rem;
+    text-align: center;
+}
+
+.arch-body {
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 1.1rem .2rem 1.2rem;
+}
+
+.arch-image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    margin-bottom: 1rem;
+    border-radius: 9rem 9rem 0 0 / 11rem 11rem 0 0;
+}
+
+.arch-lock {
+    margin: 0 0 .8rem;
+    font-size: 2.2rem;
+    line-height: 1;
+}
+
+.arch-title {
+    margin: 0 0 .5rem;
+    font-weight: 700;
+    font-size: 1.3rem;
+    line-height: 1.15;
+    letter-spacing: .01em;
+}
+
+.arch-title a { color: var(--text); text-decoration: none; }
+.arch-title a:hover { color: var(--accent); text-decoration: underline; }
+
+.arch-meta {
+    margin: 0;
+    font-size: .85rem;
+    color: var(--muted);
+}
+
+.arch-meta::before { content: "\2726\00a0\00a0"; color: var(--ember); }
+
+.empty-state {
+    text-align: center;
+    font-style: italic;
+    color: var(--muted);
+    padding: 4rem 1rem;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .5rem;
+    margin: 3rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pagination a,
+.pagination .current {
+    display: inline-block;
+    min-width: 2.5rem;
+    padding: .4rem .8rem;
+    text-align: center;
+    border: 1px solid var(--line);
+    border-radius: 1.4rem 1.4rem 0 0;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.pagination a:hover { border-color: var(--accent); color: var(--accent); }
+
+.pagination .current {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-contrast);
+    font-weight: 700;
+}
+
+/* Single post */
+.post { max-width: 42rem; margin: 0 auto; }
+
+.post-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.4rem;
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 3px 0 var(--bg), 0 4px 0 var(--line);
+}
+
+.post-title {
+    margin: 0 0 .7rem;
+    font-weight: 700;
+    font-size: clamp(1.9rem, 5.5vw, 2.8rem);
+    line-height: 1.1;
+    letter-spacing: .01em;
+}
+
+.post-meta {
+    margin: 0;
+    color: var(--muted);
+    font-size: .92rem;
+}
+
+.post-meta span { color: var(--ember); }
+
+.post-hero {
+    display: block;
+    width: 100%;
+    margin: 0 0 2rem;
+    border-radius: 11rem 11rem 0 0 / 13rem 13rem 0 0;
+    box-shadow: var(--shadow);
+}
+
+/* Markdown body */
+.post-content h1, .post-content h2, .post-content h3,
+.post-content h4, .post-content h5 {
+    line-height: 1.2;
+    margin: 2.2rem 0 .8rem;
+    font-weight: 700;
+}
+.post-content p { margin: 0 0 1.15rem; }
+.post-content blockquote {
+    margin: 1.5rem 0;
+    padding: .3rem 0 .3rem 1.25rem;
+    border-left: 3px solid var(--ember);
+    font-style: italic;
+    color: var(--muted);
+}
+.post-content code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .9em;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: .25rem;
+    padding: .1em .35em;
+}
+.post-content pre {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    line-height: 1.55;
+}
+.post-content pre code { background: none; border: 0; padding: 0; }
+.post-content hr {
+    border: 0;
+    margin: 2.5rem 0;
+    text-align: center;
+    height: 1rem;
+}
+.post-content hr::before { content: "\2720 \25c6 \2720"; color: var(--muted); letter-spacing: .6em; }
+.post-content img { border-radius: 6rem 6rem 0 0 / 8rem 8rem 0 0; }
+.post-content table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; }
+.post-content th, .post-content td {
+    border: 1px solid var(--line);
+    padding: .5rem .75rem;
+    text-align: left;
+}
+
+.post-footer {
+    max-width: 42rem;
+    margin: 2.75rem auto 0;
+    text-align: center;
+}
+
+.back-link,
+.rss-link {
+    display: inline-block;
+    padding: .5rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 1.6rem 1.6rem 0 0;
+    color: var(--text);
+    text-decoration: none;
+    font-size: .9rem;
+}
+
+.back-link:hover,
+.rss-link:hover { border-color: var(--accent); color: var(--accent); }
+
+/* 404 / private */
+.center-page {
+    max-width: 28rem;
+    margin: 0 auto;
+    text-align: center;
+    padding: 3rem 0;
+}
+
+.center-page .display {
+    margin: 0 0 .75rem;
+    font-size: clamp(4rem, 14vw, 6rem);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--accent);
+}
+
+.center-page .ornament { margin-bottom: 1rem; }
+
+input[type="password"].field {
+    width: 100%;
+    padding: .6rem .9rem;
+    font: inherit;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    margin: .75rem 0 1rem;
+}
+
+.button {
+    display: inline-block;
+    padding: .55rem 1.5rem;
+    font: inherit;
+    font-weight: 700;
+    color: var(--accent-contrast);
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 1.6rem 1.6rem 0 0;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.button:hover { filter: brightness(1.12); }
+
+/* Footer */
+.site-footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: .9rem;
+    padding: 2.25rem 1.25rem 3rem;
+    border-top: 1px solid var(--line);
+    margin-top: 3rem;
+}
+
+.site-footer p { margin: .4rem 0; }
+.site-footer a.rss-link { color: var(--muted); }
+.site-footer a.rss-link:hover { color: var(--accent); border-color: var(--accent); }

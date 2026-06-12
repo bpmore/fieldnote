@@ -144,6 +144,76 @@ function dpl_unique_slug(Store $blogStore, string $title, ?int $excludeId = null
 }
 
 /**
+ * Shared accessibility baseline injected into every theme's <head> ahead of
+ * the theme stylesheet (so themes can override at equal specificity).
+ * Covers the WCAG 2.2 plumbing no theme should have to re-implement:
+ * skip-link reveal, :focus-visible ring, pagination target-size floor,
+ * .sr-only, and a global reduced-motion kill switch.
+ */
+function dpl_a11y_base_css(): string
+{
+    return <<<'CSS'
+.skip-link{position:absolute;left:-999px;top:auto}
+.skip-link:focus{position:fixed;left:.75rem;top:.75rem;z-index:999;padding:.5rem 1rem;background:var(--bg,#fff);color:var(--text,#000);outline:2px solid var(--focus,currentColor);outline-offset:2px}
+:focus-visible{outline:2px solid var(--focus,currentColor);outline-offset:2px}
+.pagination a,.pagination .current{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:24px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+CSS;
+}
+
+/**
+ * Skip-to-content link. Themes call this immediately after <body> and give
+ * their main element id="main". Styling lives in dpl_a11y_base_css().
+ */
+function dpl_skip_link(string $label = 'Skip to content'): void
+{
+    echo '<a class="skip-link" href="#main">' . e($label) . '</a>' . "\n";
+}
+
+/**
+ * Alt text for the un-linked post hero image. List/card images stay alt=""
+ * (decorative — the adjacent title link already names the destination);
+ * the hero is content, so it gets the post title. One function so the
+ * policy can change once, everywhere.
+ *
+ * @param array<string,mixed> $post
+ */
+function dpl_image_alt(array $post): string
+{
+    return (string) ($post['title'] ?? '');
+}
+
+/**
+ * Shared pagination block: aria-label, aria-current on the active page,
+ * rel prev/next. Themes style it via the .pagination / .current classes;
+ * the 24px minimum target size comes from dpl_a11y_base_css().
+ */
+function dpl_pagination(\AltoRouter $router, int $page, int $numPages): void
+{
+    if ($numPages <= 1) {
+        return;
+    }
+    echo '<nav aria-label="Pages">' . "\n" . '<ul class="pagination">' . "\n";
+    if ($page > 1) {
+        $prev = $page === 2 ? $router->generate('home') : $router->generate('posts', ['page' => $page - 1]);
+        echo '<li><a href="' . e($prev) . '" rel="prev" aria-label="Previous page">&larr;</a></li>' . "\n";
+    }
+    for ($p = 1; $p <= $numPages; $p++) {
+        if ($p === $page) {
+            echo '<li><span class="current" aria-current="page">' . $p . '</span></li>' . "\n";
+        } else {
+            $href = $p === 1 ? $router->generate('home') : $router->generate('posts', ['page' => $p]);
+            echo '<li><a href="' . e($href) . '">' . $p . '</a></li>' . "\n";
+        }
+    }
+    if ($page < $numPages) {
+        echo '<li><a href="' . e($router->generate('posts', ['page' => $page + 1])) . '" rel="next" aria-label="Next page">&rarr;</a></li>' . "\n";
+    }
+    echo '</ul>' . "\n" . '</nav>' . "\n";
+}
+
+/**
  * Emit the shared <head> content every theme needs: charset, viewport, title,
  * theme stylesheet, favicon, RSS discovery, canonical URL, OpenGraph/Twitter
  * cards, and the admin's headerInject snippet. Themes call this from their
@@ -173,6 +243,7 @@ function dpl_render_head(array $siteConfig, \AltoRouter $router, string $pageTit
     echo '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">' . "\n";
     echo '<meta name="robots" content="index, follow">' . "\n";
     echo '<title>' . e($fullTitle) . '</title>' . "\n";
+    echo '<style>' . dpl_a11y_base_css() . '</style>' . "\n";
     echo '<link rel="stylesheet" href="' . e($themeCssHref) . '">' . "\n";
     echo '<link rel="icon" href="' . $base . '/logo.svg" type="image/svg+xml">' . "\n";
     echo '<link rel="alternate" type="application/rss+xml" title="' . e($siteName) . '" href="' . e($router->generate('feed')) . '">' . "\n";

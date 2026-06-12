@@ -1,0 +1,326 @@
+/* Dropplets "riso" theme — two-ink risograph overprint.
+   Blue ink + pink ink on warm paper; paper grain from dot gradients,
+   off-registration heading shadows, duotone hero tint, numbered zine rows.
+   Dark scheme = midnight print: paper goes black, inks brighten. */
+
+:root {
+    color-scheme: light dark;
+    --bg: #f6efdf;
+    --surface: #fcf7ea;
+    --text: #22357d;
+    --muted: #4d5685;
+    --accent: #b0145a;
+    --accent-contrast: #fdf8ee;
+    --line: #7d87b5;
+    --focus: #b0145a;
+    --ghost: rgba(240, 110, 165, .55);   /* off-registration second ink */
+    --grain: rgba(34, 53, 125, .08);     /* paper grain dots */
+    --duo-a: rgba(176, 20, 90, .38);     /* duotone overlay, pink corner */
+    --duo-b: rgba(34, 53, 125, .42);     /* duotone overlay, blue corner */
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #13121c;
+        --surface: #1b1a28;
+        --text: #a3b6f2;
+        --muted: #909ac9;
+        --accent: #ff7ab8;
+        --accent-contrast: #330b1e;
+        --line: #5f66a3;
+        --focus: #ff7ab8;
+        --ghost: rgba(255, 122, 184, .4);
+        --grain: rgba(163, 182, 242, .07);
+        --duo-a: rgba(255, 122, 184, .3);
+        --duo-b: rgba(76, 96, 178, .38);
+    }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    color: var(--text);
+    background-color: var(--bg);
+    background-image: radial-gradient(var(--grain) 1px, transparent 1px);
+    background-size: 7px 7px;
+}
+
+img { max-width: 100%; height: auto; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Off-registration: a second-ink ghost slips 2px off the first pass. */
+.offset { text-shadow: 2px 2px 0 var(--ghost); }
+
+/* ========== Masthead ========== */
+.masthead {
+    padding: 3rem 1.25rem 2rem;
+    text-align: center;
+    border-bottom: 3px solid var(--text);
+}
+
+.site-title {
+    display: inline-block;
+    font-size: clamp(2rem, 6vw, 3rem);
+    font-weight: 900;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    color: var(--text);
+}
+
+.site-title:hover { color: var(--accent); text-decoration: none; }
+
+.site-info {
+    margin: .6rem auto 0;
+    max-width: 36rem;
+    color: var(--muted);
+    font-style: italic;
+}
+
+/* ========== Layout ========== */
+.wrap {
+    max-width: 42rem;
+    margin: 0 auto;
+    padding: 2.5rem 1.25rem;
+}
+
+/* ========== Numbered zine entries (home) ========== */
+.zine-list {
+    list-style: none;
+    counter-reset: zine;
+    margin: 0;
+    padding: 0;
+}
+
+.zine-entry {
+    counter-increment: zine;
+    border-bottom: 2px dashed var(--line);
+}
+
+.zine-row {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 1.1rem;
+    padding: 1.4rem .25rem;
+}
+
+.zine-row::before {
+    content: counter(zine, decimal-leading-zero);
+    flex: 0 0 auto;
+    font-size: 2.4rem;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--accent);
+    text-shadow: 2px 2px 0 var(--ghost);
+}
+
+.zine-body { flex: 1 1 auto; min-width: 0; }
+
+.zine-title {
+    margin: 0 0 .3rem;
+    font-size: 1.35rem;
+    line-height: 1.3;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .01em;
+}
+
+.zine-title a { color: var(--text); }
+.zine-title a::after { content: ""; position: absolute; inset: 0; }
+.zine-row:hover .zine-title a { color: var(--accent); text-decoration: none; }
+
+.zine-meta {
+    margin: 0;
+    font-size: .875rem;
+    color: var(--muted);
+}
+
+.empty-state { text-align: center; color: var(--muted); padding: 4rem 0; font-style: italic; }
+
+/* ========== Pagination ========== */
+.pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .5rem;
+    margin: 3rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pagination a,
+.pagination .current {
+    min-width: 2.4rem;
+    padding: .35rem .7rem;
+    text-align: center;
+    font-weight: 800;
+    border: 2px solid var(--text);
+    color: var(--text);
+    box-shadow: 3px 3px 0 var(--ghost);
+}
+
+.pagination a:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+
+.pagination .current {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-contrast);
+}
+
+/* ========== Single post ========== */
+.post-header {
+    margin-bottom: 1.75rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 2px dashed var(--line);
+}
+
+.post-title {
+    margin: 0 0 .6rem;
+    font-size: clamp(1.8rem, 5.5vw, 2.7rem);
+    line-height: 1.15;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .01em;
+}
+
+.post-meta { margin: 0; color: var(--muted); font-size: .95rem; font-style: italic; }
+
+/* Duotone hero: grayscale base, two-ink gradient overprint. */
+.post-hero-wrap {
+    position: relative;
+    margin: 0 0 2rem;
+    border: 2px solid var(--text);
+    box-shadow: 5px 5px 0 var(--ghost);
+}
+
+.post-hero {
+    display: block;
+    width: 100%;
+    filter: grayscale(1) contrast(1.05);
+}
+
+.post-hero-wrap::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--duo-a), var(--duo-b));
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
+
+.post-content p { margin: 0 0 1.15rem; }
+
+.post-content h1, .post-content h2, .post-content h3,
+.post-content h4, .post-content h5 {
+    margin: 2.2rem 0 .8rem;
+    line-height: 1.25;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .01em;
+    text-shadow: 2px 2px 0 var(--ghost);
+}
+
+.post-content a { text-decoration: underline; text-underline-offset: 2px; }
+
+.post-content img {
+    border: 2px solid var(--text);
+    box-shadow: 4px 4px 0 var(--ghost);
+}
+
+.post-content blockquote {
+    margin: 1.5rem 0;
+    padding: .25rem 0 .25rem 1.1rem;
+    border-left: 4px solid var(--accent);
+    color: var(--muted);
+    font-style: italic;
+}
+
+.post-content code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .9em;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: .1em .35em;
+}
+
+.post-content pre {
+    background: var(--surface);
+    border: 2px solid var(--text);
+    box-shadow: 4px 4px 0 var(--ghost);
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    line-height: 1.55;
+}
+
+.post-content pre code { border: 0; background: none; padding: 0; }
+.post-content hr { border: 0; border-top: 2px dashed var(--line); margin: 2.5rem 0; }
+.post-content table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; }
+.post-content th, .post-content td { border: 1px solid var(--line); padding: .5rem .75rem; text-align: left; }
+
+.post-footer {
+    margin-top: 3rem;
+    padding-top: 1.25rem;
+    border-top: 2px dashed var(--line);
+}
+
+.back-link {
+    display: inline-block;
+    padding: .5rem 0;
+    font-weight: 800;
+}
+
+/* ========== 404 ========== */
+.center-page {
+    max-width: 28rem;
+    margin: 0 auto;
+    text-align: center;
+    padding: 3rem 0;
+}
+
+.center-page .display {
+    margin: 0 0 1rem;
+    font-size: 6rem;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--accent);
+}
+
+.button {
+    display: inline-block;
+    padding: .6rem 1.5rem;
+    font-weight: 800;
+    color: var(--accent-contrast);
+    background: var(--accent);
+    border: 2px solid var(--accent);
+    box-shadow: 4px 4px 0 var(--ghost);
+}
+
+.button:hover { filter: brightness(.94); text-decoration: none; }
+
+/* ========== Footer ========== */
+.site-footer {
+    margin-top: 3rem;
+    padding: 2rem 1.25rem 3rem;
+    border-top: 3px solid var(--text);
+    text-align: center;
+    color: var(--muted);
+    font-size: .9rem;
+}
+
+.site-footer p { margin: .25rem 0; }
+
+.rss-link {
+    display: inline-block;
+    padding: .5rem .9rem;
+    font-weight: 800;
+    color: var(--muted);
+    text-decoration: underline;
+}
+
+.rss-link:hover { color: var(--accent); }

@@ -1,0 +1,30 @@
+<?php
+
+use function Dropplets\e;
+use function Dropplets\dpl_render_head;
+use function Dropplets\dpl_skip_link;
+
+$siteName = $siteConfig['name'] !== '' ? $siteConfig['name'] : 'Dropplets';
+?>
+<!doctype html>
+<html lang="en">
+
+<head>
+    <?php dpl_render_head(
+        $siteConfig,
+        $router,
+        $pageTitle ?? '',
+        $post ?? null,
+        $router->generate('themeAsset', ['theme' => 'neon', 'file' => 'theme.css'])
+    ); ?>
+</head>
+
+<body>
+    <?php dpl_skip_link(); ?>
+    <header class="hud-bar">
+        <a class="site-title" href="<?= e($router->generate('home')) ?>"><?= e($siteName) ?></a>
+        <?php if ($siteConfig['info'] !== ''): ?>
+            <span class="site-info"><?= e($siteConfig['info']) ?></span>
+        <?php endif; ?>
+    </header>
+    <main id="main">

@@ -1,0 +1,218 @@
+/* Dropplets "circuit" — printed circuit board. Dark-identity: green
+   solder-mask with copper traces in :root, blueprint under light scheme. */
+
+:root {
+    color-scheme: dark light;
+    --bg: #0a1d10;
+    --surface: #11291a;
+    --text: #d8e9d8;
+    --muted: #98b69c;
+    --accent: #e6a063;
+    --accent-contrast: #2f1602;
+    --line: #557f5f;
+    --focus: #62d98f;
+    --copper: #e6a063;
+    --tin: #aebfc4;
+    --trace: rgba(230, 160, 99, .55);
+    --pad-fill: #0a1d10;
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg: #f2f6fb;
+        --surface: #ffffff;
+        --text: #152741;
+        --muted: #455a78;
+        --accent: #18508f;
+        --accent-contrast: #ffffff;
+        --line: #7385a0;
+        --focus: #18508f;
+        --copper: #18508f;
+        --tin: #455a78;
+        --trace: rgba(24, 80, 143, .5);
+        --pad-fill: #f2f6fb;
+    }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+    margin: 0;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 1rem; line-height: 1.7;
+    color: var(--text); background: var(--bg);
+}
+
+img { max-width: 100%; height: auto; display: block; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+a:focus-visible,
+.button:focus-visible {
+    outline: 2px solid transparent;
+    box-shadow: 0 0 0 2px var(--bg), 0 0 0 5px var(--focus);
+}
+
+/* ---- Silkscreen title block ---- */
+.title-block {
+    position: relative; max-width: 46rem; margin: 2.5rem auto 0;
+    padding: 1.6rem 1.5rem 1.4rem; border: 2px solid var(--trace);
+}
+
+/* Corner mounting pads. */
+.title-block::before,
+.title-block::after {
+    content: ""; position: absolute; width: .8rem; height: .8rem;
+    border-radius: 50%; border: 2px solid var(--copper); background: var(--pad-fill);
+}
+
+.title-block::before { top: -.5rem; left: -.5rem; }
+.title-block::after { bottom: -.5rem; right: -.5rem; }
+
+.silk-label {
+    position: absolute; top: -.7rem; left: 1.25rem; padding: 0 .5rem;
+    background: var(--bg); font-size: .68rem; letter-spacing: .3em;
+    text-transform: uppercase; color: var(--muted);
+}
+
+.site-title {
+    display: inline-block; padding: .25rem 0;
+    font-size: clamp(1.25rem, 4vw, 1.7rem); font-weight: 700;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--accent);
+}
+
+.site-title:hover { color: var(--text); text-decoration: none; }
+.site-info { margin: .35rem 0 0; font-size: .82rem; color: var(--muted); }
+
+/* ---- Netlist (home): vertical trace, pad dots, right-angle stubs ---- */
+.wrap { max-width: 46rem; margin: 0 auto; padding: 2.5rem 1.5rem 0; }
+
+.net { list-style: none; margin: 0; padding: 0 0 0 2.1rem; position: relative; }
+
+/* The shared vertical copper trace. */
+.net::before {
+    content: ""; position: absolute; top: .2rem; bottom: .2rem; left: .45rem;
+    width: 2px; background: var(--trace);
+}
+
+.node { position: relative; padding: 0 0 2rem; }
+.node:last-child { padding-bottom: .25rem; }
+
+/* Pad dot on the trace. */
+.node::before {
+    content: ""; position: absolute; top: .4rem; left: -2.1rem;
+    width: .7rem; height: .7rem; border-radius: 50%;
+    border: 2px solid var(--copper); background: var(--pad-fill);
+}
+
+/* Right-angle stub from the trace to the entry. */
+.node::after {
+    content: ""; position: absolute; top: .85rem; left: -1.2rem;
+    width: 1rem; height: 2px; background: var(--trace);
+}
+
+.node-title { margin: 0 0 .2rem; font-size: 1.15rem; line-height: 1.4; font-weight: 700; }
+.node-title a { color: var(--accent); }
+.node-title a:hover { color: var(--text); }
+
+.node-meta { margin: 0; font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+
+.empty-state {
+    text-align: center; color: var(--muted); padding: 4.5rem 0;
+    letter-spacing: .12em; text-transform: uppercase; font-size: .85rem;
+}
+
+/* ---- Pagination ---- */
+.pagination {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: .45rem; margin: 2.5rem 0 0; padding: 0; list-style: none;
+}
+
+.pagination a,
+.pagination .current {
+    min-width: 2.4rem; padding: .3rem .7rem; text-align: center;
+    border: 1px solid var(--line); color: var(--text); background: var(--surface);
+}
+
+.pagination a:hover { border-color: var(--copper); color: var(--accent); text-decoration: none; }
+
+.pagination .current { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); font-weight: 700; }
+
+/* ---- Single post ---- */
+.post { padding-top: .25rem; }
+
+.post-header { margin-bottom: 1.9rem; border-bottom: 2px solid var(--trace); padding-bottom: 1.2rem; }
+
+.post-title {
+    margin: 0 0 .5rem; font-size: clamp(1.4rem, 4.5vw, 2.1rem);
+    font-weight: 700; line-height: 1.25; letter-spacing: .04em; color: var(--accent);
+}
+
+.post-meta { margin: 0; font-size: .75rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+
+.post-hero { width: 100%; border: 2px solid var(--trace); margin-bottom: 2rem; }
+
+.post-content { font-size: .98rem; }
+.post-content h2, .post-content h3, .post-content h4 {
+    margin: 2.1rem 0 .7rem; line-height: 1.3;
+    letter-spacing: .08em; text-transform: uppercase;
+}
+.post-content h2::before, .post-content h3::before { content: "[ "; color: var(--copper); }
+.post-content h2::after, .post-content h3::after { content: " ]"; color: var(--copper); }
+.post-content p { margin: 0 0 1.15rem; }
+.post-content a { text-decoration: underline; text-underline-offset: 2px; }
+.post-content img { border: 1px solid var(--line); }
+.post-content ul { list-style: none; padding-left: 1.4rem; }
+.post-content ul li { position: relative; }
+.post-content ul li::before {
+    content: ""; position: absolute; top: .55em; left: -1.3rem;
+    width: .55rem; height: .55rem; border-radius: 50%; border: 2px solid var(--copper);
+}
+.post-content blockquote {
+    margin: 1.6rem 0; padding: .35rem 0 .35rem 1.15rem;
+    border-left: 2px solid var(--tin); color: var(--muted);
+}
+.post-content code {
+    font-size: .92em; background: var(--surface);
+    border: 1px solid var(--line); padding: .1em .35em;
+}
+.post-content pre {
+    background: var(--surface); border: 1px solid var(--line);
+    padding: 1rem 1.2rem; overflow-x: auto; line-height: 1.55;
+}
+.post-content pre code { background: none; border: 0; padding: 0; }
+.post-content hr { border: 0; border-top: 2px dashed var(--trace); margin: 2.5rem 0; }
+.post-content table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; }
+.post-content th, .post-content td { border: 1px solid var(--line); padding: .5rem .75rem; text-align: left; }
+
+.post-back { margin: 3rem 0 0; padding-top: 1.25rem; border-top: 1px solid var(--line); }
+.post-back a { display: inline-block; padding: .5rem 0; font-size: .85rem; letter-spacing: .1em; text-transform: uppercase; }
+
+/* ---- 404 ---- */
+.center-page { max-width: 26rem; margin: 3.5rem auto; text-align: center; }
+
+.center-page .display { margin: 0; font-size: 5.5rem; font-weight: 700; line-height: 1; letter-spacing: .08em; color: var(--accent); }
+
+.lost-note { color: var(--muted); font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; }
+
+.button {
+    display: inline-block; padding: .65rem 1.5rem; font-size: .85rem;
+    font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent-contrast); background: var(--accent);
+    border: 1px solid var(--accent);
+}
+
+.button:hover { text-decoration: none; color: var(--accent-contrast); opacity: .88; }
+
+/* ---- Footer ---- */
+.site-footer {
+    max-width: 46rem; margin: 3.5rem auto 0; padding: 1.75rem 1.5rem 2.5rem;
+    border-top: 2px solid var(--trace); text-align: center;
+    font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+}
+
+.site-footer p { margin: .25rem 0; }
+.site-footer a { color: var(--muted); text-decoration: underline; }
+.site-footer a:hover { color: var(--accent); }
+.footer-link { display: inline-block; padding: .5rem .75rem; }

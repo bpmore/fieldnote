@@ -1,0 +1,210 @@
+/* Dropplets "folio" theme — literary book typography.
+   Charter/Georgia, drop caps, small-caps headings, fleuron separators,
+   table-of-contents home with leader dots. Dark mode is ink-on-slate. */
+
+:root {
+    color-scheme: light dark;
+    --bg: #fbf8f1;            /* laid paper */
+    --surface: #f3eee1;       /* tipped-in plate / code panel */
+    --text: #211c16;          /* book ink */
+    --muted: #5d5547;         /* annotation grey */
+    --accent: #8f2a23;        /* ribbon red */
+    --accent-contrast: #ffffff;
+    --line: #8f8472;
+    --focus: #8f2a23;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #23272e;        /* slate */
+        --surface: #2a2f37;
+        --text: #e6e4df;
+        --muted: #a9a399;
+        --accent: #eda69a;    /* faded ribbon */
+        --accent-contrast: #46120c;
+        --line: #7e858f;
+        --focus: #eda69a;
+    }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+    margin: 0;
+    font-family: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
+    font-size: 1.125rem;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg);
+}
+
+img { max-width: 100%; height: auto; }
+a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+a:hover { text-decoration-thickness: 2px; }
+
+.small-caps,
+.toc-heading,
+.chapter-kicker {
+    font-variant-caps: small-caps;
+    letter-spacing: .14em;
+    text-transform: lowercase;
+}
+
+/* Centered fleuron separator. */
+.ornament { text-align: center; margin: 1.75rem 0; color: var(--accent); }
+.ornament::before { content: "\2766"; font-size: 1.4rem; line-height: 1; }
+
+/* ---------- Frontispiece ---------- */
+.frontispiece { text-align: center; padding: 3.5rem 1.25rem 0; }
+
+.frontispiece .site-title {
+    font-variant-caps: small-caps;
+    text-transform: lowercase;
+    letter-spacing: .18em;
+    font-size: clamp(1.7rem, 5vw, 2.4rem);
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.frontispiece .site-title:hover { color: var(--accent); }
+.frontispiece .site-info { margin: .5rem auto 0; max-width: 34rem; font-style: italic; color: var(--muted); }
+.frontispiece .ornament { margin: 1.25rem 0 0; }
+
+/* ---------- Leaf (main column) ---------- */
+.leaf {
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: 2.5rem 1.25rem 1rem;
+}
+
+/* ---------- Home: table of contents ---------- */
+.toc-heading {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--muted);
+    margin: 0 0 1.75rem;
+}
+
+.toc-list { list-style: none; margin: 0; padding: 0; }
+.toc-row { margin: 0 0 1.6rem; }
+
+.toc-link {
+    display: flex;
+    align-items: flex-end;
+    gap: .25rem;
+    color: var(--text);
+    text-decoration: none;
+    padding: .35rem 0;
+}
+
+.toc-title { font-size: 1.2rem; font-weight: 700; line-height: 1.4; }
+.toc-link:hover .toc-title { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.toc-lock { font-size: .95rem; margin-right: .15rem; }
+
+/* Leader dots between title and date, like a printed contents page. */
+.toc-leader {
+    flex: 1 1 1.5rem;
+    min-width: 1.5rem;
+    border-bottom: 2px dotted var(--line);
+    margin: 0 .35rem .45rem;
+}
+
+.toc-date { white-space: nowrap; font-size: .9rem; color: var(--muted); font-style: italic; }
+.toc-byline { margin: 0; font-size: .9rem; font-style: italic; color: var(--muted); }
+
+.empty-state { text-align: center; font-style: italic; color: var(--muted); padding: 2rem 0; }
+
+/* ---------- Chapter (single post) ---------- */
+.chapter-head { text-align: center; margin-bottom: 2rem; }
+.chapter-kicker { margin: 0 0 .5rem; font-size: .95rem; color: var(--muted); }
+
+.chapter-title {
+    margin: 0 0 .5rem;
+    font-size: clamp(1.8rem, 5.5vw, 2.6rem);
+    line-height: 1.25;
+    font-weight: 700;
+}
+
+.chapter-byline { margin: 0; font-style: italic; color: var(--muted); }
+.chapter-head .ornament { margin: 1.25rem 0 0; }
+
+.chapter-plate { margin: 0 0 2rem; }
+.chapter-plate img {
+    display: block;
+    margin: 0 auto;
+    border: 1px solid var(--line);
+    padding: .5rem;
+    background: var(--surface);
+}
+
+/* Drop cap on the opening paragraph. */
+.chapter-body > p:first-of-type::first-letter {
+    float: left;
+    font-size: 3.4em;
+    line-height: .85;
+    padding: .06em .12em 0 0;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.chapter-body p { margin: 0 0 1.4rem; }
+.chapter-body h1, .chapter-body h2, .chapter-body h3,
+.chapter-body h4, .chapter-body h5, .chapter-body h6 {
+    font-variant-caps: small-caps;
+    text-transform: lowercase;
+    letter-spacing: .12em;
+    font-size: 1.2rem;
+    line-height: 1.4;
+    margin: 2.25rem 0 .75rem;
+    text-align: center;
+}
+.chapter-body blockquote {
+    margin: 1.75rem 1.5rem;
+    padding: 0;
+    font-style: italic;
+    color: var(--muted);
+    text-align: center;
+}
+.chapter-body code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .85em;
+    background: var(--surface);
+    padding: .1em .35em;
+}
+.chapter-body pre {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: .85rem 1.1rem;
+    overflow-x: auto;
+    line-height: 1.55;
+    margin: 0 0 1.4rem;
+}
+.chapter-body pre code { background: none; padding: 0; }
+.chapter-body hr { border: 0; text-align: center; margin: 2rem 0; }
+.chapter-body hr::after { content: "\2766"; color: var(--accent); font-size: 1.2rem; }
+.chapter-body table { border-collapse: collapse; width: 100%; margin: 0 0 1.4rem; }
+.chapter-body th, .chapter-body td { border: 1px solid var(--line); padding: .4rem .65rem; text-align: left; }
+
+.chapter-return, .errata { max-width: 40rem; margin: 1.5rem auto 0; }
+.errata { text-align: center; }
+.errata p { color: var(--muted); }
+.return-link { display: inline-block; padding: .5rem 0; min-height: 24px; }
+
+/* ---------- Pagination ---------- */
+.pagination { margin-top: 2.5rem; }
+.pagination .current { color: var(--accent); font-weight: 700; }
+
+/* ---------- Colophon ---------- */
+.colophon {
+    text-align: center;
+    padding: 1rem 1.25rem 3rem;
+    color: var(--muted);
+    font-style: italic;
+    font-size: .95rem;
+}
+.colophon p { margin: .25rem 0; }
+.colophon .ornament { margin: 0 0 1rem; }
+.foot-link { display: inline-block; padding: .35rem .6rem; min-height: 24px; min-width: 24px; }

@@ -1,14 +1,41 @@
-/* terminal — a phosphor-green console. Always dark. Original theme. */
+/* terminal — a phosphor-green console. Dark by identity: dark tokens live in
+   :root so no-preference users get the CRT look; the light scheme is a
+   "hardcopy printout" — green-tinted paper, deep green ink, same prompt and
+   cursor conventions. All colors live in the two token blocks below. */
 
 :root {
+    color-scheme: dark light;
+
     --bg: #0b0f0c;
-    --panel: #101510;
+    --surface: #101510;
     --text: #b8e6b8;
-    --bright: #5dff7f;
-    --dim: #4f7a55;
+    --muted: #7fae86;
+    --accent: #5dff7f;
+    --accent-contrast: #0b0f0c;
+    --line: #4d6d53;
+    --focus: #5dff7f;
     --amber: #ffc857;
-    --rule: #1f2b20;
+
+    /* legacy names */
+    --panel: var(--surface);
+    --bright: var(--accent);
+    --dim: var(--muted);
+    --rule: var(--line);
     --mono: ui-monospace, "SF Mono", Menlo, "Cascadia Code", Consolas, monospace;
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg: #f2f7f2;
+        --surface: #e4eee5;
+        --text: #173c1f;
+        --muted: #38663f;
+        --accent: #1c692e;
+        --accent-contrast: #f2f7f2;
+        --line: #79917c;
+        --focus: #1c692e;
+        --amber: #8a5500;
+    }
 }
 
 * { box-sizing: border-box; }
@@ -22,10 +49,10 @@ body {
     line-height: 1.75;
 }
 
-::selection { background: var(--bright); color: var(--bg); }
+::selection { background: var(--bright); color: var(--accent-contrast); }
 
 a { color: var(--bright); text-decoration: none; }
-a:hover { background: var(--bright); color: var(--bg); }
+a:hover { background: var(--bright); color: var(--accent-contrast); }
 img { max-width: 100%; height: auto; filter: saturate(.8); border: 1px solid var(--rule); }
 
 .masthead { max-width: 46rem; margin: 0 auto; padding: 3rem 1.25rem 0; }
@@ -66,8 +93,9 @@ img { max-width: 100%; height: auto; filter: saturate(.8); border: 1px solid var
 
 .pagination {
     display: flex;
-    justify-content: space-between;
-    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .4rem;
     list-style: none;
     margin: 2.5rem 0 0;
     padding: 1rem 0 0;
@@ -75,9 +103,11 @@ img { max-width: 100%; height: auto; filter: saturate(.8); border: 1px solid var
     font-size: .85rem;
 }
 
+.pagination a,
+.pagination .current { padding: .2rem .6rem; border: 1px solid var(--line); }
 .pagination a { color: var(--amber); }
 .pagination a:hover { background: var(--amber); color: var(--bg); }
-.page-state { color: var(--dim); margin: 0 auto; }
+.pagination .current { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); font-weight: 700; }
 
 .post-header { margin: 2rem 0 1.5rem; }
 .post-title { color: var(--bright); font-size: 1.6rem; line-height: 1.3; margin: 0 0 .4rem; }
@@ -90,7 +120,7 @@ img { max-width: 100%; height: auto; filter: saturate(.8); border: 1px solid var
 .post-content p { margin: 0 0 1.2rem; }
 .post-content a { text-decoration: underline; text-underline-offset: 3px; }
 .post-content a:hover { text-decoration: none; }
-.post-content blockquote { margin: 1.5rem 0; padding-left: 1.25rem; border-left: 2px solid var(--dim); color: var(--dim); }
+.post-content blockquote { margin: 1.5rem 0; padding-left: 1.25rem; border-left: 2px solid var(--line); color: var(--dim); }
 .post-content code { color: var(--amber); background: var(--panel); padding: .1em .35em; border: 1px solid var(--rule); border-radius: 2px; }
 .post-content pre { background: var(--panel); border: 1px solid var(--rule); padding: 1rem 1.25rem; overflow-x: auto; }
 .post-content pre code { border: 0; background: none; padding: 0; }
@@ -98,9 +128,12 @@ img { max-width: 100%; height: auto; filter: saturate(.8); border: 1px solid var
 
 .post-footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px dashed var(--rule); font-size: .85rem; }
 
+/* Standalone links (back-link, 404, footer RSS) get a 24px target floor. */
+.post-footer a, .center-page a, .site-footer a { display: inline-block; padding: .3rem .2rem; }
+
 .center-page { text-align: center; padding: 4rem 0; }
-.center-page .display { font-size: 4rem; color: var(--amber); margin: 0; }
-.center-page .display::after { content: ": command not found"; font-size: 1rem; display: block; color: var(--dim); }
+.center-page .display { font-size: 4rem; font-weight: 700; color: var(--amber); margin: 0; line-height: 1; }
+.center-page .display::after { content: ": command not found"; font-size: 1rem; font-weight: 400; display: block; color: var(--dim); }
 
 .site-footer { max-width: 46rem; margin: 0 auto; text-align: left; color: var(--dim); font-size: .8rem; padding: 0 1.25rem 3rem; }
 .site-footer p { margin: .2rem 0; }

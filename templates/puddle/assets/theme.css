@@ -3,22 +3,31 @@
    jacksondc's "Puddle/Downpour" theme for the original Dropplets. */
 
 :root {
+    color-scheme: light dark;
     --bg: #ffffff;
+    --surface: #ffffff;
     --text: #3d3d3d;
     --heading: #1f1f1f;
-    --muted: #9b9b9b;
+    --muted: #6e6e6e;
     --rule: #ececec;
     --accent: #1f6f8b;
+    --accent-contrast: #ffffff;
+    --line: #767676;
+    --focus: #1f6f8b;
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
         --bg: #191919;
+        --surface: #191919;
         --text: #cfccc6;
         --heading: #f0ede7;
-        --muted: #7d7a74;
+        --muted: #9a968e;
         --rule: #2c2c2c;
         --accent: #7fb8cc;
+        --accent-contrast: #191919;
+        --line: #6e6b65;
+        --focus: #7fb8cc;
     }
 }
 
@@ -98,9 +107,9 @@ img { max-width: 100%; height: auto; }
 /* Pagination */
 .pagination {
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .35rem .75rem;
     list-style: none;
     margin: 3rem 0 0;
     padding: 1.25rem 0 0;
@@ -108,7 +117,8 @@ img { max-width: 100%; height: auto; }
     font-size: .95rem;
 }
 
-.page-state { color: var(--muted); margin: 0 auto; }
+.pagination a, .pagination .current { padding: .1rem .45rem; }
+.pagination .current { color: var(--heading); font-weight: 700; }
 
 /* Single post */
 .post-header { text-align: center; margin: 2.5rem 0 2rem; }
@@ -180,3 +190,6 @@ img { max-width: 100%; height: auto; }
 }
 
 .site-footer a { color: var(--muted); text-decoration: underline; }
+
+/* WCAG 2.5.8: standalone links get a 24px target. */
+.post-footer a, .site-footer a, .center-page a { display: inline-block; padding: .25rem .35rem; }

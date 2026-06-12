@@ -1,0 +1,241 @@
+/* Dropplets "rewind" theme — 1970s record-sleeve earth tones.
+   Burnt orange, mustard, avocado, cream. Chunky rounded display
+   type, sunburst stripe rules, album-tracklist post rows. */
+
+:root {
+    color-scheme: light dark;
+    --bg: #f6edd9;
+    --surface: #fdf6e6;
+    --text: #33270f;
+    --muted: #6b5635;
+    --accent: #9c3f0c;
+    --accent-contrast: #fff3df;
+    --line: #9c8148;
+    --focus: #9c3f0c;
+    --stripe-orange: #c25415;
+    --stripe-mustard: #d09c1c;
+    --stripe-avocado: #7c8b33;
+    --shadow: 0 2px 5px rgba(80, 55, 10, .12);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #1d1410;
+        --surface: #281c15;
+        --text: #f2e3cd;
+        --muted: #c4a87e;
+        --accent: #f09b4f;
+        --accent-contrast: #311a02;
+        --line: #84653a;
+        --focus: #f09b4f;
+        --stripe-orange: #d96b25;
+        --stripe-mustard: #d9a514;
+        --stripe-avocado: #94a73d;
+        --shadow: 0 2px 8px rgba(0, 0, 0, .55);
+    }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    color: var(--text);
+    background: var(--bg);
+}
+
+h1, h2, .site-title, .track-no {
+    font-family: ui-rounded, "Arial Rounded MT Bold", "Hiragino Maru Gothic ProN", Quicksand, "Trebuchet MS", sans-serif;
+}
+
+img { max-width: 100%; height: auto; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* The sunburst: thick 70s stripe band built only from tokens. */
+.sunburst {
+    height: .9rem;
+    border-radius: 999px;
+    background: repeating-linear-gradient(
+        90deg,
+        var(--stripe-orange) 0 2.5rem,
+        var(--stripe-mustard) 2.5rem 5rem,
+        var(--stripe-avocado) 5rem 7.5rem
+    );
+}
+
+/* ===== Masthead ===== */
+.sleeve { max-width: 46rem; margin: 0 auto; padding: 3rem 1.25rem 0; }
+
+.sleeve .site-title {
+    display: inline-block;
+    font-size: clamp(2.2rem, 7vw, 3.4rem);
+    font-weight: 800;
+    letter-spacing: -.01em;
+    color: var(--accent);
+    line-height: 1.1;
+}
+.sleeve .site-title:hover { color: var(--text); text-decoration: none; }
+
+.sleeve .site-info { margin: .4rem 0 1.5rem; color: var(--muted); font-size: 1.05rem; }
+.sleeve .site-title + .sunburst { margin-top: 1.5rem; }
+
+/* ===== Layout ===== */
+.groove { max-width: 46rem; margin: 0 auto; padding: 2.25rem 1.25rem 1rem; }
+
+/* ===== Tracklist (home) ===== */
+.tracklist { list-style: none; margin: 0; padding: 0; }
+
+.track {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.4rem .25rem;
+    border-bottom: .4rem solid var(--line);
+}
+.tracklist .track:last-child { border-bottom: 0; }
+
+.track-no {
+    flex: 0 0 auto;
+    min-width: 4.5rem;
+    font-size: clamp(2.4rem, 8vw, 3.4rem);
+    font-weight: 800;
+    line-height: 1;
+    color: var(--muted);
+    text-align: center;
+}
+.track:hover .track-no { color: var(--accent); }
+
+.track-info { min-width: 0; }
+.track-title { margin: 0 0 .2rem; font-size: 1.35rem; line-height: 1.3; font-weight: 800; }
+.track-title a { color: var(--text); }
+.track-title a::after { content: ""; position: absolute; inset: 0; }
+.track:hover .track-title a { color: var(--accent); }
+.track-title a:hover { text-decoration: none; }
+
+.track-meta { margin: 0; font-size: .9rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+
+.empty-state { text-align: center; color: var(--muted); padding: 4rem 0; }
+
+/* ===== Pagination ===== */
+.pagination {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: .5rem; margin: 3rem 0 0; padding: 0; list-style: none;
+}
+.pagination a, .pagination .current {
+    display: inline-block; min-width: 2.6rem; padding: .45rem .85rem;
+    text-align: center; border: 3px solid var(--line); border-radius: 999px;
+    color: var(--text); font-weight: 700;
+}
+.pagination a:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+.pagination .current { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
+
+/* ===== Single post: striped band header ===== */
+.record { max-width: 42rem; margin: 0 auto; }
+
+.record-head { margin-bottom: 2rem; }
+.record-head .sunburst { margin-bottom: 1.5rem; }
+.record-title {
+    margin: 0 0 .5rem;
+    font-size: clamp(2rem, 6vw, 3rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -.01em;
+}
+.record-meta { margin: 0; color: var(--muted); font-size: .9rem; text-transform: uppercase; letter-spacing: .08em; }
+
+.record-hero {
+    width: 100%;
+    border-radius: 1rem;
+    border: .4rem solid var(--line);
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+}
+
+.record-content h1, .record-content h2, .record-content h3, .record-content h4 {
+    margin: 2.2rem 0 .8rem; line-height: 1.3;
+}
+.record-content p { margin: 0 0 1.2rem; }
+.record-content a { text-decoration: underline; text-underline-offset: 2px; }
+.record-content img { border-radius: .75rem; border: .3rem solid var(--line); }
+.record-content blockquote {
+    margin: 1.6rem 0;
+    padding: .4rem 0 .4rem 1.3rem;
+    border-left: .5rem solid var(--stripe-mustard);
+    border-radius: .25rem;
+    color: var(--muted);
+    font-size: 1.1rem;
+}
+.record-content code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .9em;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: .4rem;
+    padding: .12em .4em;
+}
+.record-content pre {
+    background: var(--surface);
+    border: 2px solid var(--line);
+    border-radius: .75rem;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    line-height: 1.55;
+}
+.record-content pre code { background: none; border: 0; padding: 0; }
+.record-content hr {
+    border: 0;
+    height: .6rem;
+    border-radius: 999px;
+    background: repeating-linear-gradient(
+        90deg,
+        var(--stripe-orange) 0 2rem,
+        var(--stripe-mustard) 2rem 4rem,
+        var(--stripe-avocado) 4rem 6rem
+    );
+    margin: 2.5rem 0;
+}
+.record-content table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; }
+.record-content th, .record-content td { border: 1px solid var(--line); padding: .5rem .75rem; text-align: left; }
+
+.record-return { max-width: 42rem; margin: 2.75rem auto 0; }
+.back-link { display: inline-block; padding: .5rem .75rem .5rem 0; font-weight: 700; }
+
+/* ===== 404 ===== */
+.skip { max-width: 30rem; margin: 0 auto; text-align: center; padding: 3rem 0; }
+.skip-code {
+    font-size: 6rem;
+    margin: 0 0 .5rem;
+    line-height: 1;
+    font-weight: 800;
+    color: var(--accent);
+}
+
+.button {
+    display: inline-block;
+    margin-top: .75rem;
+    padding: .6rem 1.6rem;
+    font-weight: 800;
+    color: var(--accent-contrast);
+    background: var(--accent);
+    border-radius: 999px;
+}
+.button:hover { filter: brightness(.92); color: var(--accent-contrast); text-decoration: none; }
+
+/* ===== Footer ===== */
+.runout {
+    max-width: 46rem;
+    margin: 2.5rem auto 0;
+    padding: 0 1.25rem 3rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: .9rem;
+}
+.runout .sunburst { margin-bottom: 1.5rem; }
+.runout p { margin: .25rem 0; }
+.foot-link { display: inline-block; padding: .4rem .6rem; color: var(--muted); text-decoration: underline; font-weight: 700; }
+.foot-link:hover { color: var(--accent); }

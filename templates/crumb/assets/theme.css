@@ -1,0 +1,236 @@
+/* Dropplets "crumb" theme — warm cream, butter, and cinnamon.
+   Recipe-card blog: rounded serif headings, dotted scallop dividers. */
+
+:root {
+    color-scheme: light dark;
+    --bg: #faf3e7;
+    --surface: #fffaf0;
+    --text: #3d2b1f;
+    --muted: #6e5240;
+    --accent: #8c3f10;
+    --accent-contrast: #fff6ea;
+    --line: #8a6a4f;
+    --focus: #8c3f10;
+    --butter: #f5e3bd;
+    --tip: #f7e9cd;
+    --shadow: 0 2px 4px rgba(101, 67, 33, .08), 0 10px 28px rgba(101, 67, 33, .08);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #241a14;
+        --surface: #2e221a;
+        --text: #f3e6d8;
+        --muted: #c5ab97;
+        --accent: #e8a05c;
+        --accent-contrast: #2a1707;
+        --line: #8a6a50;
+        --focus: #e8a05c;
+        --butter: #3c2c1e;
+        --tip: #3a2a1c;
+        --shadow: 0 2px 6px rgba(0, 0, 0, .45);
+    }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    color: var(--text);
+    background: var(--bg);
+}
+
+h1, h2, h3, h4, .site-title {
+    font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    font-weight: 700;
+}
+
+img { max-width: 100%; height: auto; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Dotted "scallop" rule, the theme signature. */
+.crumb-rule {
+    width: min(14rem, 60%);
+    margin: 1.25rem auto 0;
+    border-top: 4px dotted var(--line);
+}
+
+/* ===== Masthead ===== */
+.pantry-head { text-align: center; padding: 3rem 1.25rem 1.75rem; }
+
+.pantry-head .site-title {
+    font-size: clamp(2rem, 5vw, 2.75rem);
+    color: var(--accent);
+    letter-spacing: .01em;
+}
+.pantry-head .site-title:hover { text-decoration: none; color: var(--text); }
+
+.pantry-head .site-info {
+    margin: .4rem auto 0;
+    max-width: 34rem;
+    font-style: italic;
+    color: var(--muted);
+}
+
+/* ===== Layout: single hearty column ===== */
+.kitchen {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 2.25rem 1.25rem 1rem;
+}
+
+/* ===== Recipe cards (home) ===== */
+.recipe-stack { display: grid; gap: 2.5rem; }
+
+.recipe-card {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 1.25rem;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+.recipe-image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 5 / 2;
+    object-fit: cover;
+}
+
+.recipe-lock {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 5 / 2;
+    font-size: 2.75rem;
+    background: var(--butter);
+}
+
+.recipe-body {
+    padding: 1.4rem 1.6rem 1.5rem;
+    text-align: center;
+    border-top: 4px dotted var(--line);
+}
+
+.recipe-title { margin: 0 0 .3rem; font-size: 1.55rem; line-height: 1.3; }
+.recipe-title a { color: var(--text); }
+.recipe-title a::after { content: ""; position: absolute; inset: 0; }
+.recipe-card:hover .recipe-title a { color: var(--accent); }
+.recipe-title a:hover { text-decoration: none; }
+
+.recipe-byline { margin: 0; font-style: italic; font-size: .95rem; color: var(--muted); }
+
+.empty-state { text-align: center; font-style: italic; color: var(--muted); padding: 4rem 0; }
+
+/* ===== Pagination ===== */
+.pagination {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: .45rem; margin: 2.75rem 0 0; padding: 0; list-style: none;
+}
+.pagination a, .pagination .current {
+    display: inline-block; min-width: 2.5rem; padding: .4rem .8rem;
+    text-align: center; border: 1px dotted var(--line); border-radius: 999px;
+    color: var(--text);
+}
+.pagination a:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+.pagination .current {
+    background: var(--accent); border: 1px solid var(--accent);
+    color: var(--accent-contrast); font-weight: 700;
+}
+
+/* ===== Single post: the recipe page ===== */
+.recipe-page { max-width: 40rem; margin: 0 auto; }
+
+.recipe-head { text-align: center; margin-bottom: 2rem; }
+.recipe-page-title {
+    margin: 0 0 .4rem;
+    font-size: clamp(1.9rem, 5vw, 2.6rem);
+    line-height: 1.25;
+}
+.recipe-page-byline { margin: 0; font-style: italic; color: var(--muted); }
+
+.recipe-hero {
+    width: 100%;
+    border-radius: 1.25rem;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+}
+
+/* Generous, kitchen-counter reading rhythm. */
+.recipe-content { font-size: 1.1rem; line-height: 1.85; }
+.recipe-content h1, .recipe-content h2, .recipe-content h3, .recipe-content h4 {
+    margin: 2.4rem 0 .7rem; line-height: 1.3;
+}
+.recipe-content p { margin: 0 0 1.25rem; }
+.recipe-content a { text-decoration: underline; text-underline-offset: 2px; }
+.recipe-content img { border-radius: .9rem; }
+.recipe-content ul, .recipe-content ol { padding-left: 1.4rem; }
+.recipe-content li { margin-bottom: .4rem; }
+
+/* Blockquotes as cook's tip boxes. */
+.recipe-content blockquote {
+    margin: 1.75rem 0;
+    padding: 1rem 1.4rem;
+    background: var(--tip);
+    border: 1px dotted var(--line);
+    border-radius: 1rem;
+    font-style: italic;
+}
+.recipe-content blockquote p:last-child { margin-bottom: 0; }
+
+.recipe-content code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .9em;
+    background: var(--butter);
+    border-radius: .35rem;
+    padding: .15em .4em;
+}
+.recipe-content pre {
+    background: var(--butter);
+    border: 1px solid var(--line);
+    border-radius: .9rem;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    line-height: 1.55;
+}
+.recipe-content pre code { background: none; padding: 0; }
+.recipe-content hr { border: 0; border-top: 4px dotted var(--line); width: 60%; margin: 2.5rem auto; }
+.recipe-content table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; }
+.recipe-content th, .recipe-content td { border: 1px solid var(--line); padding: .5rem .75rem; text-align: left; }
+
+.recipe-return { max-width: 40rem; margin: 2.5rem auto 0; text-align: center; }
+.back-link { display: inline-block; padding: .5rem .9rem; font-style: italic; }
+
+/* ===== 404 ===== */
+.oops { max-width: 28rem; margin: 0 auto; text-align: center; padding: 3rem 0; }
+.oops-code { font-size: 5.5rem; margin: 0; line-height: 1; color: var(--accent); }
+
+.button {
+    display: inline-block;
+    margin-top: .75rem;
+    padding: .55rem 1.5rem;
+    font-weight: 700;
+    color: var(--accent-contrast);
+    background: var(--accent);
+    border-radius: 999px;
+}
+.button:hover { filter: brightness(.92); color: var(--accent-contrast); text-decoration: none; }
+
+/* ===== Footer ===== */
+.pantry-foot {
+    text-align: center;
+    color: var(--muted);
+    font-size: .9rem;
+    padding: 1rem 1.25rem 2.75rem;
+}
+.pantry-foot .crumb-rule { margin-bottom: 1.5rem; }
+.pantry-foot p { margin: .25rem 0; }
+.foot-link { display: inline-block; padding: .4rem .6rem; color: var(--muted); text-decoration: underline; }
+.foot-link:hover { color: var(--accent); }

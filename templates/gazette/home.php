@@ -2,11 +2,13 @@
 use function Dropplets\e;
 use function Dropplets\dpl_post_url;
 use function Dropplets\dpl_excerpt;
+use function Dropplets\dpl_pagination;
 require __DIR__ . '/header.php';
 $dateFormat = i18n('dateformat', false);
 $lead = $allPosts[0] ?? null;
 $rest = array_slice($allPosts, 1);
 ?>
+<h1 class="sr-only"><?= e($siteName) ?></h1>
 <?php if ($lead === null): ?>
     <p class="empty-state">Nothing here yet.</p>
 <?php else: ?>
@@ -36,11 +38,5 @@ $rest = array_slice($allPosts, 1);
         </div>
     <?php endif; ?>
 <?php endif; ?>
-<?php if ($numPages > 1): ?>
-    <nav aria-label="Pages"><ul class="pagination">
-        <?php if ($page > 1): ?><li><a href="<?= e($page === 2 ? $router->generate('home') : $router->generate('posts', ['page' => $page - 1])) ?>" rel="prev">&larr; Later editions</a></li><?php endif; ?>
-        <li class="page-state">Page <?= (int) $page ?> of <?= (int) $numPages ?></li>
-        <?php if ($page < $numPages): ?><li><a href="<?= e($router->generate('posts', ['page' => $page + 1])) ?>" rel="next">Earlier editions &rarr;</a></li><?php endif; ?>
-    </ul></nav>
-<?php endif; ?>
+<?php dpl_pagination($router, $page, $numPages); ?>
 <?php require __DIR__ . '/footer.php'; ?>

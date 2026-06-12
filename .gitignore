@@ -12,3 +12,6 @@
 
 # OS noise
 .DS_Store
+
+# Generated theme screenshots
+/screenshots/

@@ -3,7 +3,7 @@ use function Dropplets\e;
 require __DIR__ . '/header.php';
 ?>
 <div class="center-page">
-    <p class="display">404</p>
+    <h1 class="display">404</h1>
     <p>That page could not be found.</p>
     <a class="button" href="<?= e($router->generate('home')) ?>">Go Home</a>
 </div>

@@ -1,14 +1,19 @@
 /* bloom — soft pastels, rounded cards, friendly. Original theme. */
 
 :root {
+    color-scheme: light dark;
     --bg: #fdf7fb;
-    --card: #ffffff;
+    --surface: #ffffff;
+    --card: var(--surface);
     --text: #4a3f4c;
     --heading: #2e2331;
-    --muted: #a292a6;
+    --muted: #7d6c81;
     --border: #f3e3ee;
-    --accent: #c2559b;
-    --accent-2: #7b6fd0;
+    --line: #9a85a0;
+    --accent: #b04489;
+    --accent-2: #6153c5;
+    --accent-contrast: #ffffff;
+    --focus: var(--accent);
     --grad: linear-gradient(120deg, #ffd6e8, #e3d9ff 55%, #d2f0e8);
     --shadow: 0 10px 30px rgba(160, 100, 150, .12);
     --round: ui-rounded, -apple-system, "Segoe UI", system-ui, sans-serif;
@@ -17,13 +22,16 @@
 @media (prefers-color-scheme: dark) {
     :root {
         --bg: #1d1722;
-        --card: #271f2e;
+        --surface: #271f2e;
         --text: #d8cdde;
         --heading: #f3ebf7;
-        --muted: #84768c;
+        --muted: #9d8fa5;
         --border: #372c40;
+        --line: #8a7c92;
         --accent: #ef91cd;
         --accent-2: #a99cf0;
+        --accent-contrast: #381129;
+        --focus: var(--accent);
         --grad: linear-gradient(120deg, #4d2b44, #3a3060 55%, #234a40);
         --shadow: 0 10px 30px rgba(0, 0, 0, .35);
     }
@@ -39,7 +47,7 @@ img { max-width: 100%; height: auto; }
 .masthead { background: var(--grad); text-align: center; padding: 4rem 1.25rem 3.5rem; border-radius: 0 0 2.5rem 2.5rem; }
 .site-title { font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 800; color: var(--heading); letter-spacing: -.02em; }
 .site-title:hover { color: var(--accent); text-decoration: none; }
-.site-info { color: var(--heading); opacity: .65; margin: .5rem auto 0; max-width: 36rem; }
+.site-info { color: var(--heading); opacity: .75; margin: .5rem auto 0; max-width: 36rem; }
 
 .wrap { max-width: 72rem; margin: 0 auto; padding: 2.5rem 1.25rem; }
 
@@ -62,7 +70,7 @@ img { max-width: 100%; height: auto; }
 .pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin: 3rem 0 0; padding: 0; list-style: none; }
 .pagination a, .pagination .current { display: inline-block; min-width: 2.6rem; padding: .45rem .9rem; text-align: center; border-radius: 2rem; background: var(--card); border: 1px solid var(--border); color: var(--text); }
 .pagination a:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
-.pagination .current { background: linear-gradient(120deg, var(--accent), var(--accent-2)); border: 0; color: #fff; font-weight: 700; }
+.pagination .current { background: linear-gradient(120deg, var(--accent), var(--accent-2)); border: 0; color: var(--accent-contrast); font-weight: 700; }
 
 .post { max-width: 42rem; margin: 0 auto; }
 .post-header { text-align: center; margin-bottom: 1.75rem; }
@@ -81,13 +89,14 @@ img { max-width: 100%; height: auto; }
 .post-content hr { border: 0; border-top: 1px solid var(--border); margin: 2.5rem 0; }
 
 .post-footer { max-width: 42rem; margin: 3rem auto 0; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+.post-footer a { display: inline-block; padding: .3rem .45rem; margin-left: -.45rem; }
 
 .center-page { max-width: 28rem; margin: 0 auto; text-align: center; padding: 3rem 0; }
 .center-page .display { font-size: 5rem; font-weight: 800; margin: 0; background: linear-gradient(120deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.center-page .button, .button { display: inline-block; padding: .5rem 1.4rem; font-weight: 700; color: #fff; background: linear-gradient(120deg, var(--accent), var(--accent-2)); border-radius: 2rem; }
+.center-page .button, .button { display: inline-block; padding: .5rem 1.4rem; font-weight: 700; color: var(--accent-contrast); background: linear-gradient(120deg, var(--accent), var(--accent-2)); border-radius: 2rem; }
 .button:hover { text-decoration: none; filter: brightness(1.05); }
 
-input[type="password"].field { width: 100%; padding: .6rem .9rem; font-size: 1rem; color: var(--text); background: var(--card); border: 1px solid var(--border); border-radius: 1rem; margin: .75rem 0 1rem; }
+input[type="password"].field { width: 100%; padding: .6rem .9rem; font-size: 1rem; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 1rem; margin: .75rem 0 1rem; }
 
 .site-footer { text-align: center; color: var(--muted); font-size: .88rem; padding: 2.5rem 1.25rem 3rem; }
-.site-footer a { color: var(--muted); text-decoration: underline; }
+.site-footer a { color: var(--muted); text-decoration: underline; display: inline-block; padding: .3rem .45rem; }

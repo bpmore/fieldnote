@@ -2,24 +2,37 @@
    Original theme inspired by the layout direction of benlk's "Bink". */
 
 :root {
+    color-scheme: light dark;
     --bg: #fdfdfc;
+    --surface: var(--bg);
     --text: #1c1c1c;
     --heading: #000;
-    --muted: #777;
+    --muted: #707070;
     --rule: #e8e6e1;
+    --line: #8a857c;
     --brand: #e8923a;
-    --link: #1c5fa8;
+    --brand-text: #a05a00;
+    --accent: #1c5fa8;
+    --link: var(--accent);
+    --accent-contrast: #ffffff;
+    --focus: var(--accent);
     --cond: "Avenir Next Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
         --bg: #15140f;
+        --surface: var(--bg);
         --text: #ded8cb;
         --heading: #f6f1e5;
         --muted: #8d8678;
         --rule: #2e2c25;
-        --link: #82aee0;
+        --line: #807a6a;
+        --brand: #e8923a;
+        --brand-text: var(--brand);
+        --accent: #82aee0;
+        --accent-contrast: #0e2238;
+        --focus: var(--accent);
     }
 }
 
@@ -43,11 +56,11 @@ img { max-width: 100%; height: auto; }
 
 .site-title { margin: 0; font-family: var(--cond); font-size: 3rem; line-height: 1.05; }
 .site-title a { color: var(--heading); }
-.site-title a:hover { color: var(--brand); text-decoration: none; }
+.site-title a:hover { color: var(--brand-text); text-decoration: none; }
 .site-info { color: var(--muted); margin: .6rem 0 0; max-width: 34rem; }
 
-.masthead-links { list-style: none; margin: 1rem 0 0; padding: 0; display: flex; gap: 1.25rem; font-size: .9rem; }
-.masthead-links a { color: var(--brand); font-weight: 600; }
+.masthead-links { list-style: none; margin: .75rem 0 0; padding: 0; display: flex; gap: 1rem; font-size: .9rem; }
+.masthead-links a { color: var(--brand-text); font-weight: 600; display: inline-block; padding: .3rem .35rem; margin-left: -.35rem; }
 
 .wrap { max-width: 50rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
 
@@ -63,11 +76,11 @@ img { max-width: 100%; height: auto; }
 .row-entry:last-of-type { border-bottom: 0; }
 
 .row-meta { color: var(--muted); font-size: .85rem; line-height: 1.5; text-align: right; padding-top: .45rem; }
-.row-meta time { display: block; font-weight: 700; color: var(--brand); }
+.row-meta time { display: block; font-weight: 700; color: var(--brand-text); }
 
 .entry-title { margin: 0 0 .45rem; font-family: var(--cond); font-size: 1.7rem; line-height: 1.2; }
 .entry-title a { color: var(--heading); }
-.entry-title a:hover { color: var(--brand); text-decoration: none; }
+.entry-title a:hover { color: var(--brand-text); text-decoration: none; }
 .entry-excerpt { margin: 0; }
 
 @media (max-width: 640px) {
@@ -80,9 +93,9 @@ img { max-width: 100%; height: auto; }
 
 .pagination {
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .5rem;
     list-style: none;
     margin: 2.5rem 0 0;
     padding: 1rem 0 0;
@@ -90,12 +103,13 @@ img { max-width: 100%; height: auto; }
     font-size: .9rem;
 }
 
-.page-state { color: var(--muted); margin: 0 auto; }
+.pagination a, .pagination .current { padding: .2rem .6rem; }
+.pagination .current { color: var(--muted); font-weight: 700; }
 
 .post-header { margin: 2.25rem 0 1.5rem; }
 .post-title { font-family: var(--cond); color: var(--heading); font-size: 2.6rem; line-height: 1.1; margin: 0 0 .5rem; }
 .post-meta { color: var(--muted); font-size: .9rem; margin: 0; }
-.post-meta::before { content: "— "; color: var(--brand); }
+.post-meta::before { content: "— "; color: var(--brand-text); }
 .post-hero { margin: 1.5rem 0 2rem; border-radius: 4px; }
 
 .post-content h1, .post-content h2, .post-content h3 { font-family: var(--cond); color: var(--heading); line-height: 1.25; margin: 2rem 0 .6rem; }
@@ -107,9 +121,11 @@ img { max-width: 100%; height: auto; }
 .post-content pre code { background: none; padding: 0; }
 
 .post-footer { margin-top: 3rem; padding-top: 1rem; border-top: 6px solid var(--brand); font-size: .9rem; }
+.post-footer a { display: inline-block; padding: .3rem .4rem; margin-left: -.4rem; }
 
 .center-page { text-align: center; padding: 4rem 0; }
-.center-page .display { font-family: var(--cond); font-size: 6rem; color: var(--brand); margin: 0; }
+.center-page .display { font-family: var(--cond); font-size: 6rem; color: var(--brand-text); margin: 0; }
+.center-page a { display: inline-block; padding: .35rem .9rem; }
 
 .site-footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 1rem 1.25rem 3rem; }
-.site-footer a { color: var(--muted); text-decoration: underline; }
+.site-footer a { color: var(--muted); text-decoration: underline; display: inline-block; padding: .3rem .45rem; }
