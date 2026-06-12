@@ -1,8 +1,48 @@
-# Fieldnote 3.0
+# Fieldnote
 
-A minimalist markdown blogging platform, formerly known as Dropplets. This is a modernized, security-hardened, and renamed fork of [johnroper100/dropplets](https://github.com/johnroper100/dropplets) (which was itself a continuation of the original Dropplets).
+**A markdown blog that respects your readers.** No database, no JavaScript,
+no tracking, no build step. Write a post, pick one of 70 themes, done.
+Every page your visitors see is a single HTML file and one small stylesheet.
 
-No database, flat-file posts, a single password to manage everything, and a simple template system. The goals of the original are unchanged; the internals are rebuilt for PHP 8 and current security practice.
+Fieldnote (formerly Dropplets) is a modernized, security-hardened fork of
+[johnroper100/dropplets](https://github.com/johnroper100/dropplets), rebuilt
+for PHP 8 and current security practice.
+
+## Why Fieldnote
+
+**Accessibility first, enforced by a machine.** All 70 themes meet
+WCAG 2.2 AA — in light mode *and* dark mode. That's not a pledge, it's a
+gate: `php bin/audit-themes.php` computes the contrast ratio of every
+color pair in every theme in both schemes, lints for skip links, heading
+order, focus visibility, and ARIA, and fails the build if a single theme
+slips. Keyboard users get a skip link and a visible focus ring on every
+theme. Motion stops dead under `prefers-reduced-motion`. Layouts reflow at
+320 px with no horizontal scroll, so the site works at 400 % zoom.
+
+**Zero JavaScript, genuinely.** Public pages ship markup and one 4–8 KB
+stylesheet. Nothing else. No webfonts, no CDNs, no analytics snippet
+phoning home — every asset is served from your own domain. Pages are fast
+because there is nothing to be slow.
+
+**70 themes, light and dark built into each one.** Photography walls,
+recipe cards, broadsheet front pages, phosphor terminals, wanted posters,
+risograph overprints. Every theme answers `prefers-color-scheme`, so your
+blog follows each reader's preference automatically. The full roster is
+below.
+
+**A single password — and real two-factor.** One password runs the whole
+site, protected by bcrypt, rate limiting, and optional TOTP two-factor
+with single-use recovery codes. Works with 1Password, Google
+Authenticator, Authy, Apple Passwords, any standard authenticator.
+
+**Flat files you can grep.** Posts live in a flat-file store, config is a
+PHP array, images are files on disk. Back up your blog with `cp -R`.
+Migrate it with `rsync`. No database server to run, tune, or lose.
+
+**Hardened where it counts.** CSRF tokens on every form, markdown rendered
+in safe mode (raw HTML and `javascript:` URLs neutralized), SSRF-safe
+remote image fetching with DNS pinning, destructive actions POST-only,
+secrets and content stored entirely outside the web root.
 
 ## Requirements
 
@@ -66,7 +106,7 @@ data/          <- config.php and siteDatabase/ (NOT web-accessible)
 vendor/        <- Composer dependencies
 ```
 
-All assets are self-hosted (`public/static/`): no CDNs, no webfonts. Public pages ship a single ~7 KB stylesheet and no JavaScript, with automatic dark mode.
+All assets are self-hosted: no CDNs, no webfonts. Public pages ship a single 4–8 KB theme stylesheet and no JavaScript, with automatic dark mode.
 
 Keeping `data/` outside `public/` means your password hash and post store are never reachable over HTTP, regardless of web server.
 
