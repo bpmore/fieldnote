@@ -199,8 +199,21 @@ $router->map('GET', '/themes/[:theme]/[**:file]', function ($theme, $file) use (
     exit;
 }, 'themeAsset');
 
-$router->map('GET', '/feed', function () use ($requireConfig, $siteConfig, $blogStore, $router) {
+$router->map('GET', '/feed', function () use ($requireConfig, $siteConfig, $blogStore, $publishedCount, $router) {
     $requireConfig();
+
+    // Validators cover everything that can change an item: the post set
+    // (ids/dates/count), titles, slugs, bodies, and protection status —
+    // so an edit to an already-published post busts the ETag too.
+    $posts  = $blogStore->findBy(['draft', '=', false], ['date' => 'desc'], 20);
+    $newest = (int) ($posts[0]['date'] ?? 0);
+    $seed   = $siteConfig['name'] . '|' . $publishedCount . '|' . sha1(serialize(array_map(
+        static fn (array $p): array => [
+            $p['_id'], $p['date'], $p['title'] ?? '', $p['slug'] ?? '', $p['content'] ?? '', !empty($p['password']),
+        ],
+        $posts
+    )));
+    fn_conditional_get($seed, $newest ?: time());
 
     $base = rtrim((string) $siteConfig['domain'], '/');
     if ($base === '') {
@@ -221,7 +234,6 @@ $router->map('GET', '/feed', function () use ($requireConfig, $siteConfig, $blog
     echo '<description>' . $xml($siteConfig['info']) . '</description>' . "\n";
     echo '<atom:link href="' . $xml($base . $router->generate('feed')) . '" rel="self" type="application/rss+xml"/>' . "\n";
 
-    $posts = $blogStore->findBy(['draft', '=', false], ['date' => 'desc'], 20);
     foreach ($posts as $post) {
         // Never leak the body of a password-protected post into the feed.
         if (!empty($post['password'])) {

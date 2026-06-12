@@ -347,6 +347,36 @@ function fn_invalidate_published_count(): void
 }
 
 /**
+ * Conditional-GET plumbing for feed-style responses. Sends ETag,
+ * Last-Modified, and Cache-Control, then ends the request with an empty 304
+ * when the client's validators still match. Call before producing the body —
+ * feed readers poll constantly and shouldn't cost a render each time.
+ */
+function fn_conditional_get(string $etagSeed, int $lastModified): void
+{
+    $etag = '"' . sha1($etagSeed) . '"';
+    header('ETag: ' . $etag);
+    header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $lastModified) . ' GMT');
+    header('Cache-Control: max-age=300');
+
+    $ifNoneMatch = trim((string) ($_SERVER['HTTP_IF_NONE_MATCH'] ?? ''));
+    if ($ifNoneMatch !== '') {
+        // Weak comparison: caches may have prefixed W/ on the way through.
+        if ($ifNoneMatch === '*' || str_replace('W/', '', $ifNoneMatch) === $etag) {
+            http_response_code(304);
+            exit;
+        }
+        return; // a presented ETag takes precedence over If-Modified-Since
+    }
+
+    $ifModifiedSince = (string) ($_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? '');
+    if ($ifModifiedSince !== '' && strtotime($ifModifiedSince) >= $lastModified) {
+        http_response_code(304);
+        exit;
+    }
+}
+
+/**
  * Render the homepage (page 1) through a given template directory. Shared by
  * the public home route and the admin theme preview so the preview always
  * renders exactly what the theme would show live.
