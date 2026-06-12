@@ -71,3 +71,10 @@ names — the auditor resolves one level of `var()` indirection.
 Pagination gets a 24 px floor from the baseline. Any other standalone link
 (footer RSS, back-links, 404 button) needs enough padding to reach 24 × 24 px,
 unless it genuinely sits inline in a sentence (WCAG 2.5.8 inline exception).
+
+## Optional helpers
+
+`Fieldnote\fn_tag_links($router, $post)` renders the post's tags as an
+aria-labelled nav of links to `/tag/<name>` pages (nothing when untagged).
+Opt in from `post.php` the way `gazette` and `liquid-new` do; base layout
+for `.tag-list` ships in the shared a11y CSS, visual styling is yours.

@@ -25,6 +25,9 @@ $uploadLimitMb = rtrim(rtrim(number_format($uploadLimit / 1048576, 1), '0'), '.'
         <input type="text" name="blogPostAuthor" class="blogPostAuthor form-control my-2"
                placeholder="<?php i18n("write_post_author_placeholder"); ?>" required
                value="<?= e($post['author'] ?? $siteConfig['author'] ?? '') ?>" />
+        <input type="text" name="blogPostTags" class="form-control my-2"
+               placeholder="Tags, comma-separated (optional)"
+               value="<?= e(implode(', ', (array) ($post['tags'] ?? []))) ?>" />
         <?php /* Deliberately never pre-filled: stored URLs are site-relative
                  (rejected by type="url"), and round-tripping the old absolute
                  URL made every save re-download and duplicate the image. */ ?>

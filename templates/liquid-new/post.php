@@ -21,6 +21,7 @@ $parser->setSafeMode(true);
     <div class="post-content">
         <?= $parser->text($post['content']) ?>
     </div>
+    <?php Fieldnote\fn_tag_links($router, $post); ?>
 </article>
 <div class="post-footer">
     <a href="<?= e($router->generate('home')) ?>">&larr; Back to all posts</a>

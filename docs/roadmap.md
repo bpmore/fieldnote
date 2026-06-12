@@ -196,7 +196,7 @@ page; badge off by default.
 
 ## Phase 2 — table stakes the minimal competitors lack
 
-### 2.1 Tags (M)
+### 2.1 Tags (M) — SHIPPED
 
 The biggest content-model gap vs every competitor.
 
@@ -249,7 +249,7 @@ Dashboard shows "scheduled for …" badge on such drafts.
 first request after that minute, with correct permalink date; editing a
 scheduled post doesn't publish it early; no cron anywhere.
 
-### 2.4 sitemap.xml + JSON Feed (S)
+### 2.4 sitemap.xml + JSON Feed (S) — SHIPPED
 
 **Plan:** `/sitemap.xml`: home + every published, non-password post
 (`lastmod` from `publishedAt`), same query shape as the feed; referenced

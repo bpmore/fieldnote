@@ -202,18 +202,9 @@ $router->map('GET', '/themes/[:theme]/[**:file]', function ($theme, $file) use (
 $router->map('GET', '/feed', function () use ($requireConfig, $siteConfig, $blogStore, $publishedCount, $router) {
     $requireConfig();
 
-    // Validators cover everything that can change an item: the post set
-    // (ids/dates/count), titles, slugs, bodies, and protection status —
-    // so an edit to an already-published post busts the ETag too.
     $posts  = $blogStore->findBy(['draft', '=', false], ['date' => 'desc'], 20);
     $newest = (int) ($posts[0]['date'] ?? 0);
-    $seed   = $siteConfig['name'] . '|' . $publishedCount . '|' . sha1(serialize(array_map(
-        static fn (array $p): array => [
-            $p['_id'], $p['date'], $p['title'] ?? '', $p['slug'] ?? '', $p['content'] ?? '', !empty($p['password']),
-        ],
-        $posts
-    )));
-    fn_conditional_get($seed, $newest ?: time());
+    fn_conditional_get(fn_feed_seed('rss', $posts, $publishedCount, $siteConfig), $newest ?: time());
 
     $base = rtrim((string) $siteConfig['domain'], '/');
     if ($base === '') {
@@ -245,12 +236,132 @@ $router->map('GET', '/feed', function () use ($requireConfig, $siteConfig, $blog
         echo '<link>' . $xml($url) . '</link>' . "\n";
         echo '<guid isPermaLink="true">' . $xml($url) . '</guid>' . "\n";
         echo '<pubDate>' . $xml(date(DATE_RSS, (int) $post['date'])) . '</pubDate>' . "\n";
+        foreach ((array) ($post['tags'] ?? []) as $tag) {
+            echo '<category>' . $xml((string) $tag) . '</category>' . "\n";
+        }
         echo '<description>' . $xml($parser->text((string) $post['content'])) . '</description>' . "\n";
         echo '</item>' . "\n";
     }
     echo '</channel></rss>';
     exit;
 }, 'feed');
+
+$router->map('GET', '/feed.json', function () use ($requireConfig, $siteConfig, $blogStore, $publishedCount, $router) {
+    $requireConfig();
+
+    $posts  = $blogStore->findBy(['draft', '=', false], ['date' => 'desc'], 20);
+    $newest = (int) ($posts[0]['date'] ?? 0);
+    fn_conditional_get(fn_feed_seed('json', $posts, $publishedCount, $siteConfig), $newest ?: time());
+
+    $base = rtrim((string) $siteConfig['domain'], '/');
+    if ($base === '') {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $base   = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+    }
+
+    $parser = new \ParsedownExtra();
+    $parser->setSafeMode(true);
+
+    $items = [];
+    foreach ($posts as $post) {
+        // Same rule as RSS: protected bodies never leak into a feed.
+        if (!empty($post['password'])) {
+            continue;
+        }
+        $url  = $base . fn_post_url($router, $post);
+        $item = [
+            'id'             => $url,
+            'url'            => $url,
+            'title'          => (string) $post['title'],
+            'content_html'   => $parser->text((string) $post['content']),
+            'date_published' => date(DATE_ATOM, (int) $post['date']),
+            'authors'        => [['name' => (string) ($post['author'] ?? '')]],
+        ];
+        if (!empty($post['tags'])) {
+            $item['tags'] = array_values((array) $post['tags']);
+        }
+        $items[] = $item;
+    }
+
+    header('Content-Type: application/feed+json; charset=utf-8');
+    echo json_encode([
+        'version'       => 'https://jsonfeed.org/version/1.1',
+        'title'         => $siteConfig['name'] !== '' ? $siteConfig['name'] : 'Fieldnote',
+        'home_page_url' => $base . $router->generate('home'),
+        'feed_url'      => $base . $router->generate('jsonFeed'),
+        'description'   => (string) $siteConfig['info'],
+        'items'         => $items,
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    exit;
+}, 'jsonFeed');
+
+$router->map('GET', '/sitemap.xml', function () use ($requireConfig, $siteConfig, $blogStore, $publishedCount, $router) {
+    $requireConfig();
+
+    $posts  = $blogStore->findBy(['draft', '=', false], ['date' => 'desc']);
+    $newest = (int) ($posts[0]['date'] ?? 0);
+    fn_conditional_get(fn_feed_seed('sitemap', $posts, $publishedCount, $siteConfig), $newest ?: time());
+
+    $base = rtrim((string) $siteConfig['domain'], '/');
+    if ($base === '') {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $base   = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+    }
+    $xml = static fn (string $v): string => htmlspecialchars($v, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+
+    header('Content-Type: application/xml; charset=utf-8');
+    echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+    echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+    echo '<url><loc>' . $xml($base . $router->generate('home')) . '</loc>'
+        . ($newest > 0 ? '<lastmod>' . date('Y-m-d', $newest) . '</lastmod>' : '') . '</url>' . "\n";
+    foreach ($posts as $post) {
+        // Protected posts are findable by their owner, not by crawlers.
+        if (!empty($post['password'])) {
+            continue;
+        }
+        echo '<url><loc>' . $xml($base . fn_post_url($router, $post)) . '</loc>'
+            . '<lastmod>' . date('Y-m-d', (int) ($post['publishedAt'] ?? $post['date'])) . '</lastmod></url>' . "\n";
+    }
+    echo '</urlset>';
+    exit;
+}, 'sitemap');
+
+$router->map('GET', '/robots.txt', function () use ($siteConfig, $router) {
+    $base = rtrim((string) $siteConfig['domain'], '/');
+    if ($base === '') {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $base   = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+    }
+    header('Content-Type: text/plain; charset=utf-8');
+    echo "User-agent: *\n"
+        . "Disallow: /dashboard\n"
+        . "Disallow: /admin/\n"
+        . "Disallow: /login\n"
+        . "Disallow: /settings\n"
+        . "\n"
+        . 'Sitemap: ' . $base . $router->generate('sitemap') . "\n";
+    exit;
+}, 'robots');
+
+// Tag pages: published posts carrying the tag, rendered through the theme's
+// home view (same shape as the homepage; tags are slugs, so URLs stay clean).
+$router->map('GET', '/tag/[:tag]', function ($tag) use ($requireConfig, $siteConfig, $blogStore, $imageStore, $router, $notFound) {
+    $requireConfig();
+    $tag = (string) $tag;
+    $matching = array_values(array_filter(
+        $blogStore->findBy(['draft', '=', false], ['date' => 'desc']),
+        static fn (array $p): bool => in_array($tag, (array) ($p['tags'] ?? []), true)
+    ));
+    if ($matching === []) {
+        $notFound();
+    }
+    $allPosts = array_map(fn ($p) => fn_with_image($p, $imageStore), array_slice($matching, 0, 50));
+    $page     = 1;
+    $numPages = 1; // fn_pagination renders nothing for a single page
+    $limit    = count($allPosts);
+    $pageTitle = 'Tagged: ' . $tag;
+    require fn_template_dir($siteConfig['template']) . '/home.php';
+}, 'tag');
 
 // ---------------------------------------------------------------------------
 // Authenticated, state-changing routes
@@ -320,6 +431,7 @@ $router->map('GET|POST', '/post/[i:id]/edit', function ($id) use ($requireConfig
         }
         $post['title']   = $newTitle;
         $post['author']  = fn_clean($_POST['blogPostAuthor']);
+        $post['tags']    = fn_parse_tags((string) ($_POST['blogPostTags'] ?? ''));
         $post['content'] = (string) $_POST['blogPostContent']; // markdown stored raw, escaped at render
         $post['password'] = fn_hash_post_password($_POST['blogPostPassword'] ?? '', $post['password'] ?? '');
 
@@ -356,6 +468,7 @@ $router->map('GET|POST', '/write', function () use ($requireConfig, $requireAuth
             'date'     => time(),
             'draft'    => true,
             'author'   => fn_clean($_POST['blogPostAuthor']),
+            'tags'     => fn_parse_tags((string) ($_POST['blogPostTags'] ?? '')),
             'content'  => (string) $_POST['blogPostContent'],
             'password' => fn_hash_post_password($_POST['blogPostPassword'] ?? '', ''),
         ];

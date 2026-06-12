@@ -153,6 +153,50 @@ function fn_slugify(string $title): string
 }
 
 /**
+ * Normalize a comma-separated tag string into unique slugs, capped at 8.
+ * Tags share the post slug alphabet so tag URLs are always clean.
+ *
+ * @return string[]
+ */
+function fn_parse_tags(string $input): array
+{
+    $tags = [];
+    foreach (explode(',', $input) as $raw) {
+        if (trim($raw) === '') {
+            continue;
+        }
+        $slug = fn_slugify($raw);
+        if (!in_array($slug, $tags, true)) {
+            $tags[] = $slug;
+        }
+        if (count($tags) === 8) {
+            break;
+        }
+    }
+    return $tags;
+}
+
+/**
+ * Tag list for a post: an aria-labelled nav of links to tag pages. Themes
+ * opt in by calling it (the fn_pagination pattern) — no contract change;
+ * layout plumbing for .tag-list lives in fn_a11y_base_css().
+ *
+ * @param array<string,mixed> $post
+ */
+function fn_tag_links(\AltoRouter $router, array $post): void
+{
+    $tags = array_filter(array_map('strval', (array) ($post['tags'] ?? [])));
+    if ($tags === []) {
+        return;
+    }
+    echo '<nav class="tags" aria-label="Tags"><ul class="tag-list">' . "\n";
+    foreach ($tags as $tag) {
+        echo '<li><a href="' . e($router->generate('tag', ['tag' => $tag])) . '">' . e($tag) . '</a></li>' . "\n";
+    }
+    echo '</ul></nav>' . "\n";
+}
+
+/**
  * A slug unique across the blog store, appending -2, -3, ... on collision.
  * $excludeId lets a post keep its own slug when re-saved.
  */
@@ -187,6 +231,8 @@ function fn_a11y_base_css(): string
 .pagination li{margin:0}
 .pagination a,.pagination .current{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:24px}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.tag-list{display:flex;flex-wrap:wrap;gap:.5rem;list-style:none;margin:.5rem 0;padding:0}
+.tag-list a{display:inline-flex;align-items:center;min-height:24px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 CSS;
 }
@@ -336,6 +382,7 @@ function fn_render_head(array $siteConfig, \AltoRouter $router, string $pageTitl
     }
     echo '<link rel="icon" href="' . $base . '/logo.svg" type="image/svg+xml">' . "\n";
     echo '<link rel="alternate" type="application/rss+xml" title="' . e($siteName) . '" href="' . e($router->generate('feed')) . '">' . "\n";
+    echo '<link rel="alternate" type="application/feed+json" title="' . e($siteName) . '" href="' . e($router->generate('jsonFeed')) . '">' . "\n";
     if ($canonical !== '') {
         echo '<link rel="canonical" href="' . e($canonical) . '">' . "\n";
         echo '<meta property="og:url" content="' . e($canonical) . '">' . "\n";
@@ -396,6 +443,24 @@ function fn_invalidate_published_count(): void
  * when the client's validators still match. Call before producing the body —
  * feed readers poll constantly and shouldn't cost a render each time.
  */
+/**
+ * ETag seed for syndication endpoints (RSS, JSON feed, sitemap): every field
+ * that can change an item, so edits to already-published posts bust caches.
+ *
+ * @param array<int,array<string,mixed>> $posts
+ * @param array<string,mixed>            $siteConfig
+ */
+function fn_feed_seed(string $route, array $posts, int $publishedCount, array $siteConfig): string
+{
+    return $route . '|' . $siteConfig['name'] . '|' . $publishedCount . '|' . sha1(serialize(array_map(
+        static fn (array $p): array => [
+            $p['_id'], $p['date'], $p['title'] ?? '', $p['slug'] ?? '',
+            $p['content'] ?? '', !empty($p['password']), $p['tags'] ?? [],
+        ],
+        $posts
+    )));
+}
+
 function fn_conditional_get(string $etagSeed, int $lastModified): void
 {
     $etag = '"' . sha1($etagSeed) . '"';

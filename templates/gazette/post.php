@@ -12,6 +12,7 @@ $parser->setSafeMode(true);
     </header>
     <?php if (!empty($post['imageUrl'])): ?><img class="post-hero" src="<?= e($post['imageUrl']) ?>" alt="<?= e(fn_image_alt($post)) ?>"><?php endif; ?>
     <div class="post-content"><?= $parser->text($post['content']) ?></div>
+    <?php Fieldnote\fn_tag_links($router, $post); ?>
 </article>
 <div class="post-footer"><a href="<?= e($router->generate('home')) ?>">&larr; Back to all posts</a></div>
 <?php require __DIR__ . '/footer.php'; ?>

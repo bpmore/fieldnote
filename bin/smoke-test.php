@@ -60,7 +60,7 @@ $blog = new Store('blog', $tmp . '/data/siteDatabase', ['timeout' => false]);
 $blog->insert([
     'title' => 'Hello World', 'slug' => 'hello-world', 'author' => 'Tester',
     'date' => time() - 86400, 'publishedAt' => time() - 86400, 'draft' => false,
-    'content' => 'A **published** fixture post.', 'password' => '',
+    'content' => 'A **published** fixture post.', 'password' => '', 'tags' => ['notes', 'testing'],
 ]);
 $blog->insert([
     'title' => 'Locked Post', 'slug' => 'locked-post', 'author' => 'Tester',
@@ -195,8 +195,27 @@ check('unknown URL 404s', $s === 404, "status $s");
 [$s, $h, $b] = req('GET', "$base/feed");
 check('feed renders with validators', $s === 200 && isset($h['etag'], $h['last-modified']) && str_contains($b, '<rss'), "status $s");
 check('feed excludes protected bodies', !str_contains($b, 'SENTINEL-PROTECTED-BODY'));
+check('feed carries tag categories', str_contains($b, '<category>notes</category>'));
 [$s, , $b] = req('GET', "$base/feed", ['headers' => ['If-None-Match: ' . ($h['etag'] ?? '')]]);
 check('feed conditional GET 304s', $s === 304 && $b === '', "status $s");
+
+// ----------------------------------------------------- tags + syndication --
+
+[$s, , $b] = req('GET', "$base/tag/notes");
+check('tag page lists tagged post', $s === 200 && str_contains($b, 'Hello World'), "status $s");
+[$s] = req('GET', "$base/tag/never-used");
+check('unknown tag 404s', $s === 404, "status $s");
+
+[$s, , $b] = req('GET', "$base/feed.json");
+$json = json_decode($b, true);
+check('JSON feed valid with items', $s === 200 && ($json['version'] ?? '') === 'https://jsonfeed.org/version/1.1' && count($json['items'] ?? []) >= 1, "status $s");
+check('JSON feed excludes protected, includes tags', !str_contains($b, 'SENTINEL-PROTECTED-BODY') && in_array('notes', $json['items'][0]['tags'] ?? [], true));
+
+[$s, , $b] = req('GET', "$base/sitemap.xml");
+check('sitemap lists posts, omits protected', $s === 200 && str_contains($b, 'hello-world') && !str_contains($b, 'locked-post'), "status $s");
+
+[$s, , $b] = req('GET', "$base/robots.txt");
+check('robots.txt points at sitemap', $s === 200 && str_contains($b, 'Sitemap:') && str_contains($b, '/sitemap.xml'), "status $s");
 
 // ------------------------------------------------------------ auth gating --
 

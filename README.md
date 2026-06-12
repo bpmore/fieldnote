@@ -105,7 +105,13 @@ Recovery: each recovery code works once in place of a TOTP code. If you lose
 both the authenticator and the codes, delete `data/totp.json` on the server to
 fall back to password-only login.
 
-An RSS feed of published posts is available at `/feed`.
+Posts take comma-separated **tags**; each tag gets a page at `/tag/<name>`,
+and tags flow into both feeds as categories.
+
+Syndication and discovery come built in: RSS at `/feed`, a JSON Feed at
+`/feed.json`, a sitemap at `/sitemap.xml` (referenced from `/robots.txt`) —
+all answering conditional requests with 304s so feed readers and crawlers
+cost you nothing between posts.
 
 ## Project layout
 
