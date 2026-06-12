@@ -284,7 +284,7 @@ screen first: "will create N posts, M images, K collisions" then confirm.
 blog (posts, images, tags, drafts); a minimal Jekyll post imports; importing
 the same zip twice doesn't duplicate (slug match = skip, reported).
 
-### 3.2 Privacy stats with a stronger guarantee than Bear's (M)
+### 3.2 Privacy stats with a stronger guarantee than Bear's (M) — SHIPPED
 
 **Plan:** on the single-post route, append to `data/stats/YYYY-MM-DD.json`:
 `{slug: count}`. Dedup within a day via a salted hash of (IP + UA) where the

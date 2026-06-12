@@ -57,6 +57,11 @@ $isNew = ($siteConfig['name'] === '');
                            <?= !empty($siteConfig['searchEnabled']) ? 'checked' : '' ?>>
                     <label class="form-check-label" for="blogSearchEnabled">Visitor search at /search</label>
                 </div>
+                <div class="form-check my-2">
+                    <input class="form-check-input" type="checkbox" name="blogStatsEnabled" id="blogStatsEnabled"
+                           <?= !empty($siteConfig['statsEnabled']) ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="blogStatsEnabled">View counts (cookie-less; no IPs or user agents are ever stored)</label>
+                </div>
                 <label><?php i18n("settings_posts_per_page"); ?></label>
                 <input class="form-control" type="number" name="blogPostsPerPage" min="1" required value="<?= e((string) $siteConfig['postsPerPage']) ?>" />
                 <label><?php i18n("settings_timezone"); ?></label>

@@ -99,4 +99,30 @@ if (is_array($contentLint) && !empty($contentLint['warnings'])): ?>
 <?php if ($draftPostCount === 0 && $publishedPostCount === 0): ?>
     <p class="text-center text-muted mt-5">No posts yet. Time to write your first one!</p>
 <?php endif; ?>
+
+<?php
+if (!empty($siteConfig['statsEnabled'])):
+    $viewTotals = (new Fieldnote\Stats(FN_DATA_DIR))->totals(30);
+    $titleBySlug = [];
+    foreach (array_merge($publishedPosts, $draftPosts) as $vp) {
+        $titleBySlug[(string) ($vp['slug'] ?? '')] = (string) ($vp['title'] ?? '');
+    }
+    if ($viewTotals !== []): ?>
+    <div class="mt-5">
+        <h2>Views <span class="badge text-bg-secondary align-middle"><?= array_sum($viewTotals) ?></span>
+            <small class="text-muted fs-6">last 30 days &middot; cookie-less, no IPs stored</small></h2>
+        <table class="table table-sm">
+            <thead><tr><th scope="col">Post</th><th scope="col" class="text-end">Views</th></tr></thead>
+            <tbody>
+                <?php foreach (array_slice($viewTotals, 0, 10, true) as $slug => $views): ?>
+                    <tr>
+                        <td><?= e($titleBySlug[$slug] ?? $slug) ?></td>
+                        <td class="text-end"><?= (int) $views ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php endif; ?>
+<?php endif; ?>
 <?php require __DIR__ . '/footer.php'; ?>

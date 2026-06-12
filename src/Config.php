@@ -29,6 +29,7 @@ final class Config
         'template'     => 'gazette',
         'paletteOverrides' => [],
         'searchEnabled' => true,
+        'statsEnabled' => true,
         'trustedProxies' => '',
         'postsPerPage' => 6,
         'basePath'     => '',

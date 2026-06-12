@@ -261,6 +261,24 @@ check('authed dashboard renders', $s === 200 && str_contains($b, 'Hello World'),
 check('2FA verify page renders', $s === 200 && str_contains($b, 'Two-Factor Verification'), "status $s");
 check('2FA verify page free of PHP warnings', !str_contains($b, 'Undefined variable') && !str_contains($b, 'Warning:'));
 
+// ------------------------------------------------------------------ stats --
+
+// curl's default/empty UA is filtered as a non-reader, so views need a
+// browser-looking one. Same UA twice = one view; a second UA = two.
+$postPath = parse_url($h2['location'] ?? '/', PHP_URL_PATH); // locked post — counted only when unlocked, so use post 1
+[, $h1b] = req('GET', "$base/post/1");
+$postPath = parse_url($h1b['location'] ?? '/', PHP_URL_PATH);
+req('GET', $base . $postPath, ['headers' => ['User-Agent: Mozilla/5.0 (SmokeTest A)']]);
+req('GET', $base . $postPath, ['headers' => ['User-Agent: Mozilla/5.0 (SmokeTest A)']]);
+req('GET', $base . $postPath, ['headers' => ['User-Agent: Mozilla/5.0 (SmokeTest B)']]);
+$statFiles = glob($tmp . '/data/stats/[0-9]*.json') ?: [];
+$views = $statFiles ? (array) json_decode((string) file_get_contents($statFiles[0]), true) : [];
+check('views dedupe per visitor per day', ($views['hello-world'] ?? 0) === 2, 'got ' . var_export($views, true));
+$leaks = (string) shell_exec('grep -rl "127.0.0.1\|SmokeTest" ' . escapeshellarg($tmp . '/data/stats') . ' 2>/dev/null');
+check('no IP or UA ever written to stats', trim($leaks) === '');
+[, , $b] = req('GET', "$base/dashboard", $authed);
+check('dashboard shows view counts', str_contains($b, 'cookie-less') && str_contains($b, 'Hello World'));
+
 // ----------------------------------------- draft share links + revisions --
 
 [, , $b] = req('GET', "$base/dashboard", $authed);

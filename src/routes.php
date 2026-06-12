@@ -164,6 +164,9 @@ $router->map('GET|POST', '/[i:year]/[i:month]/[:slug]', function ($year, $month,
     $post = fn_with_image($post, $imageStore);
 
     if ($unlocked) {
+        if (!empty($siteConfig['statsEnabled'])) {
+            (new Stats(FN_DATA_DIR))->record((string) ($post['slug'] ?? ''));
+        }
         $pageTitle = $post['title'];
         require fn_template_dir($siteConfig['template']) . '/post.php';
     } else {
@@ -717,6 +720,7 @@ $router->map('GET|POST', '/settings', function () use ($configStore, $siteConfig
             // every settings save. (Theme-keyed: inert after a switch.)
             'paletteOverrides' => $siteConfig['paletteOverrides'] ?? [],
             'searchEnabled' => !empty($_POST['blogSearchEnabled']),
+            'statsEnabled' => !empty($_POST['blogStatsEnabled']),
             'trustedProxies' => fn_clean($_POST['blogTrustedProxies'] ?? ''),
             'postsPerPage' => $postsPerPage,
             'basePath'     => fn_clean($_POST['blogBase'] ?? ''),
