@@ -39,6 +39,22 @@ $isNew = ($siteConfig['name'] === '');
                 <input class="form-control" type="url" name="blogDomain" required
                        placeholder="<?= e(($_SERVER['REQUEST_SCHEME'] ?? 'https') . '://' . ($_SERVER['HTTP_HOST'] ?? '')) ?>"
                        value="<?= e($siteConfig['domain']) ?>" />
+                <details class="settings-help my-2">
+                    <summary>How to point a custom domain at this blog</summary>
+                    <ol class="mt-2 mb-1">
+                        <li><strong>DNS</strong> — add an A/AAAA record (or CNAME) for your domain pointing at this server.</li>
+                        <li><strong>Web server</strong> — serve the domain with its document root on Fieldnote's <code>public/</code> directory.
+                            Apache works out of the box (an <code>.htaccess</code> ships in <code>public/</code>); nginx needs
+                            <code>try_files $uri /index.php?$query_string;</code> in the site block.</li>
+                        <li><strong>HTTPS</strong> — issue a certificate at the server or proxy (Let's Encrypt, Cloudflare, etc.). Fieldnote follows whatever the server terminates.</li>
+                        <li><strong>Set the field above</strong> to <code>https://yourdomain.com</code> and save. This drives canonical URLs,
+                            feeds, and the sitemap — and any request that arrives on a different host is permanently
+                            redirected here, so www/apex and old addresses can't serve duplicates.</li>
+                        <li><strong>Behind Cloudflare or a reverse proxy?</strong> Also fill in the trusted proxy field below so
+                            login rate-limiting sees real visitor addresses.</li>
+                    </ol>
+                    <p class="mb-0"><small class="text-muted">Changing the domain later is safe: posts, images, and themes store nothing host-specific.</small></p>
+                </details>
                 <label><?php i18n("settings_blog_OGImage"); ?></label>
                 <input class="form-control" type="text" name="blogOGImage" value="<?= e($siteConfig['OGImage']) ?>" />
                 <label><?php i18n("settings_footer_message"); ?></label>

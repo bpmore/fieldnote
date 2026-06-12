@@ -78,6 +78,27 @@ php -S 127.0.0.1:8000 -t public public/index.php
 # then open http://127.0.0.1:8000/settings
 ```
 
+### Point a domain at it
+
+1. **DNS** — an A/AAAA record (or CNAME) for your domain pointing at the
+   server.
+2. **Web server** — serve the domain with its document root on `public/`.
+   Apache works out of the box (`.htaccess` ships in `public/`); nginx
+   needs `try_files $uri /index.php?$query_string;` in the site block.
+3. **HTTPS** — issue a certificate at the server or proxy (Let's Encrypt,
+   Cloudflare, …). Fieldnote follows whatever the server terminates.
+4. **Settings → Blog domain** — set it to `https://yourdomain.com`. This
+   drives canonical URLs, both feeds, and the sitemap. Once set, requests
+   arriving on any other host (www vs apex, an old domain, the bare IP)
+   are 301-redirected to the canonical address.
+5. **Behind Cloudflare or a reverse proxy?** Fill in Settings → trusted
+   proxies so login rate-limiting keys on real visitor addresses instead
+   of the proxy's.
+
+Changing the domain later is safe: posts, images, and themes store nothing
+host-specific. (The same how-to lives in the admin panel next to the
+domain field.)
+
 ### Docker
 
 ```

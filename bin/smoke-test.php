@@ -418,7 +418,7 @@ preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
     'csrf_token'   => $m[1],
     'blogName'     => 'Smoke',
     'blogInfo'     => 'Smoke-test fixture',
-    'blogDomain'   => 'http://smoke.example',
+    'blogDomain'   => $base, // the test server itself, so canonical-host enforcement keeps matching
     'blogTemplate' => 'gazette',
     'blogTimezone' => 'UTC',
     'blogI18N'     => 'en_US',
@@ -435,6 +435,17 @@ file_put_contents("$sessionDir/sess_$staleSid", 'isAuthenticated|b:1;');
 [$s, $h] = req('GET', "$base/dashboard", ['cookie' => 'fieldnote_sess=' . $staleSid]);
 @unlink("$sessionDir/sess_$staleSid");
 check('password change logs out other sessions', $s === 302 && str_contains($h['location'] ?? '', '/login'), "status $s");
+
+// ----------------------------------------------------- canonical host 301 --
+
+// The domain is now configured (set just above), so a request arriving on
+// any other host must 301 to the canonical address, path intact.
+[$s, $h] = req('GET', "$base/tag/notes", ['headers' => ['Host: old-address.example']]);
+check('non-canonical host 301s to the domain', $s === 301 && ($h['location'] ?? '') === "$base/tag/notes", "status $s -> " . ($h['location'] ?? ''));
+[$s] = req('GET', "$base/", ['headers' => ['Host: ' . parse_url($base, PHP_URL_HOST) . ':' . parse_url($base, PHP_URL_PORT)]]);
+check('canonical host serves normally', $s === 200, "status $s");
+[$s] = req('POST', "$base/logout", ['headers' => ['Host: old-address.example']]);
+check('non-GET on wrong host is not blind-redirected', $s === 419, "status $s");
 
 // ---------------------------------------------------------------- summary --
 

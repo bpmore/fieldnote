@@ -211,8 +211,7 @@ $router->map('GET', '/feed', function () use ($requireConfig, $siteConfig, $blog
 
     $base = rtrim((string) $siteConfig['domain'], '/');
     if ($base === '') {
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $base   = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+        $base = fn_request_base();
     }
 
     $parser = new \ParsedownExtra();
@@ -258,8 +257,7 @@ $router->map('GET', '/feed.json', function () use ($requireConfig, $siteConfig, 
 
     $base = rtrim((string) $siteConfig['domain'], '/');
     if ($base === '') {
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $base   = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+        $base = fn_request_base();
     }
 
     $parser = new \ParsedownExtra();
@@ -307,8 +305,7 @@ $router->map('GET', '/sitemap.xml', function () use ($requireConfig, $siteConfig
 
     $base = rtrim((string) $siteConfig['domain'], '/');
     if ($base === '') {
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $base   = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+        $base = fn_request_base();
     }
     $xml = static fn (string $v): string => htmlspecialchars($v, ENT_XML1 | ENT_QUOTES, 'UTF-8');
 
@@ -332,8 +329,7 @@ $router->map('GET', '/sitemap.xml', function () use ($requireConfig, $siteConfig
 $router->map('GET', '/robots.txt', function () use ($siteConfig, $router) {
     $base = rtrim((string) $siteConfig['domain'], '/');
     if ($base === '') {
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $base   = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+        $base = fn_request_base();
     }
     header('Content-Type: text/plain; charset=utf-8');
     echo "User-agent: *\n"
@@ -1130,6 +1126,21 @@ if (
         . "Go back, attach a smaller image, and try again — your text is still in the previous tab.",
         ini_get('post_max_size')
     ));
+}
+
+// Canonical-host enforcement: once a domain is configured, a request that
+// arrives on any other host (www vs apex, an old domain, the bare server IP)
+// is permanently redirected to the canonical address — one address per page
+// for crawlers, and Host-header values stay out of generated URLs. Only safe
+// methods redirect; a 301 would silently drop a POST body.
+$fnCanonical = parse_url((string) $siteConfig['domain']);
+if (!empty($fnCanonical['host']) && in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) {
+    $canonicalHostPort = strtolower($fnCanonical['host'] . (isset($fnCanonical['port']) ? ':' . $fnCanonical['port'] : ''));
+    $requestHostPort   = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+    if ($requestHostPort !== '' && $requestHostPort !== $canonicalHostPort) {
+        header('Location: ' . rtrim((string) $siteConfig['domain'], '/') . ($_SERVER['REQUEST_URI'] ?? '/'), true, 301);
+        exit;
+    }
 }
 
 // Enforce CSRF once, centrally, for every POST before any handler runs.

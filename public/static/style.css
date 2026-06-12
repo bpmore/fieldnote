@@ -221,3 +221,17 @@ h2 {
     border: 1px solid #dee2e6;
     vertical-align: middle;
 }
+
+/* Inline how-to blocks in settings */
+.settings-help summary {
+    cursor: pointer;
+    font-size: 14px;
+    color: #495057;
+}
+
+.settings-help {
+    font-size: 14px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 8px 12px;
+}

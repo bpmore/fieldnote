@@ -267,6 +267,19 @@ function fn_flash_content_lint(string $title, string $markdown): void
 }
 
 /**
+ * Scheme + host for building absolute URLs when no domain is configured,
+ * honoring X-Forwarded-Proto the same way the session cookie does — behind
+ * a TLS-terminating proxy the fallback must not emit http:// URLs.
+ */
+function fn_request_base(): string
+{
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['SERVER_PORT'] ?? null) == 443)
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+    return ($https ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+}
+
+/**
  * Visitor search form (GET, zero-JS). Themes opt in by calling it wherever
  * fits their layout; the sr-only label keeps it accessible unstyled.
  */
