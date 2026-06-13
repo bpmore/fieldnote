@@ -68,6 +68,12 @@ $isNew = ($siteConfig['name'] === '');
                         <option value="<?= e($tplName) ?>" <?= $siteConfig['template'] === $tplName ? 'selected' : '' ?>><?= e($tplName) ?></option>
                     <?php endforeach; ?>
                 </select>
+                <div class="form-check my-2">
+                    <input class="form-check-input" type="checkbox" name="blogThemeOfDay" id="blogThemeOfDay"
+                           <?= !empty($siteConfig['themeOfDay']) ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="blogThemeOfDay">Theme of the day — rotate a different theme each day</label>
+                </div>
+                <small class="text-muted d-block mb-2">When on, the public site cycles through every installed theme, one per day (your pick above is used when this is off). Today: <strong><?= e(Fieldnote\fn_theme_of_day($siteConfig)) ?></strong>.</small>
                 <label><?php i18n("settings_posts_per_page"); ?></label>
                 <input class="form-control" type="number" name="blogPostsPerPage" min="1" required value="<?= e((string) $siteConfig['postsPerPage']) ?>" />
                 <label><?php i18n("settings_blog_OGImage"); ?></label>

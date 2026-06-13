@@ -942,6 +942,38 @@ if (isset($m[1])) {
 preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
 req('POST', "$base/admin/themes/apply", $authed + ['body' => 'theme=gazette&csrf_token=' . $m[1]]);
 
+// ------------------------------------------------------- theme of the day --
+// Rewrite the served config in place; the next request reads it fresh.
+$writeCfg = function (array $over) use ($tmp, $config): void {
+    file_put_contents(
+        $tmp . '/data/config.php',
+        "<?php\nreturn " . var_export(array_merge($config, $over), true) . ";\n"
+    );
+};
+// Expected daily pick, computed independently of the helper: sorted installed
+// themes, indexed by the UTC epoch-day (matches fn_theme_of_day for tz=UTC).
+$tNames = [];
+foreach (glob($root . '/templates/*', GLOB_ONLYDIR) ?: [] as $d) {
+    if (is_file("$d/home.php") && is_file("$d/post.php")) {
+        $tNames[] = basename($d);
+    }
+}
+sort($tNames);
+$today = $tNames[((int) floor(time() / 86400)) % count($tNames)];
+
+$writeCfg(['template' => 'gazette', 'themeOfDay' => false, 'timezone' => 'UTC']);
+[$s, , $b] = req('GET', "$base/", []);
+check('themeOfDay off uses the fixed template', $s === 200 && str_contains($b, '/themes/gazette/theme.css'), "status $s");
+
+$writeCfg(['template' => 'gazette', 'themeOfDay' => true, 'timezone' => 'UTC']);
+[$s, , $b]   = req('GET', "$base/", []);
+[$s2, , $b2] = req('GET', "$base/", []);
+check('themeOfDay on renders the daily theme', $s === 200 && str_contains($b, "/themes/$today/theme.css"), "today=$today status $s");
+check('themeOfDay is stable within the day', $s2 === 200 && str_contains($b2, "/themes/$today/theme.css"));
+
+// Restore the fixture default so later sections are unaffected.
+$writeCfg(['template' => 'gazette', 'themeOfDay' => false, 'timezone' => 'UTC']);
+
 /** @return array<string,array<string,string>> scheme => token => hex */
 function formColors(string $html, string $type): array
 {

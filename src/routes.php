@@ -79,7 +79,7 @@ $notFound = static function (): void {
     http_response_code(404);
     global $siteConfig, $router, $pageTitle;
     $pageTitle = 'Not Found';
-    $tpl = fn_template_dir($siteConfig['template']) . '/404.php';
+    $tpl = fn_template_dir(fn_effective_template($siteConfig)) . '/404.php';
     if (is_file($tpl)) {
         require $tpl;
     } else {
@@ -95,7 +95,7 @@ $notFound = static function (): void {
 
 $router->map('GET', '/', function () use ($requireConfig, $siteConfig, $blogStore, $imageStore, $postsPerPage, $numPages, $router) {
     $requireConfig();
-    fn_render_home($siteConfig, $router, $blogStore, $imageStore, fn_template_dir($siteConfig['template']), $postsPerPage, $numPages);
+    fn_render_home($siteConfig, $router, $blogStore, $imageStore, fn_template_dir(fn_effective_template($siteConfig)), $postsPerPage, $numPages);
 }, 'home');
 
 $router->map('GET', '/[i:page]', function ($page) use ($requireConfig, $siteConfig, $blogStore, $imageStore, $postsPerPage, $numPages, $router, $notFound) {
@@ -111,7 +111,7 @@ $router->map('GET', '/[i:page]', function ($page) use ($requireConfig, $siteConf
         $blogStore->findBy(['draft', '=', false], ['date' => 'desc'], $postsPerPage, $skip)
     );
     $pageTitle = 'Posts | Page ' . $page;
-    require fn_template_dir($siteConfig['template']) . '/home.php';
+    require fn_template_dir(fn_effective_template($siteConfig)) . '/home.php';
 }, 'posts');
 
 // Legacy numeric URLs (/post/1) permanently redirect to the canonical
@@ -185,7 +185,7 @@ $router->map('GET|POST', '/[i:year]/[i:month]/[:slug]', function ($year, $month,
             (new Stats(FN_DATA_DIR))->record((string) ($post['slug'] ?? ''));
         }
         $pageTitle = $post['title'];
-        require fn_template_dir($siteConfig['template']) . '/post.php';
+        require fn_template_dir(fn_effective_template($siteConfig)) . '/post.php';
     } else {
         $pageTitle = 'Private post';
         require FN_INTERNAL_DIR . '/private.php';
@@ -450,7 +450,7 @@ MD;
         'tags'     => [],
     ];
     $pageTitle = 'Accessibility';
-    require fn_template_dir($siteConfig['template']) . '/post.php';
+    require fn_template_dir(fn_effective_template($siteConfig)) . '/post.php';
 }, 'accessibility');
 
 // Personal profile page (docs/brag-spec.md). Owner-authored markdown, rendered
@@ -471,7 +471,7 @@ if (in_array($fnProfileSlug, Config::PROFILE_SLUGS, true)) {
             'tags'     => [],
         ];
         $pageTitle = ucfirst($fnProfileSlug);
-        require fn_template_dir($siteConfig['template']) . '/post.php';
+        require fn_template_dir(fn_effective_template($siteConfig)) . '/post.php';
     }, 'profilePage');
 }
 
@@ -544,7 +544,7 @@ $router->map('GET', '/search', function () use ($requireConfig, $siteConfig, $bl
     // status line never appears on the homepage or tag pages.
     $searchQuery = $q !== '' ? $q : null;
     $pageTitle = $q === '' ? 'Search' : 'Search: ' . $q;
-    require fn_template_dir($siteConfig['template']) . '/home.php';
+    require fn_template_dir(fn_effective_template($siteConfig)) . '/home.php';
 }, 'search');
 
 // Tag pages: published posts carrying the tag, rendered through the theme's
@@ -564,7 +564,7 @@ $router->map('GET', '/tag/[:tag]', function ($tag) use ($requireConfig, $siteCon
     $numPages = 1; // fn_pagination renders nothing for a single page
     $limit    = count($allPosts);
     $pageTitle = 'Tagged: ' . $tag;
-    require fn_template_dir($siteConfig['template']) . '/home.php';
+    require fn_template_dir(fn_effective_template($siteConfig)) . '/home.php';
 }, 'tag');
 
 // ---------------------------------------------------------------------------
@@ -869,6 +869,7 @@ $router->map('GET|POST', '/settings', function () use ($configStore, $siteConfig
             'password'     => $password,
             'sessionEpoch' => $sessionEpoch,
             'template'     => basename(fn_clean($_POST['blogTemplate'])),
+            'themeOfDay'   => !empty($_POST['blogThemeOfDay']),
             // Not part of this form; carried over or it would vanish on
             // every settings save. (Theme-keyed: inert after a switch.)
             'paletteOverrides' => $siteConfig['paletteOverrides'] ?? [],

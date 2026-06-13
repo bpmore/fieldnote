@@ -851,6 +851,47 @@ function fn_template_dir(string $name): string
 }
 
 /**
+ * "Theme of the day": pick one installed theme deterministically per calendar
+ * day, so every visitor that day sees the same theme (fully cacheable) and the
+ * site cycles through the whole set with no repeat until all have shown.
+ *
+ * The day index ticks over at the site's local midnight (config timezone), and
+ * the order follows fn_template_names()'s alphabetical sort. $epochDay is
+ * injectable for tests.
+ */
+function fn_theme_of_day(array $siteConfig = [], ?int $epochDay = null, ?array $names = null): string
+{
+    $names = $names ?? fn_template_names();
+    if (!$names) {
+        return 'liquid-new';
+    }
+    if ($epochDay === null) {
+        try {
+            $now = new \DateTime('now', new \DateTimeZone((string) ($siteConfig['timezone'] ?? 'UTC')));
+        } catch (\Exception $e) {
+            $now = new \DateTime('now');
+        }
+        // Shift by the zone offset so the counter increments at local midnight.
+        $epochDay = (int) floor(($now->getTimestamp() + $now->getOffset()) / 86400);
+    }
+    $count = count($names);
+    return $names[(($epochDay % $count) + $count) % $count];
+}
+
+/**
+ * The template a PUBLIC page should render with: the daily rotation when
+ * themeOfDay is on, otherwise the owner's fixed pick. Admin views (theme
+ * gallery, draft preview) keep using $siteConfig['template'] directly.
+ */
+function fn_effective_template(array $siteConfig): string
+{
+    if (empty($siteConfig['themeOfDay'])) {
+        return (string) ($siteConfig['template'] ?? '');
+    }
+    return fn_theme_of_day($siteConfig);
+}
+
+/**
  * Delete an image record and its file on disk. Stored paths are relative to
  * uploads/ (an absolute path means a pre-migration record). The single
  * cleanup path for post deletion AND image replacement — replacing used to
