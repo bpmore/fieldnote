@@ -233,6 +233,19 @@ file_put_contents($cfgFile, "<?php\nreturn " . var_export(array_merge($config, [
 check('a11y badge shows when enabled and links to the statement', str_contains($b, 'class="a11y-badge"') && str_contains($b, 'href="/accessibility"') && str_contains($b, 'WCAG'));
 file_put_contents($cfgFile, "<?php\nreturn " . var_export($config, true) . ";\n");
 
+// Inline owner controls on a public post: invisible to visitors, present for
+// the authenticated owner; delete routes through a server-rendered confirm.
+[, $h] = req('GET', "$base/post/1");
+$postPath = parse_url($h['location'] ?? '/hello-world', PHP_URL_PATH);
+[, , $b] = req('GET', $base . $postPath);
+check('post controls hidden from visitors', !str_contains($b, 'post-admin'));
+[$s, , $b] = req('GET', $base . $postPath, $authed);
+check('owner sees edit + hide controls on a published post', $s === 200 && str_contains($b, 'class="post-admin"') && str_contains($b, '/edit') && str_contains($b, '>Hide</button>'), "status $s");
+[$s, , $b] = req('GET', "$base/post/1/delete", $authed);
+check('owner delete opens a confirm page, not a one-click delete', $s === 200 && str_contains($b, 'Delete permanently') && str_contains($b, 'csrf_token'), "status $s");
+[$s, $h] = req('GET', "$base/post/1/delete");
+check('delete confirm requires auth', $s === 302 && str_contains($h['location'] ?? '', '/login'), "status $s");
+
 // ----------------------------------------------------------------- search --
 
 [$s, , $b] = req('GET', "$base/search?q=published");

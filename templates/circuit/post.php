@@ -20,6 +20,8 @@ $parser->setSafeMode(true);
         <?= $parser->text($post['content']) ?>
     </div>
 </article>
+<?php Fieldnote\fn_post_admin($router, $post); ?>
+
 <div class="post-back">
     <a href="<?= e($router->generate('home')) ?>">&larr; Back to the board</a>
 </div>

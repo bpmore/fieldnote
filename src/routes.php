@@ -179,7 +179,9 @@ $router->map('GET|POST', '/[i:year]/[i:month]/[:slug]', function ($year, $month,
     $post = fn_with_image($post, $imageStore);
 
     if ($unlocked) {
-        if (!empty($siteConfig['statsEnabled'])) {
+        // The owner's own visits (now invited by the inline edit control) must
+        // not inflate the view count.
+        if (!empty($siteConfig['statsEnabled']) && !Security::isAuthenticated()) {
             (new Stats(FN_DATA_DIR))->record((string) ($post['slug'] ?? ''));
         }
         $pageTitle = $post['title'];
@@ -536,12 +538,22 @@ $router->map('POST', '/post/[i:id]/hide', function ($id) use ($requireConfig, $r
     $redirect('dashboard');
 }, 'hide');
 
-$router->map('POST', '/post/[i:id]/delete', function ($id) use ($requireConfig, $requireAuth, $blogStore, $imageStore, $redirect, $notFound) {
+$router->map('GET|POST', '/post/[i:id]/delete', function ($id) use ($requireConfig, $requireAuth, $siteConfig, $blogStore, $imageStore, $router, $redirect, $notFound) {
     $requireConfig();
     $requireAuth();
     $post = $blogStore->findById((int) $id);
     if ($post === null) {
         $notFound();
+    }
+    // GET renders a server-side confirmation: the inline delete control on a
+    // public post page links here, and that page runs under a no-JS CSP, so
+    // the dashboard's data-confirm cannot guard a one-click delete. The actual
+    // delete is the POST below (CSRF-gated centrally), the same one the
+    // dashboard's confirm submits.
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        $pageTitle = 'Delete post';
+        require FN_INTERNAL_DIR . '/confirm-delete.php';
+        return;
     }
     // Clean up the linked image record and its file on disk.
     fn_delete_image($imageStore, $post['image'] ?? null);

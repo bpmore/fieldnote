@@ -26,6 +26,8 @@ $coord = date('d', $ts) . '°' . date('i', $ts) . '′ N · ' . date('m', $ts) .
         <?= $parser->text($post['content']) ?>
     </div>
 </article>
+<?php Fieldnote\fn_post_admin($router, $post); ?>
+
 <div class="post-footer">
     <a class="back-link" href="<?= e($router->generate('home')) ?>">&larr; Return to base camp</a>
 </div>

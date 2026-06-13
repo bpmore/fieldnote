@@ -30,6 +30,8 @@ $parser->setSafeMode(true);
         <?= $parser->text($post['content']) ?>
     </div>
 </article>
+<?php Fieldnote\fn_post_admin($router, $post); ?>
+
 <div class="post-footer">
     <div class="rule" aria-hidden="true"></div>
     <a class="back-link" href="<?= e($router->generate('home')) ?>">&larr; Return to the programme</a>

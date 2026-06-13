@@ -17,4 +17,9 @@
 .a11y-badge{display:inline-flex;align-items:center;gap:.4rem;min-height:24px;padding:.25rem .6rem;border:1px solid var(--line,currentColor);border-radius:999px;font-size:.8rem;line-height:1;text-decoration:none;color:inherit}
 .a11y-badge:hover{text-decoration:underline}
 .a11y-badge-mark{color:var(--accent,currentColor);flex:none}
+.post-admin{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:1.5rem 0;padding:.6rem .8rem;border:1px dashed var(--line,currentColor);border-radius:.4rem;font-size:.9rem}
+.post-admin form{margin:0}
+.post-admin a,.post-admin button{display:inline-flex;align-items:center;min-height:24px;padding:.25rem .7rem;font:inherit;line-height:1;color:inherit;background:none;border:1px solid var(--line,currentColor);border-radius:.3rem;text-decoration:none;cursor:pointer}
+.post-admin a:hover,.post-admin button:hover{text-decoration:underline}
+.post-admin-danger{color:var(--accent,currentColor)}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}

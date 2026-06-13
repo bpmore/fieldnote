@@ -27,6 +27,8 @@ $parser->setSafeMode(true);
         <?= $parser->text($post['content']) ?>
     </div>
 </article>
+<?php Fieldnote\fn_post_admin($router, $post); ?>
+
 <div class="post-footer">
     <a class="button" href="<?= e($router->generate('home')) ?>">&larr; Back to all posts</a>
 </div>

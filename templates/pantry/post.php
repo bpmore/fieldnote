@@ -25,6 +25,8 @@ $parser->setSafeMode(true);
         </div>
     </div>
 </article>
+<?php Fieldnote\fn_post_admin($router, $post); ?>
+
 <div class="post-footer">
     <a class="back-link" href="<?= e($router->generate('home')) ?>">&larr; Back to the pantry shelf</a>
 </div>

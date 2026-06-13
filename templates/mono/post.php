@@ -21,6 +21,8 @@ $parser->setSafeMode(true);
         <?= $parser->text($post['content']) ?>
     </div>
 </article>
+<?php Fieldnote\fn_post_admin($router, $post); ?>
+
 <nav class="back">
     <a class="back-link" href="<?= e($router->generate('home')) ?>">&larr; Index</a>
 </nav>

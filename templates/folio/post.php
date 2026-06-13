@@ -27,6 +27,8 @@ $parser->setSafeMode(true);
 
     <div class="ornament" aria-hidden="true"></div>
 </article>
+<?php Fieldnote\fn_post_admin($router, $post); ?>
+
 <nav class="chapter-return">
     <a class="return-link" href="<?= e($router->generate('home')) ?>">&larr; Return to the contents</a>
 </nav>

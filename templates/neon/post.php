@@ -26,4 +26,6 @@ $parser->setSafeMode(true);
 
     <p class="post-back"><a href="<?= e($router->generate('home')) ?>">&larr; return to feed</a></p>
 </article>
+<?php Fieldnote\fn_post_admin($router, $post); ?>
+
 <?php require __DIR__ . '/footer.php'; ?>

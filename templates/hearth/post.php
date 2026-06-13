@@ -21,6 +21,8 @@ $parser->setSafeMode(true);
         <?= $parser->text($post['content']) ?>
     </div>
 </article>
+<?php Fieldnote\fn_post_admin($router, $post); ?>
+
 <div class="story-return">
     <a class="back-link" href="<?= e($router->generate('home')) ?>">&larr; Back to the album</a>
 </div>

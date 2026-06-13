@@ -86,3 +86,11 @@ already; the mark is `currentColor` inline SVG and `.a11y-badge` ships in the
 shared a11y CSS, so it inherits your footer's (gate-passing) colors. If your
 footer needs the badge somewhere specific, move the call — don't restyle it
 into failing contrast.
+
+`Fieldnote\fn_post_admin($router, $post)` renders inline owner controls
+(edit, publish/hide, delete) on a post, or nothing for logged-out visitors —
+so `post.php` can call it unconditionally. Every theme calls it after
+`</article>`; `.post-admin` ships in the shared a11y CSS and uses theme
+tokens. Delete links to a server-rendered confirm page (the public surface is
+no-JS), so it's safe without the dashboard's confirm script. Move the call to
+reposition it; keep it gated and don't restyle it into failing contrast.

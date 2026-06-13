@@ -14,5 +14,7 @@ $parser->setSafeMode(true);
     <div class="post-content"><?= $parser->text($post['content']) ?></div>
     <?php Fieldnote\fn_tag_links($router, $post); ?>
 </article>
+<?php Fieldnote\fn_post_admin($router, $post); ?>
+
 <div class="post-footer"><a href="<?= e($router->generate('home')) ?>">&larr; Back to all posts</a></div>
 <?php require __DIR__ . '/footer.php'; ?>

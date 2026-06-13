@@ -23,6 +23,8 @@ $parser->setSafeMode(true);
     </div>
     <?php Fieldnote\fn_tag_links($router, $post); ?>
 </article>
+<?php Fieldnote\fn_post_admin($router, $post); ?>
+
 <div class="post-footer">
     <a href="<?= e($router->generate('home')) ?>">&larr; Back to all posts</a>
 </div>

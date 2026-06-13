@@ -345,6 +345,36 @@ function fn_a11y_badge(\AltoRouter $router, array $siteConfig): void
 }
 
 /**
+ * Inline owner controls on a public post page. Renders nothing unless the
+ * viewer is the authenticated owner, so every theme's post.php can call it
+ * unconditionally and visitors never see a trace of it. Edit is a link;
+ * publish/hide are CSRF-protected POSTs (the central gate covers them);
+ * delete is a link to a server-rendered confirm page, because the public
+ * surface runs under a strict no-JS CSP and the dashboard's data-confirm
+ * script never loads here. Styled by .post-admin in the shared a11y.css.
+ *
+ * @param array<string,mixed> $post
+ */
+function fn_post_admin(\AltoRouter $router, array $post): void
+{
+    if (!Security::isAuthenticated()) {
+        return;
+    }
+    $id = (int) ($post['_id'] ?? 0);
+    if ($id === 0) {
+        return;
+    }
+    $draft = !empty($post['draft']);
+    echo '<nav class="post-admin" aria-label="Post controls">' . "\n";
+    echo '<a class="post-admin-link" href="' . e($router->generate('editPost', ['id' => $id])) . '">Edit</a>' . "\n";
+    echo '<form method="post" action="' . e($router->generate($draft ? 'publish' : 'hide', ['id' => $id])) . '">'
+        . csrf_field()
+        . '<button type="submit">' . ($draft ? 'Publish' : 'Hide') . '</button></form>' . "\n";
+    echo '<a class="post-admin-link post-admin-danger" href="' . e($router->generate('deletePost', ['id' => $id])) . '">Delete&hellip;</a>' . "\n";
+    echo '</nav>' . "\n";
+}
+
+/**
  * Alt text for the un-linked post hero image. List/card images stay alt=""
  * (decorative — the adjacent title link already names the destination);
  * the hero is content, so it gets the post title. One function so the

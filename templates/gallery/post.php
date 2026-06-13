@@ -26,4 +26,6 @@ $parser->setSafeMode(true);
 
     <p class="exhibit-back"><a href="<?= e($router->generate('home')) ?>">&larr; Return to the exhibition</a></p>
 </article>
+<?php Fieldnote\fn_post_admin($router, $post); ?>
+
 <?php require __DIR__ . '/footer.php'; ?>

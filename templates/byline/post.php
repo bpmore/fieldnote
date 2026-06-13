@@ -23,6 +23,8 @@ $parser->setSafeMode(true);
         <?= $parser->text($post['content']) ?>
     </div>
 </article>
+<?php Fieldnote\fn_post_admin($router, $post); ?>
+
 <nav class="piece-return">
     <a class="return-link" href="<?= e($router->generate('home')) ?>">&larr; All stories</a>
 </nav>
