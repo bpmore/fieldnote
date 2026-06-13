@@ -236,6 +236,8 @@ h1, h2, h3 { text-transform: lowercase; }
 
 /* ---- Footer ---- */
 .site-footer { border-top: 2px solid var(--line); margin-top: 3rem; }
+/* The footer doesn't use the masthead's column grid — center it as a block. */
+.site-footer .footer-inner.module { display: block; text-align: center; }
 .footer-inner { padding-top: 1.5rem; padding-bottom: 2rem; color: var(--muted); font-size: .85rem; }
 .footer-inner p { margin: 0 0 .25rem; }
 .rss-link { display: inline-block; padding: .3rem .5rem .3rem 0; color: var(--muted); text-decoration: underline; }
