@@ -630,6 +630,39 @@ if (!class_exists(ZipArchive::class)) {
         'importZip'  => new CURLFile($jekyllZip, 'application/zip', 'jekyll.zip'),
     ]]);
     check('re-import skips existing slugs', $s === 200 && str_contains($b, 'skip — exists'), "status $s");
+
+    // WordPress (WXR): HTML body -> Markdown, accessibility report on the
+    // dry-run, posts land as drafts. No remote images, so no network in CI.
+    $wxr = "$tmp/wp.xml";
+    file_put_contents($wxr,
+        '<?xml version="1.0"?><rss version="2.0"'
+        . ' xmlns:content="http://purl.org/rss/1.0/modules/content/"'
+        . ' xmlns:wp="http://wordpress.org/export/1.2/"'
+        . ' xmlns:dc="http://purl.org/dc/elements/1.1/"><channel><item>'
+        . '<title>WP Imported</title><dc:creator>brent</dc:creator>'
+        . '<pubDate>Mon, 02 Jun 2025 10:00:00 +0000</pubDate>'
+        . '<content:encoded><![CDATA[<h2>Section</h2><p>Imported from <strong>WordPress</strong>. See <a href="https://e.com">read more</a>.</p>]]></content:encoded>'
+        . '<category domain="post_tag">News</category>'
+        . '<wp:post_name>wp-imported</wp:post_name><wp:post_type>post</wp:post_type>'
+        . '<wp:status>publish</wp:status><wp:post_date_gmt>2025-06-02 10:00:00</wp:post_date_gmt>'
+        . '</item></channel></rss>');
+    [, , $b] = req('GET', "$base/admin/import", $authed);
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+    [$s, , $b] = req('POST', "$base/admin/import", $authed + ['body' => [
+        'csrf_token'   => $m[1],
+        'importSource' => 'wordpress',
+        'importZip'    => new CURLFile($wxr, 'text/xml', 'wp.xml'),
+    ]]);
+    check('wordpress dry-run flags accessibility and writes nothing', $s === 200 && str_contains($b, 'wp-imported') && str_contains($b, 'to fix') && str_contains($b, 'Nothing has been written'), "status $s");
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+    [$s] = req('POST', "$base/admin/import/confirm", $authed + ['body' => 'csrf_token=' . $m[1]]);
+    check('wordpress import creates the post', $s === 302, "status $s");
+    [, , $b] = req('GET', "$base/");
+    check('wordpress import lands as a draft (hidden from the public)', !str_contains($b, 'WP Imported'));
+    [, , $b] = req('GET', "$base/dashboard", $authed);
+    check('imported draft appears on the dashboard', str_contains($b, 'WP Imported'));
+    [$s, , $b] = req('GET', "$base/2025/06/wp-imported", $authed);
+    check('wordpress HTML body converted to markdown and rendered', $s === 200 && str_contains($b, 'Imported from') && str_contains($b, '<strong>WordPress</strong>'), "status $s");
 }
 
 // ---------------------------------------------------------- theme gallery --

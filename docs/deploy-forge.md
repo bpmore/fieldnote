@@ -8,9 +8,9 @@ your own domain throughout.
 
 ## Requirements
 
-- PHP **8.1+** with extensions: `curl`, `gd`, `json`, `mbstring`, `zip`
-  (`zip` is needed for Markdown export/import; `openssl` — core — is needed for
-  ActivityPub keys).
+- PHP **8.1+** with extensions: `curl`, `gd`, `json`, `mbstring`, `zip`,
+  `dom`, `simplexml` (`zip` for Markdown export/import; `dom` + `simplexml` for
+  the platform importers; `openssl` — core — for ActivityPub keys).
 - Composer.
 - Two writable, gitignored runtime dirs, created on deploy: `data/`
   (config, posts, the `pages` store, ActivityPub keys) and `public/uploads/`.

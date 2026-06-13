@@ -1411,17 +1411,35 @@ $router->map('GET|POST', '/admin/import', function () use ($requireConfig, $requ
             if (!is_dir($cacheDir)) {
                 @mkdir($cacheDir, 0750, true);
             }
-            $stored = $cacheDir . '/import-' . bin2hex(random_bytes(6)) . '.zip';
+            $stored = $cacheDir . '/import-' . bin2hex(random_bytes(6)) . '.upload';
             move_uploaded_file($file['tmp_name'], $stored);
+
+            // Source format: the owner's pick, or auto-detected from the file.
+            $source = in_array($_POST['importSource'] ?? 'auto', ['markdown', 'wordpress'], true)
+                ? (string) $_POST['importSource']
+                : 'auto';
+            if ($source === 'auto') {
+                $head = (string) file_get_contents($stored, false, null, 0, 4096);
+                if (str_starts_with($head, "PK\x03\x04")) {
+                    $source = 'markdown';
+                } elseif (WordPressImporter::looksLikeWxr($head)) {
+                    $source = 'wordpress';
+                } else {
+                    $source = 'markdown';
+                }
+            }
+
             $porter   = new Porter($blogStore, $imageStore, $images, FN_UPLOAD_DIR);
-            $analysis = $porter->analyze($stored);
+            $analysis = $source === 'wordpress'
+                ? $porter->analyzeEntries(WordPressImporter::parse($stored))
+                : $porter->analyze($stored);
             if ($analysis['posts'] === []) {
                 $importError = implode(' ', $analysis['errors']) ?: 'Nothing importable found.';
                 $analysis = null;
                 @unlink($stored);
             } else {
-                // The dry-run screen confirms against exactly this archive.
-                $_SESSION['import_pending'] = ['path' => $stored, 'exp' => time() + 900];
+                // The dry-run screen confirms against exactly this upload.
+                $_SESSION['import_pending'] = ['path' => $stored, 'source' => $source, 'exp' => time() + 900];
             }
         }
     }
@@ -1440,7 +1458,9 @@ $router->map('POST', '/admin/import/confirm', function () use ($requireConfig, $
         $redirect('import');
     }
     $porter = new Porter($blogStore, $imageStore, $images, FN_UPLOAD_DIR);
-    $_SESSION['import_result'] = $porter->import($pending['path'], $siteConfig);
+    $_SESSION['import_result'] = ($pending['source'] ?? 'markdown') === 'wordpress'
+        ? $porter->importEntries(WordPressImporter::parse($pending['path']), $siteConfig)
+        : $porter->import($pending['path'], $siteConfig);
     @unlink($pending['path']);
     $redirect('dashboard');
 }, 'importConfirm');

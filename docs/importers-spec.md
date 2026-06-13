@@ -162,10 +162,19 @@ draft vs published, that's recorded in the report — but everything still
 
 | Phase | Scope | Size |
 |---|---|---|
-| 0 | Converter layer + `Porter` in-memory entry point + import-as-draft + a11y report + image localization via SafeHttp + format-pick UI | M |
-| 1 | **WordPress (WXR)** + **Generic RSS/Atom** — volume + universal floor | M |
+| 0 | Converter layer + `Porter` in-memory entry point + import-as-draft + a11y report + image localization via SafeHttp + format-pick UI | M — **SHIPPED** |
+| 1 | **WordPress (WXR)** — **SHIPPED** (`WordPressImporter`; covers Squarespace). **Generic RSS/Atom** — pending | M |
 | 2 | **Substack**, **Ghost**, **WriteFreely** — timing, structured, positioning | M |
 | 3 | **Medium**, **Blogger**, **Notion**, **Dev.to/Hashnode** | M |
+
+Phase 0 + WordPress shipped: `Porter::analyzeEntries()` / `importEntries()` run
+the shared pipeline (HTML→Markdown via `league/html-to-markdown`, inline +
+featured image localization through `ImageHandler::storeFromUrl` /
+`SafeHttp`, slug-collision skip, import-as-draft, per-post `ContentLint`
+report). `WordPressImporter::parse()` maps WXR posts (title/slug/date/tags/
+author/body, `_thumbnail_id` → attachment featured image). Import screen has a
+source dropdown + auto-detection; the dry-run shows the accessibility report.
+Remaining converters plug in by yielding the same entry shape.
 
 Recommendation: build Phase 0 (the shared plumbing) with **WordPress** as the
 first converter — it's the largest source and exercises every hard part

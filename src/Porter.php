@@ -194,6 +194,152 @@ final class Porter
         return ['created' => $created, 'skipped' => $skipped, 'images' => $importedImages, 'errors' => $errors];
     }
 
+    // ------------------------------------------ platform converter pipeline --
+    // docs/importers-spec.md. A converter (e.g. WordPressImporter) parses its
+    // source format into normalized entries; everything downstream — HTML to
+    // Markdown, image localization, dedup, the dry-run, and import-as-draft —
+    // lives here, so each converter only has to read its own format.
+    //
+    // Entry shape: {title, slug?, date:int, tags:string[], author?, html?|
+    //               markdown?, featuredImageUrl?, source?}
+
+    /**
+     * Dry-run for converter entries: title/slug/collision plus a per-post
+     * accessibility report (run on the converted Markdown), nothing written.
+     *
+     * @param  list<array<string,mixed>> $entries
+     * @return array{posts: list<array{file:string,title:string,slug:string,draft:bool,collision:bool,image:string,a11y:list<string>}>, errors: list<string>}
+     */
+    public function analyzeEntries(array $entries): array
+    {
+        $posts = [];
+        foreach (array_slice($entries, 0, self::MAX_ENTRIES) as $e) {
+            $slug = $this->entrySlug($e);
+            $posts[] = [
+                'file'      => (string) ($e['source'] ?? $e['title'] ?? $slug),
+                'title'     => (string) ($e['title'] ?? ''),
+                'slug'      => $slug,
+                'draft'     => true, // imports always land as drafts
+                'collision' => $this->blogStore->findOneBy(['slug', '=', $slug]) !== null,
+                'image'     => (string) ($e['featuredImageUrl'] ?? ''),
+                'a11y'      => ContentLint::check($this->entryMarkdown($e)),
+            ];
+        }
+        return ['posts' => $posts, 'errors' => $posts === [] ? ['Nothing importable found.'] : []];
+    }
+
+    /**
+     * Import converter entries. Every post lands as a **draft** (so the
+     * publish-time accessibility gate applies before it goes public); slug
+     * collisions are skipped; featured and inline images are localized into
+     * uploads via ImageHandler (SSRF-guarded by SafeHttp). docs/importers-spec.md.
+     *
+     * @param  list<array<string,mixed>> $entries
+     * @return array{created:int,skipped:int,images:int,errors:list<string>}
+     */
+    public function importEntries(array $entries, array $siteConfig): array
+    {
+        $created = $skipped = $images = 0;
+        $errors  = [];
+        foreach (array_slice($entries, 0, self::MAX_ENTRIES) as $e) {
+            $slug = $this->entrySlug($e);
+            if ($this->blogStore->findOneBy(['slug', '=', $slug]) !== null) {
+                $skipped++;
+                continue;
+            }
+            [$body, $inlined] = $this->localizeInlineImages($this->entryMarkdown($e));
+            $images += $inlined;
+
+            $tags = array_slice(array_values(array_unique(array_map(
+                static fn ($t): string => fn_slugify((string) $t),
+                (array) ($e['tags'] ?? [])
+            ))), 0, 8);
+
+            $record = [
+                'title'        => (string) ($e['title'] ?? $slug),
+                'slug'         => $slug,
+                'date'         => (int) ($e['date'] ?? time()),
+                'publishedAt'  => 0,
+                'draft'        => true,
+                'author'       => ((string) ($e['author'] ?? '')) !== '' ? (string) $e['author'] : (string) ($siteConfig['author'] ?? ''),
+                'tags'         => $tags,
+                'content'      => $body,
+                'password'     => '',
+                'scheduledFor' => 0,
+            ];
+
+            $featured = (string) ($e['featuredImageUrl'] ?? '');
+            if ($featured !== '') {
+                $stored = $this->images->storeFromUrl($featured);
+                if ($stored !== null) {
+                    $rec = $this->imageStore->insert(['url' => $stored[0], 'path' => $stored[1]]);
+                    $record['image'] = $rec['_id'];
+                    $images++;
+                } else {
+                    $errors[] = ($e['title'] ?? $slug) . ': featured image could not be fetched';
+                }
+            }
+
+            $this->blogStore->insert($record);
+            $created++;
+        }
+        if ($created > 0) {
+            fn_invalidate_published_count();
+        }
+        return ['created' => $created, 'skipped' => $skipped, 'images' => $images, 'errors' => $errors];
+    }
+
+    /** Markdown for one entry: passthrough if already Markdown, else HTML to Markdown. */
+    private function entryMarkdown(array $entry): string
+    {
+        if (isset($entry['markdown'])) {
+            return rtrim((string) $entry['markdown'], "\n");
+        }
+        $html = (string) ($entry['html'] ?? '');
+        return $html === '' ? '' : self::htmlToMarkdown($html);
+    }
+
+    private static function htmlToMarkdown(string $html): string
+    {
+        $conv = new \League\HTMLToMarkdown\HtmlConverter([
+            'strip_tags'   => true,
+            'hard_break'   => true,
+            'remove_nodes' => 'script style',
+            'use_autolinks' => false,
+        ]);
+        if (class_exists(\League\HTMLToMarkdown\Converter\TableConverter::class)) {
+            $conv->getEnvironment()->addConverter(new \League\HTMLToMarkdown\Converter\TableConverter());
+        }
+        return trim($conv->convert($html));
+    }
+
+    /** Download remote inline images into uploads and rewrite the Markdown to the local copy. */
+    private function localizeInlineImages(string $md): array
+    {
+        $count = 0;
+        $out = preg_replace_callback(
+            '/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/i',
+            function (array $m) use (&$count): string {
+                $stored = $this->images->storeFromUrl($m[2]);
+                if ($stored === null) {
+                    return $m[0]; // leave the original URL; noted as a non-fatal gap
+                }
+                $count++;
+                return '![' . $m[1] . '](' . $stored[0] . ')';
+            },
+            $md
+        );
+        return [(string) $out, $count];
+    }
+
+    private function entrySlug(array $entry): string
+    {
+        $slug = (string) ($entry['slug'] ?? '');
+        return $slug !== ''
+            ? fn_slugify(basename(trim($slug, '/')))
+            : fn_slugify((string) ($entry['title'] ?? 'post'));
+    }
+
     // -------------------------------------------------- entry normalization --
 
     /**

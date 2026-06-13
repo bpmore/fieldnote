@@ -11,14 +11,21 @@ require __DIR__ . '/header.php';
 <?php endif; ?>
 
 <?php if ($analysis === null): ?>
-    <p class="text-muted">Upload a zip of markdown posts: a Fieldnote export, or any archive of
-        <code>.md</code> files with Jekyll/Hugo/Bear-style frontmatter. Nothing is written until
-        you confirm on the next screen, and posts whose slug already exists here are always
-        skipped — importing can never overwrite or duplicate.</p>
+    <p class="text-muted">Import your writing from another platform, or a Fieldnote / markdown
+        archive. Nothing is written until you confirm on the next screen, and posts whose slug
+        already exists here are always skipped — importing can never overwrite or duplicate.
+        Platform imports land as <strong>drafts</strong>, so the accessibility check runs when you
+        publish each one.</p>
     <form method="post" enctype="multipart/form-data" action="<?= e($router->generate('import')) ?>">
         <?= csrf_field() ?>
-        <input type="file" name="importZip" accept=".zip,application/zip" class="form-control" required>
-        <button type="submit" class="btn btn-primary mt-3">Inspect archive</button>
+        <label for="importSource" class="form-label mb-0">Source</label>
+        <select class="form-select mb-2" name="importSource" id="importSource">
+            <option value="auto">Auto-detect</option>
+            <option value="markdown">Markdown / Fieldnote export (.zip of .md with frontmatter)</option>
+            <option value="wordpress">WordPress (.xml export — also Squarespace)</option>
+        </select>
+        <input type="file" name="importZip" accept=".zip,.xml,application/zip,text/xml,application/xml" class="form-control" required>
+        <button type="submit" class="btn btn-primary mt-3">Inspect file</button>
         <a href="<?= e($router->generate('dashboard')) ?>" class="btn btn-secondary mt-3"><?php i18n("settings_dashboard_return"); ?></a>
     </form>
 <?php else: ?>
@@ -38,13 +45,21 @@ require __DIR__ . '/header.php';
         </div>
     <?php endif; ?>
     <table class="table table-sm">
-        <thead><tr><th scope="col">File</th><th scope="col">Title</th><th scope="col">Slug</th><th scope="col">Action</th></tr></thead>
+        <thead><tr><th scope="col">Title</th><th scope="col">Slug</th><th scope="col">Accessibility</th><th scope="col">Action</th></tr></thead>
         <tbody>
             <?php foreach ($analysis['posts'] as $p): ?>
                 <tr>
-                    <td><code><?= e($p['file']) ?></code></td>
                     <td><?= e($p['title']) ?><?= $p['draft'] ? ' <span class="badge text-bg-secondary">draft</span>' : '' ?></td>
                     <td><code><?= e($p['slug']) ?></code></td>
+                    <td>
+                        <?php if (!empty($p['a11y'])): ?>
+                            <details><summary class="text-warning"><?= count($p['a11y']) ?> to fix</summary>
+                                <ul class="small mb-0"><?php foreach ($p['a11y'] as $w): ?><li><?= e($w) ?></li><?php endforeach; ?></ul>
+                            </details>
+                        <?php elseif (array_key_exists('a11y', $p)): ?>
+                            <span class="text-success">clean</span>
+                        <?php else: ?>&mdash;<?php endif; ?>
+                    </td>
                     <td><?= $p['collision'] ? '<span class="text-muted">skip — exists</span>' : 'create' . ($p['image'] !== '' ? ' + image' : '') ?></td>
                 </tr>
             <?php endforeach; ?>
