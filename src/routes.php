@@ -1403,19 +1403,32 @@ $router->map('GET|POST', '/admin/import', function () use ($requireConfig, $requ
     $analysis = null;
     $importError = '';
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $file = $_FILES['importZip'] ?? null;
-        if ($file === null || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
-            $importError = 'Choose a .zip file to upload.';
-        } else {
-            $cacheDir = FN_DATA_DIR . '/cache';
-            if (!is_dir($cacheDir)) {
-                @mkdir($cacheDir, 0750, true);
-            }
-            $stored = $cacheDir . '/import-' . bin2hex(random_bytes(6)) . '.upload';
-            move_uploaded_file($file['tmp_name'], $stored);
+        $url     = trim((string) ($_POST['importUrl'] ?? ''));
+        $file    = $_FILES['importZip'] ?? null;
+        $hasFile = $file !== null && ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK && is_uploaded_file($file['tmp_name']);
 
-            // Source format: the owner's pick, or auto-detected from the file.
-            $source = in_array($_POST['importSource'] ?? 'auto', ['markdown', 'wordpress'], true)
+        $cacheDir = FN_DATA_DIR . '/cache';
+        if (!is_dir($cacheDir)) {
+            @mkdir($cacheDir, 0750, true);
+        }
+        $stored = $cacheDir . '/import-' . bin2hex(random_bytes(6)) . '.upload';
+
+        if ($url !== '') {
+            // Feeds are URLs — fetch through SafeHttp (SSRF-guarded), then parse.
+            $res = SafeHttp::get($url, ['Accept: application/rss+xml, application/atom+xml, application/xml;q=0.9, */*;q=0.8'], 12, 5 * 1024 * 1024);
+            if ($res === null || $res[0] >= 400 || $res[1] === '') {
+                $importError = 'Could not fetch that URL.';
+            } else {
+                file_put_contents($stored, $res[1]);
+            }
+        } elseif ($hasFile) {
+            move_uploaded_file($file['tmp_name'], $stored);
+        } else {
+            $importError = 'Choose a file or enter a feed URL.';
+        }
+
+        if ($importError === '') {
+            $source = in_array($_POST['importSource'] ?? 'auto', ['markdown', 'wordpress', 'rss'], true)
                 ? (string) $_POST['importSource']
                 : 'auto';
             if ($source === 'auto') {
@@ -1424,15 +1437,19 @@ $router->map('GET|POST', '/admin/import', function () use ($requireConfig, $requ
                     $source = 'markdown';
                 } elseif (WordPressImporter::looksLikeWxr($head)) {
                     $source = 'wordpress';
+                } elseif (RssImporter::looksLikeFeed($head)) {
+                    $source = 'rss';
                 } else {
                     $source = 'markdown';
                 }
             }
 
             $porter   = new Porter($blogStore, $imageStore, $images, FN_UPLOAD_DIR);
-            $analysis = $source === 'wordpress'
-                ? $porter->analyzeEntries(WordPressImporter::parse($stored))
-                : $porter->analyze($stored);
+            $analysis = match ($source) {
+                'wordpress' => $porter->analyzeEntries(WordPressImporter::parse($stored)),
+                'rss'       => $porter->analyzeEntries(RssImporter::parse($stored)),
+                default     => $porter->analyze($stored),
+            };
             if ($analysis['posts'] === []) {
                 $importError = implode(' ', $analysis['errors']) ?: 'Nothing importable found.';
                 $analysis = null;
@@ -1458,9 +1475,11 @@ $router->map('POST', '/admin/import/confirm', function () use ($requireConfig, $
         $redirect('import');
     }
     $porter = new Porter($blogStore, $imageStore, $images, FN_UPLOAD_DIR);
-    $_SESSION['import_result'] = ($pending['source'] ?? 'markdown') === 'wordpress'
-        ? $porter->importEntries(WordPressImporter::parse($pending['path']), $siteConfig)
-        : $porter->import($pending['path'], $siteConfig);
+    $_SESSION['import_result'] = match ($pending['source'] ?? 'markdown') {
+        'wordpress' => $porter->importEntries(WordPressImporter::parse($pending['path']), $siteConfig),
+        'rss'       => $porter->importEntries(RssImporter::parse($pending['path']), $siteConfig),
+        default     => $porter->import($pending['path'], $siteConfig),
+    };
     @unlink($pending['path']);
     $redirect('dashboard');
 }, 'importConfirm');

@@ -663,6 +663,39 @@ if (!class_exists(ZipArchive::class)) {
     check('imported draft appears on the dashboard', str_contains($b, 'WP Imported'));
     [$s, , $b] = req('GET', "$base/2025/06/wp-imported", $authed);
     check('wordpress HTML body converted to markdown and rendered', $s === 200 && str_contains($b, 'Imported from') && str_contains($b, '<strong>WordPress</strong>'), "status $s");
+
+    // Generic RSS: a feed file imports as a draft, with the same a11y report.
+    $rssFile = "$tmp/feed.xml";
+    file_put_contents($rssFile,
+        '<?xml version="1.0"?><rss version="2.0"><channel><title>Feed</title><item>'
+        . '<title>RSS Imported</title><link>https://blog.test/rss-imported/</link>'
+        . '<pubDate>Sat, 03 May 2025 09:00:00 +0000</pubDate><category>News</category>'
+        . '<description><![CDATA[<p>From a <strong>feed</strong>. See <a href="https://e.com">read more</a>.</p>]]></description>'
+        . '</item></channel></rss>');
+    [, , $b] = req('GET', "$base/admin/import", $authed);
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+    [$s, , $b] = req('POST', "$base/admin/import", $authed + ['body' => [
+        'csrf_token'   => $m[1],
+        'importSource' => 'rss',
+        'importZip'    => new CURLFile($rssFile, 'application/xml', 'feed.xml'),
+    ]]);
+    check('rss dry-run flags accessibility and writes nothing', $s === 200 && str_contains($b, 'rss-imported') && str_contains($b, 'to fix') && str_contains($b, 'Nothing has been written'), "status $s");
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+    [$s] = req('POST', "$base/admin/import/confirm", $authed + ['body' => 'csrf_token=' . $m[1]]);
+    check('rss import creates a draft', $s === 302, "status $s");
+    [$s, , $b] = req('GET', "$base/2025/05/rss-imported", $authed);
+    check('rss body converted to markdown and rendered', $s === 200 && str_contains($b, 'From a') && str_contains($b, '<strong>feed</strong>'), "status $s");
+
+    // RSS by URL: fetch the instance's own feed (loopback allowed in the test
+    // harness) — every post already exists, so all are deduped.
+    [, , $b] = req('GET', "$base/admin/import", $authed);
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+    [$s, , $b] = req('POST', "$base/admin/import", $authed + ['body' => http_build_query([
+        'csrf_token'   => $m[1],
+        'importSource' => 'rss',
+        'importUrl'    => "$base/feed",
+    ])]);
+    check('rss import fetches a feed URL and dedupes existing posts', $s === 200 && str_contains($b, 'skip — exists'), "status $s");
 }
 
 // ---------------------------------------------------------- theme gallery --

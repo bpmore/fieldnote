@@ -23,9 +23,13 @@ require __DIR__ . '/header.php';
             <option value="auto">Auto-detect</option>
             <option value="markdown">Markdown / Fieldnote export (.zip of .md with frontmatter)</option>
             <option value="wordpress">WordPress (.xml export — also Squarespace)</option>
+            <option value="rss">RSS / Atom feed (file or URL below)</option>
         </select>
-        <input type="file" name="importZip" accept=".zip,.xml,application/zip,text/xml,application/xml" class="form-control" required>
-        <button type="submit" class="btn btn-primary mt-3">Inspect file</button>
+        <input type="file" name="importZip" accept=".zip,.xml,application/xml,text/xml,application/rss+xml,application/atom+xml" class="form-control">
+        <label for="importUrl" class="form-label mb-0 mt-2">&hellip; or a feed URL</label>
+        <input type="url" name="importUrl" id="importUrl" class="form-control" placeholder="https://example.com/feed.xml">
+        <small class="text-muted d-block mt-1">Feeds often truncate post bodies, so RSS is a fallback — use a platform export above when you have one.</small>
+        <button type="submit" class="btn btn-primary mt-3">Inspect</button>
         <a href="<?= e($router->generate('dashboard')) ?>" class="btn btn-secondary mt-3"><?php i18n("settings_dashboard_return"); ?></a>
     </form>
 <?php else: ?>

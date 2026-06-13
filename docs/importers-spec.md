@@ -163,7 +163,7 @@ draft vs published, that's recorded in the report — but everything still
 | Phase | Scope | Size |
 |---|---|---|
 | 0 | Converter layer + `Porter` in-memory entry point + import-as-draft + a11y report + image localization via SafeHttp + format-pick UI | M — **SHIPPED** |
-| 1 | **WordPress (WXR)** — **SHIPPED** (`WordPressImporter`; covers Squarespace). **Generic RSS/Atom** — pending | M |
+| 1 | **WordPress (WXR)** — **SHIPPED** (`WordPressImporter`; covers Squarespace). **Generic RSS/Atom** — **SHIPPED** (`RssImporter`; file or SafeHttp-fetched URL) | M |
 | 2 | **Substack**, **Ghost**, **WriteFreely** — timing, structured, positioning | M |
 | 3 | **Medium**, **Blogger**, **Notion**, **Dev.to/Hashnode** | M |
 
