@@ -295,8 +295,11 @@ function fn_request_base(): string
  * Visitor search form (GET, zero-JS). Themes opt in by calling it wherever
  * fits their layout; the sr-only label keeps it accessible unstyled.
  */
-function fn_search_form(\AltoRouter $router, string $value = ''): void
+function fn_search_form(\AltoRouter $router, array $siteConfig, string $value = ''): void
 {
+    if (empty($siteConfig['searchEnabled'])) {
+        return;
+    }
     echo '<form role="search" method="get" action="' . e($router->generate('search')) . '" class="search-form">' . "\n"
         . '<label class="sr-only" for="fn-search-q">Search</label>' . "\n"
         . '<input type="search" id="fn-search-q" name="q" value="' . e($value) . '" placeholder="Search&hellip;">' . "\n"

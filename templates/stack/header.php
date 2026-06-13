@@ -28,5 +28,6 @@ $siteName = $siteConfig['name'] !== '' ? $siteConfig['name'] : 'Fieldnote';
                 <p class="site-info"><span class="comment-mark" aria-hidden="true">//</span> <?= e($siteConfig['info']) ?></p>
             <?php endif; ?>
         </div>
+<?php Fieldnote\fn_search_form($router, $siteConfig, (string) ($_GET["q"] ?? "")); ?>
     </header>
     <main id="main" class="wrap">

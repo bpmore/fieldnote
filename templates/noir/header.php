@@ -14,5 +14,6 @@ $siteName = $siteConfig['name'] !== '' ? $siteConfig['name'] : 'Fieldnote';
 <header class="masthead">
     <a class="site-title" href="<?= e($router->generate('home')) ?>"><?= e($siteName) ?></a>
     <?php if ($siteConfig['info'] !== ''): ?><p class="site-info"><?= e($siteConfig['info']) ?></p><?php endif; ?>
+<?php Fieldnote\fn_search_form($router, $siteConfig, (string) ($_GET["q"] ?? "")); ?>
 </header>
 <main id="main" class="wrap">

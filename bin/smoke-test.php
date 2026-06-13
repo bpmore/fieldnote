@@ -277,6 +277,19 @@ check('search matches protected titles', str_contains($b, 'Locked Post'));
 [, , $b] = req('GET', "$base/search?q=x");
 check('single-char query returns nothing', !str_contains($b, 'Hello World'));
 
+// The search box is surfaced in the header on every page when enabled, so
+// /search is never a blank page and search is reachable from the home page.
+[, , $b] = req('GET', "$base/");
+check('search box appears in the header when enabled', str_contains($b, 'role="search"'));
+[, , $b] = req('GET', "$base/search");
+check('the search page shows the box with no query', str_contains($b, 'role="search"'));
+file_put_contents($cfgFile, "<?php\nreturn " . var_export(array_merge($config, ['searchEnabled' => false]), true) . ";\n");
+[, , $b] = req('GET', "$base/");
+check('search box hidden when search is disabled', !str_contains($b, 'role="search"'));
+[$s] = req('GET', "$base/search");
+check('disabled search route 404s', $s === 404, "status $s");
+file_put_contents($cfgFile, "<?php\nreturn " . var_export($config, true) . ";\n");
+
 // ------------------------------------------------------------------- feed --
 
 [$s, $h, $b] = req('GET', "$base/feed");

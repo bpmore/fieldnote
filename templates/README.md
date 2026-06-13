@@ -104,3 +104,9 @@ so `post.php` can call it unconditionally. Every theme calls it after
 tokens. Delete links to a server-rendered confirm page (the public surface is
 no-JS), so it's safe without the dashboard's confirm script. Move the call to
 reposition it; keep it gated and don't restyle it into failing contrast.
+
+`Fieldnote\fn_search_form($router, $siteConfig, $value)` renders the visitor
+search box (`role="search"`), or nothing when the owner has disabled search
+(config `searchEnabled`). Every theme calls it inside `header.php` so search is
+reachable from every page and `/search` is never blank; style `.search-form`
+with theme tokens. Move the call to reposition it within the header.

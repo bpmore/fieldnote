@@ -19,5 +19,6 @@ $siteName = $siteConfig['name'] !== '' ? $siteConfig['name'] : 'Fieldnote';
             <li><a href="<?= e($router->generate('feed')) ?>">RSS feed</a></li>
         </ul>
     </div>
+<?php Fieldnote\fn_search_form($router, $siteConfig, (string) ($_GET["q"] ?? "")); ?>
 </header>
 <main id="main" class="wrap">
