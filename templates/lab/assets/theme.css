@@ -1,0 +1,41 @@
+/* lab — engineering notebook: faint graph grid, ink-blue accents, clean sans. */
+:root {
+    color-scheme: light;
+    --bg: #fbfcf7; --surface: #fbfcf7; --text: #1b1d1a; --muted: #565950;
+    --accent: #1565a0; --accent-contrast: #ffffff; --line: #3a3d36; --focus: #1565a0;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #131512; --surface: #131512; --text: #e7e9e2; --muted: #a3a69b;
+        --accent: #5b9bd5; --accent-contrast: #08121d; --line: #63665b; --focus: #5b9bd5;
+    }
+}
+* { box-sizing: border-box; }
+html { color-scheme: light dark; }
+body { margin: 0; color: var(--text); line-height: 1.6;
+    background-color: var(--bg);
+    background-image: linear-gradient(color-mix(in srgb, var(--accent) 14%, transparent) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--accent) 14%, transparent) 1px, transparent 1px);
+    background-size: 22px 22px;
+    font-family: "Helvetica Neue", Arial, system-ui, sans-serif; }
+.col { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1.25rem 5rem; }
+a { color: var(--accent); }
+.top { border-bottom: 2px solid var(--accent); padding-bottom: .9rem; margin-bottom: 2rem; }
+.site-title { display: block; font-size: 1.6rem; font-weight: 700; text-decoration: none; color: var(--text); }
+.site-info { margin: .3rem 0 0; color: var(--muted); }
+.index { list-style: none; margin: 0; padding: 0; }
+.index-item { border-bottom: 1px solid var(--line); padding: .85rem 0; }
+.index-title { margin: 0; font-size: 1.2rem; font-weight: 600; }
+.index-title a { color: var(--text); text-decoration: none; }
+.index-title a:hover { color: var(--accent); }
+.index-meta { margin: .3rem 0 0; color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
+.piece-title { margin: 0 0 .3rem; font-size: 1.8rem; font-weight: 700; }
+.piece-meta { margin: 0 0 1rem; color: var(--muted); font-size: .82rem; border-bottom: 1px solid var(--line); padding-bottom: 1rem; }
+.piece-image, .piece-body img { max-width: 100%; height: auto; }
+.piece-body blockquote { border-left: 3px solid var(--accent); margin: 1rem 0; padding-left: 1rem; color: var(--muted); }
+.piece-body pre { background: var(--surface); border: 1px solid var(--line); padding: .8rem; overflow-x: auto; font-family: ui-monospace, Menlo, monospace; }
+.empty-state { color: var(--muted); }
+.back { margin-top: 2rem; }
+.back-link { color: var(--accent); font-weight: 600; text-decoration: none; }
+.bottom { margin-top: 3rem; border-top: 2px solid var(--accent); padding-top: 1rem; color: var(--muted); font-size: .82rem; }
+.bottom a { color: var(--accent); }

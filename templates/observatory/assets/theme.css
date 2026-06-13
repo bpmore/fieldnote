@@ -1,0 +1,38 @@
+/* observatory — celestial chart: deep night, starlight type, gold, thin planisphere lines. */
+:root {
+    color-scheme: dark;
+    --bg: #0c0e15; --surface: #0c0e15; --text: #e9e7dd; --muted: #9ba2b6;
+    --accent: #d8b66a; --accent-contrast: #0c0e15; --line: #5b6382; --focus: #d8b66a;
+}
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg: #11131c; --surface: #11131c; --text: #efece2; --muted: #a7aec2;
+        --accent: #e6c47a; --accent-contrast: #11131c; --line: #6a728f; --focus: #e6c47a;
+    }
+}
+* { box-sizing: border-box; }
+html { color-scheme: dark; }
+body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.7;
+    font-family: "Optima", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; }
+.col { max-width: 46rem; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
+a { color: var(--accent); }
+.top { text-align: center; border-bottom: 1px solid var(--line); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+.site-title { display: block; font-size: 2.2rem; letter-spacing: .14em; text-transform: uppercase; text-decoration: none; color: var(--accent); }
+.site-info { margin: .5rem 0 0; color: var(--muted); font-style: italic; letter-spacing: .03em; }
+.index { list-style: none; margin: 0; padding: 0; }
+.index-item { border-bottom: 1px solid var(--line); padding: 1.1rem 0; }
+.index-title { margin: 0; font-size: 1.35rem; letter-spacing: .02em; }
+.index-title a { color: var(--text); text-decoration: none; }
+.index-title a:hover { color: var(--accent); }
+.index-meta { margin: .35rem 0 0; color: var(--muted); font-size: .82rem; letter-spacing: .14em; text-transform: uppercase; }
+.piece-title { margin: 0 0 .35rem; font-size: 2.3rem; letter-spacing: .03em; }
+.piece-meta { margin: 0; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; font-size: .8rem; }
+.piece-image, .piece-body img { max-width: 100%; height: auto; }
+.piece-body { margin-top: 1.5rem; font-size: 1.05rem; }
+.piece-body blockquote { border-left: 1px solid var(--accent); margin: 1rem 0; padding-left: 1.2rem; font-style: italic; color: var(--muted); }
+.piece-body pre { border: 1px solid var(--line); padding: .8rem; overflow-x: auto; font-family: ui-monospace, Menlo, monospace; }
+.empty-state { color: var(--muted); font-style: italic; text-align: center; }
+.back { margin-top: 2.5rem; text-align: center; }
+.back-link { color: var(--accent); letter-spacing: .1em; text-transform: uppercase; text-decoration: none; }
+.bottom { margin-top: 3rem; border-top: 1px solid var(--line); padding-top: 1.2rem; text-align: center; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; font-size: .76rem; }
+.bottom a { color: var(--accent); }

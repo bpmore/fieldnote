@@ -1,0 +1,39 @@
+/* tape — cassette j-card: dark shell, orange band, condensed uppercase labels. */
+:root {
+    color-scheme: dark;
+    --bg: #18181a; --surface: #18181a; --text: #ededed; --muted: #a6a6a8;
+    --accent: #ff8c42; --accent-contrast: #18181a; --line: #87898c; --focus: #ff8c42;
+}
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg: #1f1f22; --surface: #1f1f22; --text: #f0f0f0; --muted: #b0b0b2;
+        --accent: #ffa05e; --accent-contrast: #1f1f22; --line: #95979a; --focus: #ffa05e;
+    }
+}
+* { box-sizing: border-box; }
+html { color-scheme: dark; }
+body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.6;
+    font-family: "Oswald", "Bebas Neue", "Helvetica Neue Condensed", "Arial Narrow", system-ui, sans-serif; }
+.col { max-width: 44rem; margin: 0 auto; padding: 0 0 5rem; }
+a { color: var(--accent); }
+.top { background: var(--accent); color: var(--accent-contrast); padding: 1.1rem 1.25rem; }
+.site-title { display: block; font-size: 2rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; text-decoration: none; color: var(--accent-contrast); }
+.site-info { margin: .2rem 0 0; color: var(--accent-contrast); text-transform: uppercase; letter-spacing: .1em; font-size: .82rem; }
+#main { padding: 0 1.25rem; }
+.index { list-style: none; margin: 1.5rem 0; padding: 0; }
+.index-item { border-bottom: 2px solid var(--line); padding: .9rem 0; }
+.index-item::before { content: "\25B6"; color: var(--accent); margin-right: .5rem; font-size: .8rem; }
+.index-title { display: inline; margin: 0; font-size: 1.3rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+.index-title a { color: var(--text); text-decoration: none; }
+.index-meta { margin: .35rem 0 0; color: var(--muted); font-size: .82rem; text-transform: uppercase; letter-spacing: .1em; }
+.piece-title { margin: 0 0 .3rem; font-size: 2rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+.piece-meta { margin: 0 0 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; font-size: .82rem; }
+.piece-image, .piece-body img { max-width: 100%; height: auto; }
+.piece-body { font-family: "Helvetica Neue", Arial, system-ui, sans-serif; }
+.piece-body blockquote { border-left: 4px solid var(--accent); margin: 1rem 0; padding-left: 1rem; color: var(--muted); }
+.piece-body pre { border: 1px solid var(--line); padding: .8rem; overflow-x: auto; font-family: ui-monospace, Menlo, monospace; }
+.empty-state { color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.back { margin: 2rem 0 0; }
+.back-link { color: var(--accent); text-transform: uppercase; letter-spacing: .08em; text-decoration: none; }
+.bottom { margin-top: 3rem; border-top: 3px solid var(--accent); padding: 1rem 0 0; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-size: .8rem; }
+.bottom a { color: var(--accent); }

@@ -1,0 +1,39 @@
+/* wayfinding — transit signage: dark panels, bold sans, signal-yellow bars, arrows. */
+:root {
+    color-scheme: dark;
+    --bg: #20242b; --surface: #20242b; --text: #f3f5f7; --muted: #b2bac3;
+    --accent: #f6c915; --accent-contrast: #20242b; --line: #717c8c; --focus: #f6c915;
+}
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg: #2a2f38; --surface: #2a2f38; --text: #f5f7f9; --muted: #bcc4cd;
+        --accent: #ffd23a; --accent-contrast: #2a2f38; --line: #7e899a; --focus: #ffd23a;
+    }
+}
+* { box-sizing: border-box; }
+html { color-scheme: dark; }
+body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.55;
+    font-family: "Frutiger", "Helvetica Neue", "Arial", system-ui, sans-serif; font-weight: 500; }
+.col { max-width: 48rem; margin: 0 auto; padding: 0 0 5rem; }
+a { color: var(--accent); }
+.top { background: var(--accent); color: var(--accent-contrast); padding: 1.4rem 1.25rem; }
+.site-title { display: block; font-size: 2rem; font-weight: 800; letter-spacing: -.01em; text-decoration: none; color: var(--accent-contrast); }
+.site-info { margin: .25rem 0 0; color: var(--accent-contrast); font-weight: 600; }
+#main { padding: 0 1.25rem; }
+.index { list-style: none; margin: 1.5rem 0; padding: 0; }
+.index-item { border-left: 10px solid var(--accent); padding: .9rem 1rem; margin-bottom: .7rem; background: color-mix(in srgb, var(--text) 6%, var(--bg)); }
+.index-title { margin: 0; font-size: 1.35rem; font-weight: 700; }
+.index-title a { color: var(--text); text-decoration: none; }
+.index-title a::before { content: "\2192 "; color: var(--accent); }
+.index-meta { margin: .3rem 0 0; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: .8rem; }
+.piece-title { margin: 0 0 .3rem; font-size: 2.1rem; font-weight: 800; }
+.piece-meta { margin: 0; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: .82rem; }
+.piece-image, .piece-body img { max-width: 100%; height: auto; }
+.piece-body { margin-top: 1.4rem; font-weight: 400; }
+.piece-body blockquote { border-left: 10px solid var(--accent); margin: 1rem 0; padding-left: 1rem; color: var(--muted); }
+.piece-body pre { background: color-mix(in srgb, var(--text) 8%, var(--bg)); padding: .8rem; overflow-x: auto; }
+.empty-state { color: var(--muted); }
+.back { margin: 2rem 0 0; }
+.back-link { color: var(--accent); font-weight: 700; text-decoration: none; }
+.bottom { margin-top: 3rem; border-top: 4px solid var(--accent); padding: 1rem 0 0; color: var(--muted); font-weight: 600; font-size: .82rem; }
+.bottom a { color: var(--accent); }

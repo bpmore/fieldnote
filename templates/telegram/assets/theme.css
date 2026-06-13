@@ -1,0 +1,37 @@
+/* telegram — wire copy: pale stock, uppercase monospace, postal red, STOP rules. */
+:root {
+    color-scheme: light;
+    --bg: #efeae0; --surface: #efeae0; --text: #201d17; --muted: #5e5848;
+    --accent: #99281b; --accent-contrast: #efeae0; --line: #6f6856; --focus: #99281b;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #1d1b16; --surface: #1d1b16; --text: #e8e2d2; --muted: #ada791;
+        --accent: #e0795f; --accent-contrast: #1d1b16; --line: #8a8270; --focus: #e0795f;
+    }
+}
+* { box-sizing: border-box; }
+html { color-scheme: light dark; }
+body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.7;
+    font-family: ui-monospace, "Courier New", Menlo, monospace; }
+.col { max-width: 42rem; margin: 0 auto; padding: 1.5rem 1.25rem 5rem; }
+a { color: var(--accent); }
+.top { border-top: 4px solid var(--text); border-bottom: 4px solid var(--text); padding: 1rem 0; margin-bottom: 2rem; }
+.site-title { display: block; font-size: 1.4rem; font-weight: 700; text-transform: uppercase; letter-spacing: .28em; text-decoration: none; color: var(--text); }
+.site-info { margin: .5rem 0 0; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; font-size: .78rem; }
+.index { list-style: none; margin: 0; padding: 0; }
+.index-item { padding: .9rem 0; }
+.index-item::after { content: "\2014 STOP \2014"; display: block; color: var(--muted); letter-spacing: .2em; font-size: .7rem; margin-top: .7rem; }
+.index-title { margin: 0; font-size: 1.05rem; text-transform: uppercase; letter-spacing: .04em; }
+.index-title a { color: var(--text); text-decoration: none; }
+.index-meta { margin: .35rem 0 0; color: var(--muted); font-size: .76rem; text-transform: uppercase; letter-spacing: .12em; }
+.piece-title { margin: 0 0 .3rem; font-size: 1.5rem; text-transform: uppercase; letter-spacing: .08em; }
+.piece-meta { margin: 0 0 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; font-size: .76rem; border-bottom: 2px solid var(--text); padding-bottom: 1rem; }
+.piece-image, .piece-body img { max-width: 100%; height: auto; }
+.piece-body blockquote { border-left: 3px solid var(--accent); margin: 1rem 0; padding-left: 1rem; color: var(--muted); }
+.piece-body pre { border: 1px solid var(--line); padding: .8rem; overflow-x: auto; }
+.empty-state { color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+.back { margin-top: 2rem; }
+.back-link { color: var(--accent); text-transform: uppercase; letter-spacing: .1em; text-decoration: none; }
+.bottom { margin-top: 3rem; border-top: 4px solid var(--text); padding-top: 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-size: .74rem; }
+.bottom a { color: var(--accent); }

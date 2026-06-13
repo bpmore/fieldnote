@@ -1,0 +1,37 @@
+/* kraft — brown kraft paper: warm tan stock, rubber-stamp red, taped labels. */
+:root {
+    color-scheme: light;
+    --bg: #ddcaa3; --surface: #ddcaa3; --text: #261d12; --muted: #574832;
+    --accent: #8c3b1a; --accent-contrast: #ddcaa3; --line: #7a6a4c; --focus: #8c3b1a;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #211a11; --surface: #211a11; --text: #e6d8bf; --muted: #b39d77;
+        --accent: #d98c5f; --accent-contrast: #211a11; --line: #8a7a5c; --focus: #d98c5f;
+    }
+}
+* { box-sizing: border-box; }
+html { color-scheme: light dark; }
+body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.65;
+    font-family: "Helvetica Neue", Arial, system-ui, sans-serif; }
+.col { max-width: 44rem; margin: 0 auto; padding: 1.5rem 1.4rem 5rem; }
+a { color: var(--accent); }
+.top { border: 2px dashed var(--line); padding: 1.1rem 1.2rem; margin-bottom: 2rem; }
+.site-title { display: inline-block; font-size: 1.5rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; text-decoration: none; color: var(--accent); border: 3px solid var(--accent); padding: .15rem .5rem; transform: rotate(-1.5deg); }
+.site-info { margin: .7rem 0 0; color: var(--muted); }
+.index { list-style: none; margin: 0; padding: 0; }
+.index-item { border-bottom: 2px dashed var(--line); padding: .9rem 0; }
+.index-title { margin: 0; font-size: 1.2rem; font-weight: 700; }
+.index-title a { color: var(--text); text-decoration: none; }
+.index-title a:hover { color: var(--accent); }
+.index-meta { margin: .3rem 0 0; color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; }
+.piece-title { margin: 0 0 .3rem; font-size: 1.7rem; font-weight: 800; }
+.piece-meta { margin: 0 0 1rem; color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; }
+.piece-image, .piece-body img { max-width: 100%; height: auto; }
+.piece-body blockquote { border-left: 4px solid var(--accent); margin: 1rem 0; padding-left: 1rem; color: var(--muted); }
+.piece-body pre { border: 1px solid var(--line); padding: .8rem; overflow-x: auto; font-family: ui-monospace, Menlo, monospace; }
+.empty-state { color: var(--muted); }
+.back { margin-top: 2rem; }
+.back-link { color: var(--accent); font-weight: 700; text-decoration: none; }
+.bottom { margin-top: 3rem; border-top: 2px dashed var(--line); padding-top: 1rem; color: var(--muted); font-size: .82rem; }
+.bottom a { color: var(--accent); }
