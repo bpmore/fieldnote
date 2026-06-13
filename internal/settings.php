@@ -79,6 +79,11 @@ $isNew = ($siteConfig['name'] === '');
                     <label class="form-check-label" for="blogStatsEnabled">View counts (cookie-less; no IPs or user agents are ever stored)</label>
                 </div>
                 <div class="form-check my-2">
+                    <input class="form-check-input" type="checkbox" name="blogAccessibilityBadge" id="blogAccessibilityBadge"
+                           <?= !empty($siteConfig['accessibilityBadge']) ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="blogAccessibilityBadge">Show the WCAG 2.2 AA badge in the theme footer (links to /accessibility)</label>
+                </div>
+                <div class="form-check my-2">
                     <input class="form-check-input" type="checkbox" name="blogFederationEnabled" id="blogFederationEnabled"
                            <?= !empty($siteConfig['federationEnabled']) ? 'checked' : '' ?>>
                     <label class="form-check-label" for="blogFederationEnabled">Fediverse federation (ActivityPub, experimental)</label>

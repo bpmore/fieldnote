@@ -78,3 +78,11 @@ unless it genuinely sits inline in a sentence (WCAG 2.5.8 inline exception).
 aria-labelled nav of links to `/tag/<name>` pages (nothing when untagged).
 Opt in from `post.php` the way `gazette` and `liquid-new` do; base layout
 for `.tag-list` ships in the shared a11y CSS, visual styling is yours.
+
+`Fieldnote\fn_a11y_badge($router, $siteConfig)` renders a small WCAG 2.2 AA
+badge linking to `/accessibility`, or nothing when the owner hasn't enabled
+it (config `accessibilityBadge`, default off). Every theme footer calls it
+already; the mark is `currentColor` inline SVG and `.a11y-badge` ships in the
+shared a11y CSS, so it inherits your footer's (gate-passing) colors. If your
+footer needs the badge somewhere specific, move the call — don't restyle it
+into failing contrast.

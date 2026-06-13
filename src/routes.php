@@ -740,6 +740,7 @@ $router->map('GET|POST', '/settings', function () use ($configStore, $siteConfig
             'paletteOverrides' => $siteConfig['paletteOverrides'] ?? [],
             'searchEnabled' => !empty($_POST['blogSearchEnabled']),
             'statsEnabled' => !empty($_POST['blogStatsEnabled']),
+            'accessibilityBadge' => !empty($_POST['blogAccessibilityBadge']),
             'federationEnabled' => !empty($_POST['blogFederationEnabled']),
             // The handle is part of the actor's identity: locked once
             // federation has been on (changing it would orphan followers).

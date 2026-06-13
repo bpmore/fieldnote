@@ -31,6 +31,7 @@ final class Config
         'paletteOverrides' => [],
         'searchEnabled' => true,
         'statsEnabled' => true,
+        'accessibilityBadge' => false,
         'federationEnabled' => false,
         'apHandle' => 'blog',
         'trustedProxies' => '',

@@ -320,6 +320,31 @@ function fn_skip_link(string $label = 'Skip to content'): void
 }
 
 /**
+ * Optional footer badge linking to the /accessibility statement. Off by
+ * default (config 'accessibilityBadge'); when on, every theme that calls
+ * this in its footer shows it. The mark is inline SVG using currentColor,
+ * so it inherits the footer's own text color — which already passes the
+ * contrast gate in every theme — and the badge can never introduce an
+ * inaccessible element. Self-hosted (no external request); styled by
+ * .a11y-badge in the shared a11y.css baseline.
+ *
+ * @param array<string,mixed> $siteConfig
+ */
+function fn_a11y_badge(\AltoRouter $router, array $siteConfig): void
+{
+    if (empty($siteConfig['accessibilityBadge'])) {
+        return;
+    }
+    echo '<a class="a11y-badge" href="' . e($router->generate('accessibility'))
+        . '" aria-label="Accessibility: machine-checked to WCAG 2.2 AA. Read the statement.">' . "\n"
+        . '<svg class="a11y-badge-mark" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">'
+        . '<path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M3.5 8.5l3 3 6-7"/>'
+        . '</svg>'
+        . '<span>WCAG&nbsp;2.2&nbsp;AA</span>'
+        . '</a>' . "\n";
+}
+
+/**
  * Alt text for the un-linked post hero image. List/card images stay alt=""
  * (decorative — the adjacent title link already names the destination);
  * the hero is content, so it gets the post title. One function so the

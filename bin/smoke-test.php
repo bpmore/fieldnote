@@ -223,6 +223,16 @@ check('past-due scheduled draft auto-published', str_contains($b, 'Scheduled Pos
 [$s, , $b] = req('GET', "$base/accessibility");
 check('accessibility statement renders from Wcag constants', $s === 200 && str_contains($b, '4.5:1') && str_contains($b, 'prefers-reduced-motion'), "status $s");
 
+// Accessibility badge: off by default, opt-in via config, themed into the
+// footer, linking to the statement. Flip the fixture config on, then revert.
+$cfgFile = $tmp . '/data/config.php';
+[, , $b] = req('GET', "$base/");
+check('a11y badge hidden by default', !str_contains($b, 'a11y-badge'));
+file_put_contents($cfgFile, "<?php\nreturn " . var_export(array_merge($config, ['accessibilityBadge' => true]), true) . ";\n");
+[, , $b] = req('GET', "$base/");
+check('a11y badge shows when enabled and links to the statement', str_contains($b, 'class="a11y-badge"') && str_contains($b, 'href="/accessibility"') && str_contains($b, 'WCAG'));
+file_put_contents($cfgFile, "<?php\nreturn " . var_export($config, true) . ";\n");
+
 // ----------------------------------------------------------------- search --
 
 [$s, , $b] = req('GET', "$base/search?q=published");

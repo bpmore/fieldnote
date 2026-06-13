@@ -180,7 +180,7 @@ blocks publishing.
 two warnings after save; a clean post shows none; warnings survive the
 redirect (flash pattern, same as `login_error`).
 
-### 1.3 Public proof: /accessibility page + badge (S) — SHIPPED (page; badge deferred)
+### 1.3 Public proof: /accessibility page + badge (S) — SHIPPED
 
 Turn the gate into marketing. A public route `/accessibility` (rendered
 through the active theme like a post) stating what is machine-checked —

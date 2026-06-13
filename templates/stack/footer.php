@@ -7,6 +7,7 @@
             <?php endif; ?>
             <p><a class="rss-link" href="<?= e($router->generate('feed')) ?>">rss.xml</a></p>
         </div>
+        <?php Fieldnote\fn_a11y_badge($router, $siteConfig); ?>
     </footer>
 </body>
 </html>
