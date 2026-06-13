@@ -250,7 +250,7 @@ h1, h2, h3, .site-title, .display {
 
 /* ---- Footer ---- */
 .site-footer { border-top: 1px solid var(--hairline); margin-top: 2.5rem; background: var(--surface); }
-.footer-inner { padding-top: 1.75rem; padding-bottom: 2.25rem; color: var(--muted); font-size: .85rem; }
+.footer-inner { padding-top: 1.75rem; padding-bottom: 2.25rem; color: var(--muted); font-size: .85rem; text-align: center; }
 .footer-inner p { margin: .25rem 0; }
-.rss-link { display: inline-block; padding: .3rem .5rem .3rem 0; color: var(--muted); text-decoration: underline; }
+.rss-link { display: inline-block; padding: .3rem .5rem; color: var(--muted); text-decoration: underline; }
 .rss-link:hover { color: var(--accent); }
