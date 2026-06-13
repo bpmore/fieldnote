@@ -1428,7 +1428,7 @@ $router->map('GET|POST', '/admin/import', function () use ($requireConfig, $requ
         }
 
         if ($importError === '') {
-            $source = in_array($_POST['importSource'] ?? 'auto', ['markdown', 'wordpress', 'rss', 'substack', 'ghost'], true)
+            $source = in_array($_POST['importSource'] ?? 'auto', ['markdown', 'wordpress', 'rss', 'substack', 'ghost', 'writefreely'], true)
                 ? (string) $_POST['importSource']
                 : 'auto';
             if ($source === 'auto') {
@@ -1439,6 +1439,8 @@ $router->map('GET|POST', '/admin/import', function () use ($requireConfig, $requ
                     $source = 'wordpress';
                 } elseif (GhostImporter::looksLikeGhost($head)) {
                     $source = 'ghost';
+                } elseif (WriteFreelyImporter::looksLikeWriteFreely($head)) {
+                    $source = 'writefreely';
                 } elseif (RssImporter::looksLikeFeed($head)) {
                     $source = 'rss';
                 } else {
@@ -1448,11 +1450,12 @@ $router->map('GET|POST', '/admin/import', function () use ($requireConfig, $requ
 
             $porter   = new Porter($blogStore, $imageStore, $images, FN_UPLOAD_DIR);
             $analysis = match ($source) {
-                'wordpress' => $porter->analyzeEntries(WordPressImporter::parse($stored)),
-                'rss'       => $porter->analyzeEntries(RssImporter::parse($stored)),
-                'substack'  => $porter->analyzeEntries(SubstackImporter::parse($stored)),
-                'ghost'     => $porter->analyzeEntries(GhostImporter::parse($stored)),
-                default     => $porter->analyze($stored),
+                'wordpress'   => $porter->analyzeEntries(WordPressImporter::parse($stored)),
+                'rss'         => $porter->analyzeEntries(RssImporter::parse($stored)),
+                'substack'    => $porter->analyzeEntries(SubstackImporter::parse($stored)),
+                'ghost'       => $porter->analyzeEntries(GhostImporter::parse($stored)),
+                'writefreely' => $porter->analyzeEntries(WriteFreelyImporter::parse($stored)),
+                default       => $porter->analyze($stored),
             };
             if ($analysis['posts'] === []) {
                 $importError = implode(' ', $analysis['errors']) ?: 'Nothing importable found.';
@@ -1483,8 +1486,9 @@ $router->map('POST', '/admin/import/confirm', function () use ($requireConfig, $
         'wordpress' => $porter->importEntries(WordPressImporter::parse($pending['path']), $siteConfig),
         'rss'       => $porter->importEntries(RssImporter::parse($pending['path']), $siteConfig),
         'substack'  => $porter->importEntries(SubstackImporter::parse($pending['path']), $siteConfig),
-        'ghost'     => $porter->importEntries(GhostImporter::parse($pending['path']), $siteConfig),
-        default     => $porter->import($pending['path'], $siteConfig),
+        'ghost'       => $porter->importEntries(GhostImporter::parse($pending['path']), $siteConfig),
+        'writefreely' => $porter->importEntries(WriteFreelyImporter::parse($pending['path']), $siteConfig),
+        default       => $porter->import($pending['path'], $siteConfig),
     };
     @unlink($pending['path']);
     $redirect('dashboard');

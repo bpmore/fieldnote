@@ -745,6 +745,26 @@ if (!class_exists(ZipArchive::class)) {
     check('ghost import creates a draft', $s === 302, "status $s");
     [$s, , $b] = req('GET', "$base/2025/01/ghost-post", $authed);
     check('ghost body converted to markdown and rendered', $s === 200 && str_contains($b, 'From') && str_contains($b, '<strong>Ghost</strong>'), "status $s");
+
+    // WriteFreely: JSON export, markdown-native body, inline #hashtags as tags.
+    $wfJson = "$tmp/wf.json";
+    file_put_contents($wfJson, json_encode([
+        ['id' => 'a1', 'slug' => 'wf-post', 'title' => 'WF Post', 'appearance' => 'norm', 'rtl' => false,
+         'created' => '2025-07-01T00:00:00Z', 'body' => "## Hi\n\nFrom **WriteFreely**. See [read more](https://e.com). #fediverse"],
+    ]));
+    [, , $b] = req('GET', "$base/admin/import", $authed);
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+    [$s, , $b] = req('POST', "$base/admin/import", $authed + ['body' => [
+        'csrf_token'   => $m[1],
+        'importSource' => 'auto',
+        'importZip'    => new CURLFile($wfJson, 'application/json', 'wf.json'),
+    ]]);
+    check('writefreely json auto-detected; dry-run flags a11y, writes nothing', $s === 200 && str_contains($b, 'wf-post') && str_contains($b, 'to fix') && str_contains($b, 'Nothing has been written'), "status $s");
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+    [$s] = req('POST', "$base/admin/import/confirm", $authed + ['body' => 'csrf_token=' . $m[1]]);
+    check('writefreely import creates a draft', $s === 302, "status $s");
+    [$s, , $b] = req('GET', "$base/2025/07/wf-post", $authed);
+    check('writefreely markdown body rendered + hashtag tags', $s === 200 && str_contains($b, '<strong>WriteFreely</strong>') && str_contains($b, 'fediverse'), "status $s");
 }
 
 // ---------------------------------------------------------- theme gallery --

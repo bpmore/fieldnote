@@ -164,7 +164,7 @@ draft vs published, that's recorded in the report — but everything still
 |---|---|---|
 | 0 | Converter layer + `Porter` in-memory entry point + import-as-draft + a11y report + image localization via SafeHttp + format-pick UI | M — **SHIPPED** |
 | 1 | **WordPress (WXR)** — **SHIPPED** (`WordPressImporter`; covers Squarespace). **Generic RSS/Atom** — **SHIPPED** (`RssImporter`; file or SafeHttp-fetched URL) | M |
-| 2 | **Substack** — **SHIPPED** (`SubstackImporter`). **Ghost** — **SHIPPED** (`GhostImporter`; JSON export). **WriteFreely** — pending | M |
+| 2 | **Substack** — **SHIPPED** (`SubstackImporter`). **Ghost** — **SHIPPED** (`GhostImporter`). **WriteFreely** — **SHIPPED** (`WriteFreelyImporter`; markdown-native JSON, #hashtags → tags) | M — **DONE** |
 | 3 | **Medium**, **Blogger**, **Notion**, **Dev.to/Hashnode** | M |
 
 Phase 0 + WordPress shipped: `Porter::analyzeEntries()` / `importEntries()` run
