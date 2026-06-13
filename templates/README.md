@@ -87,6 +87,16 @@ shared a11y CSS, so it inherits your footer's (gate-passing) colors. If your
 footer needs the badge somewhere specific, move the call — don't restyle it
 into failing contrast.
 
+`Fieldnote\fn_footer_copyright($siteConfig)` renders a `© <year> <name>`
+line, or nothing unless the owner enabled it (config `copyright` =
+blog|author). `Fieldnote\fn_social_links($siteConfig)` renders the curated
+footer social links (config `social`), or nothing when none are set — each an
+accessible labelled link with a `currentColor` inline-SVG icon and `rel="me"`.
+Both are called after the footer content in every theme; `.footer-copyright`
+and `.social-links` ship in the shared a11y CSS and inherit theme colors. Move
+the calls to reposition; keep them gated and don't restyle into failing
+contrast.
+
 `Fieldnote\fn_post_admin($router, $post)` renders inline owner controls
 (edit, publish/hide, delete) on a post, or nothing for logged-out visitors —
 so `post.php` can call it unconditionally. Every theme calls it after

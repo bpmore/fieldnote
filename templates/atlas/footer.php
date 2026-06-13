@@ -6,6 +6,8 @@
         <?php endif; ?>
         <p class="footer-coord" aria-hidden="true">end of charted territory</p>
         <p><a class="rss-link" href="<?= e($router->generate('feed')) ?>">RSS feed</a></p>
+        <?php Fieldnote\fn_social_links($siteConfig); ?>
+        <?php Fieldnote\fn_footer_copyright($siteConfig); ?>
         <?php Fieldnote\fn_a11y_badge($router, $siteConfig); ?>
     </footer>
 </body>

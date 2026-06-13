@@ -240,6 +240,19 @@ file_put_contents($cfgFile, "<?php\nreturn " . var_export(array_merge($config, [
 check('a11y badge shows when enabled and links to the statement', str_contains($b, 'class="a11y-badge"') && str_contains($b, 'href="/accessibility"') && str_contains($b, 'WCAG'));
 file_put_contents($cfgFile, "<?php\nreturn " . var_export($config, true) . ";\n");
 
+// Footer copyright + curated social links: off by default, opt-in via config.
+[, , $b] = req('GET', "$base/");
+check('footer copyright + social hidden by default', !str_contains($b, 'footer-copyright') && !str_contains($b, 'social-links'));
+file_put_contents($cfgFile, "<?php\nreturn " . var_export(array_merge($config, [
+    'copyright' => 'author',
+    'copyrightStartYear' => '2021',
+    'social' => ['mastodon' => 'https://mastodon.social/@fieldnote', 'github' => 'https://github.com/bpmore/fieldnote'],
+]), true) . ";\n");
+[, , $b] = req('GET', "$base/");
+check('footer copyright renders name and a year range', str_contains($b, 'footer-copyright') && str_contains($b, 'Tester') && str_contains($b, '2021') && str_contains($b, date('Y')));
+check('footer social links render rel=me with labelled icons', str_contains($b, 'class="social-links"') && str_contains($b, 'rel="me"') && str_contains($b, 'mastodon.social/@fieldnote') && str_contains($b, '>Mastodon</span>') && str_contains($b, '>GitHub</span>'));
+file_put_contents($cfgFile, "<?php\nreturn " . var_export($config, true) . ";\n");
+
 // Inline owner controls on a public post: invisible to visitors, present for
 // the authenticated owner; delete routes through a server-rendered confirm.
 [, $h] = req('GET', "$base/post/1");

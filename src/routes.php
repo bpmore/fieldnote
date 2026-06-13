@@ -765,6 +765,29 @@ $router->map('GET|POST', '/settings', function () use ($configStore, $siteConfig
             $postsPerPage = 1;
         }
 
+        // Footer copyright + curated social links.
+        $copyright = in_array($_POST['blogCopyright'] ?? 'off', ['blog', 'author'], true)
+            ? (string) $_POST['blogCopyright']
+            : 'off';
+        $copyrightStartYear = preg_match('/^\d{4}$/', (string) ($_POST['blogCopyrightStartYear'] ?? ''))
+            ? (string) $_POST['blogCopyrightStartYear']
+            : '';
+        $social = [];
+        foreach (array_keys(Social::NETWORKS) as $netKey) {
+            $raw = trim((string) ($_POST['blogSocial_' . $netKey] ?? ''));
+            if ($raw === '') {
+                continue;
+            }
+            // Email stores a bare address; everything else must be an http(s)
+            // URL (fn_clean_url drops anything that isn't, so blanks are safe).
+            $social[$netKey] = !empty(Social::NETWORKS[$netKey]['email'])
+                ? fn_clean($raw)
+                : fn_clean_url($raw);
+            if ($social[$netKey] === '') {
+                unset($social[$netKey]);
+            }
+        }
+
         $new = [
             'name'         => fn_clean($_POST['blogName']),
             'info'         => fn_clean($_POST['blogInfo'] ?? ''),
@@ -784,6 +807,9 @@ $router->map('GET|POST', '/settings', function () use ($configStore, $siteConfig
             'searchEnabled' => !empty($_POST['blogSearchEnabled']),
             'statsEnabled' => !empty($_POST['blogStatsEnabled']),
             'accessibilityBadge' => !empty($_POST['blogAccessibilityBadge']),
+            'copyright' => $copyright,
+            'copyrightStartYear' => $copyrightStartYear,
+            'social' => $social,
             'federationEnabled' => !empty($_POST['blogFederationEnabled']),
             // The handle is part of the actor's identity: locked once
             // federation has been on (changing it would orphan followers).

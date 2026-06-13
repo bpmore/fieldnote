@@ -32,6 +32,9 @@ final class Config
         'searchEnabled' => true,
         'statsEnabled' => true,
         'accessibilityBadge' => false,
+        'copyright' => 'off',        // off | blog | author
+        'copyrightStartYear' => '',  // optional; renders a range when set
+        'social' => [],              // network => url (see Social::NETWORKS)
         'federationEnabled' => false,
         'apHandle' => 'blog',
         'trustedProxies' => '',

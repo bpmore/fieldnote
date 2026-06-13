@@ -357,6 +357,65 @@ function fn_a11y_badge(\AltoRouter $router, array $siteConfig): void
 }
 
 /**
+ * Optional footer copyright line: "© <year> <name>". Off unless the owner
+ * picks a name source (config 'copyright' = blog|author); renders a year range
+ * when 'copyrightStartYear' is set and earlier than now. The year uses the
+ * site timezone (set during bootstrap). Self-guarding — nothing for visitors
+ * to opt out of, every theme footer can call it. Styled by .footer-copyright.
+ *
+ * @param array<string,mixed> $siteConfig
+ */
+function fn_footer_copyright(array $siteConfig): void
+{
+    $mode = (string) ($siteConfig['copyright'] ?? 'off');
+    $name = $mode === 'blog'
+        ? (string) ($siteConfig['name'] ?? '')
+        : ($mode === 'author' ? (string) ($siteConfig['author'] ?? '') : '');
+    if ($name === '') {
+        return;
+    }
+    $now   = (int) date('Y');
+    $start = (int) ($siteConfig['copyrightStartYear'] ?? 0);
+    $years = ($start > 0 && $start < $now) ? ($start . '–' . $now) : (string) $now;
+    echo '<p class="footer-copyright">&copy; ' . e($years) . ' ' . e($name) . '</p>' . "\n";
+}
+
+/**
+ * Optional footer social links. Renders only the curated networks the owner
+ * filled in (config 'social' = network => url), each as a labelled link with
+ * an inline currentColor icon — accessible name always present, never icon
+ * alone. rel="me" lets Mastodon (and IndieWeb) verify the link against the
+ * blog's ActivityPub actor. Self-guarding; styled by .social-links.
+ *
+ * @param array<string,mixed> $siteConfig
+ */
+function fn_social_links(array $siteConfig): void
+{
+    $social = (array) ($siteConfig['social'] ?? []);
+    if ($social === []) {
+        return;
+    }
+    $items = '';
+    foreach (Social::NETWORKS as $key => $meta) {
+        $value = trim((string) ($social[$key] ?? ''));
+        if ($value === '') {
+            continue;
+        }
+        $href = !empty($meta['email']) ? 'mailto:' . $value : $value;
+        $items .= '<li><a class="social-link" rel="me" href="' . e($href) . '">'
+            . '<svg class="social-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">'
+            . $meta['icon'] . '</svg>'
+            . '<span>' . e($meta['label']) . '</span>'
+            . '</a></li>' . "\n";
+    }
+    if ($items === '') {
+        return;
+    }
+    echo '<nav class="social-links" aria-label="Elsewhere">' . "\n"
+        . '<ul>' . "\n" . $items . '</ul>' . "\n" . '</nav>' . "\n";
+}
+
+/**
  * Inline owner controls on a public post page. Renders nothing unless the
  * viewer is the authenticated owner, so every theme's post.php can call it
  * unconditionally and visitors never see a trace of it. Edit is a link;

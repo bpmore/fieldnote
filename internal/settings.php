@@ -59,6 +59,34 @@ $isNew = ($siteConfig['name'] === '');
                 <input class="form-control" type="text" name="blogOGImage" value="<?= e($siteConfig['OGImage']) ?>" />
                 <label><?php i18n("settings_footer_message"); ?></label>
                 <input class="form-control" type="text" name="blogFooter" value="<?= e($siteConfig['footer']) ?>" />
+
+                <label for="blogCopyright" class="mt-2">Footer copyright line</label>
+                <div class="d-flex gap-2">
+                    <select class="form-select" name="blogCopyright" id="blogCopyright">
+                        <?php $cw = (string) ($siteConfig['copyright'] ?? 'off'); ?>
+                        <option value="off" <?= $cw === 'off' ? 'selected' : '' ?>>Off</option>
+                        <option value="blog" <?= $cw === 'blog' ? 'selected' : '' ?>>&copy; year + blog name</option>
+                        <option value="author" <?= $cw === 'author' ? 'selected' : '' ?>>&copy; year + author name</option>
+                    </select>
+                    <input class="form-control" type="number" name="blogCopyrightStartYear" min="1900" max="2100"
+                           style="max-width:9rem" placeholder="Start year"
+                           value="<?= e((string) ($siteConfig['copyrightStartYear'] ?? '')) ?>" />
+                </div>
+                <small class="text-muted">The current year is automatic; a start year shows a range (e.g. 2021&ndash;<?= e(date('Y')) ?>).</small>
+
+                <fieldset class="mt-2">
+                    <legend class="fs-6">Social links in the footer</legend>
+                    <small class="text-muted d-block mb-1">Optional. Leave blank to hide. Profile URLs (https); for Email, just the address. Links carry <code>rel="me"</code> for fediverse verification.</small>
+                    <?php foreach (Fieldnote\Social::NETWORKS as $netKey => $netMeta):
+                        $isEmail = !empty($netMeta['email']); ?>
+                        <label for="blogSocial_<?= e($netKey) ?>" class="small mb-0"><?= e($netMeta['label']) ?></label>
+                        <input class="form-control form-control-sm mb-1" id="blogSocial_<?= e($netKey) ?>"
+                               type="<?= $isEmail ? 'email' : 'url' ?>" name="blogSocial_<?= e($netKey) ?>"
+                               placeholder="<?= $isEmail ? 'you@example.com' : 'https://&hellip;' ?>"
+                               value="<?= e((string) ($siteConfig['social'][$netKey] ?? '')) ?>" />
+                    <?php endforeach; ?>
+                </fieldset>
+
                 <label><?php i18n("settings_header_inject"); ?></label>
                 <textarea class="form-control" name="blogHeaderInject" rows="3"><?= e($siteConfig['headerInject']) ?></textarea>
                 <small class="text-muted">Raw HTML, inserted into every page head. Only use trusted snippets (for example, analytics).</small>
