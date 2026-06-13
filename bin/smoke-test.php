@@ -765,6 +765,32 @@ if (!class_exists(ZipArchive::class)) {
     check('writefreely import creates a draft', $s === 302, "status $s");
     [$s, , $b] = req('GET', "$base/2025/07/wf-post", $authed);
     check('writefreely markdown body rendered + hashtag tags', $s === 200 && str_contains($b, '<strong>WriteFreely</strong>') && str_contains($b, 'fediverse'), "status $s");
+
+    // Medium: zip of posts/*.html h-entry microformats, auto-detected.
+    $mdZip = "$tmp/medium.zip";
+    $z = new ZipArchive();
+    $z->open($mdZip, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+    $z->addFromString('posts/2025-08-10_My-Medium-Post-abc123def456.html',
+        '<!DOCTYPE html><html><head><title>My Medium Post – Medium</title></head><body>'
+        . '<article class="h-entry"><h1 class="p-name">My Medium Post</h1>'
+        . '<section data-field="subtitle" class="p-summary">A deck</section>'
+        . '<section data-field="body" class="e-content"><p>From <strong>Medium</strong>. <a href="https://e.com">read more</a></p></section>'
+        . '<footer><a href="https://medium.com/@b/my-medium-post-abc123def456" class="p-canonical">c</a>'
+        . '<time class="dt-published" datetime="2025-08-10T12:00:00.000Z">x</time></footer></article></body></html>');
+    $z->close();
+    [, , $b] = req('GET', "$base/admin/import", $authed);
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+    [$s, , $b] = req('POST', "$base/admin/import", $authed + ['body' => [
+        'csrf_token'   => $m[1],
+        'importSource' => 'auto',
+        'importZip'    => new CURLFile($mdZip, 'application/zip', 'medium.zip'),
+    ]]);
+    check('medium zip auto-detected; dry-run flags a11y, writes nothing', $s === 200 && str_contains($b, 'my-medium-post') && str_contains($b, 'to fix') && str_contains($b, 'Nothing has been written'), "status $s");
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+    [$s] = req('POST', "$base/admin/import/confirm", $authed + ['body' => 'csrf_token=' . $m[1]]);
+    check('medium import creates a draft', $s === 302, "status $s");
+    [$s, , $b] = req('GET', "$base/2025/08/my-medium-post", $authed);
+    check('medium body + subtitle deck converted and rendered', $s === 200 && str_contains($b, 'A deck') && str_contains($b, '<strong>Medium</strong>'), "status $s");
 }
 
 // ---------------------------------------------------------- theme gallery --

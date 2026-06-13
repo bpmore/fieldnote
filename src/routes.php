@@ -1428,13 +1428,19 @@ $router->map('GET|POST', '/admin/import', function () use ($requireConfig, $requ
         }
 
         if ($importError === '') {
-            $source = in_array($_POST['importSource'] ?? 'auto', ['markdown', 'wordpress', 'rss', 'substack', 'ghost', 'writefreely'], true)
+            $source = in_array($_POST['importSource'] ?? 'auto', ['markdown', 'wordpress', 'rss', 'substack', 'ghost', 'writefreely', 'medium'], true)
                 ? (string) $_POST['importSource']
                 : 'auto';
             if ($source === 'auto') {
                 $head = (string) file_get_contents($stored, false, null, 0, 4096);
                 if (str_starts_with($head, "PK\x03\x04")) {
-                    $source = SubstackImporter::looksLikeSubstack($stored) ? 'substack' : 'markdown';
+                    if (SubstackImporter::looksLikeSubstack($stored)) {
+                        $source = 'substack';
+                    } elseif (MediumImporter::looksLikeMedium($stored)) {
+                        $source = 'medium';
+                    } else {
+                        $source = 'markdown';
+                    }
                 } elseif (WordPressImporter::looksLikeWxr($head)) {
                     $source = 'wordpress';
                 } elseif (GhostImporter::looksLikeGhost($head)) {
@@ -1455,6 +1461,7 @@ $router->map('GET|POST', '/admin/import', function () use ($requireConfig, $requ
                 'substack'    => $porter->analyzeEntries(SubstackImporter::parse($stored)),
                 'ghost'       => $porter->analyzeEntries(GhostImporter::parse($stored)),
                 'writefreely' => $porter->analyzeEntries(WriteFreelyImporter::parse($stored)),
+                'medium'      => $porter->analyzeEntries(MediumImporter::parse($stored)),
                 default       => $porter->analyze($stored),
             };
             if ($analysis['posts'] === []) {
@@ -1488,6 +1495,7 @@ $router->map('POST', '/admin/import/confirm', function () use ($requireConfig, $
         'substack'  => $porter->importEntries(SubstackImporter::parse($pending['path']), $siteConfig),
         'ghost'       => $porter->importEntries(GhostImporter::parse($pending['path']), $siteConfig),
         'writefreely' => $porter->importEntries(WriteFreelyImporter::parse($pending['path']), $siteConfig),
+        'medium'      => $porter->importEntries(MediumImporter::parse($pending['path']), $siteConfig),
         default       => $porter->import($pending['path'], $siteConfig),
     };
     @unlink($pending['path']);

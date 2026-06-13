@@ -24,6 +24,7 @@ require __DIR__ . '/header.php';
             <option value="markdown">Markdown / Fieldnote export (.zip of .md with frontmatter)</option>
             <option value="wordpress">WordPress (.xml export — also Squarespace)</option>
             <option value="substack">Substack (.zip export)</option>
+            <option value="medium">Medium (.zip export)</option>
             <option value="ghost">Ghost (.json export)</option>
             <option value="writefreely">WriteFreely / Write.as (.json export)</option>
             <option value="rss">RSS / Atom feed (file or URL below)</option>
