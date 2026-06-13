@@ -522,7 +522,7 @@ $router->map('POST', '/post/[i:id]/publish', function ($id) use ($requireConfig,
         $_SESSION['content_lint_block'] = $lintErrors;
         $redirect('editPost', ['id' => (int) $id]);
     }
-    $update = ['draft' => false, 'scheduledFor' => 0]; // manual publish supersedes a schedule
+    $update = ['draft' => false, 'scheduledFor' => 0, 'scheduleBlocked' => false]; // manual publish supersedes a schedule
     // First publish stamps the post's date (which the permalink embeds).
     // Hiding and re-publishing later must not move it, so remember it.
     if (empty($post['publishedAt'])) {
@@ -641,6 +641,9 @@ $router->map('GET|POST', '/post/[i:id]/edit', function ($id) use ($requireConfig
             $post['image'] = $rec['_id'];
         }
 
+        // Touching the post clears any held-schedule flag — the writer is
+        // actively resolving it (and may have re-scheduled above).
+        $post['scheduleBlocked'] = false;
         $blogStore->update($post);
         fn_flash_content_lint((string) $post['title'], (string) $post['content']);
         $redirect('dashboard');

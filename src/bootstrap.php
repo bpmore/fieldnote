@@ -88,7 +88,19 @@ if ((!is_file($schedMarker) || (int) filemtime($schedMarker) < time() - 60) && i
     foreach ($blogStore->findBy(['draft', '=', true]) as $scheduledPost) {
         $at = (int) ($scheduledPost['scheduledFor'] ?? 0);
         if ($at > 0 && $at <= time()) {
-            $update = ['draft' => false, 'scheduledFor' => 0];
+            // A scheduled publish goes through the same accessibility gate as a
+            // manual one. If the content fails, hold the post as a draft and
+            // flag it on the dashboard instead of pushing it live; zero the
+            // schedule so it stops retrying every minute. Editing or
+            // re-scheduling the post clears the flag.
+            if (ContentLint::check((string) ($scheduledPost['content'] ?? '')) !== []) {
+                $blogStore->updateById((int) $scheduledPost['_id'], [
+                    'scheduledFor'    => 0,
+                    'scheduleBlocked' => true,
+                ]);
+                continue;
+            }
+            $update = ['draft' => false, 'scheduledFor' => 0, 'scheduleBlocked' => false];
             // Same first-publish stamping as the manual publish route: the
             // permalink embeds the date, so it is set once and never moves.
             if (empty($scheduledPost['publishedAt'])) {

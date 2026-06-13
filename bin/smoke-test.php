@@ -91,6 +91,13 @@ $blog->insert([
     'date' => time(), 'draft' => true, 'scheduledFor' => time() - 30,
     'content' => 'Came from the scheduler.', 'password' => '',
 ]);
+// Past-due, but its body fails the a11y check: the scheduler must hold it as a
+// draft and flag it, not push it live. (Id 5; the runtime 'Lint Me' is id 6.)
+$blog->insert([
+    'title' => 'Bad Schedule', 'slug' => 'bad-schedule', 'author' => 'Tester',
+    'date' => time(), 'draft' => true, 'scheduledFor' => time() - 30,
+    'content' => "## Two\n\n#### Four — skips a level", 'password' => '', 'tags' => [],
+]);
 
 // ----------------------------------------------------------------- server --
 
@@ -399,10 +406,17 @@ check('a clean edit to a live post still saves', $s === 302, "status $s");
 // the post stays a draft (still hidden from the public homepage).
 [, , $b] = req('GET', "$base/dashboard", $authed);
 preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
-[$s, $h] = req('POST', "$base/post/5/publish", $authed + ['body' => 'csrf_token=' . $m[1]]);
+[$s, $h] = req('POST', "$base/post/6/publish", $authed + ['body' => 'csrf_token=' . $m[1]]);
 check('publishing a failing draft is blocked and sent to the editor', $s === 302 && str_contains($h['location'] ?? '', '/edit'), "status $s -> " . ($h['location'] ?? ''));
 [, , $b] = req('GET', "$base/");
 check('the blocked publish kept the post a draft', !str_contains($b, 'Lint Me'));
+
+// Scheduled auto-publish runs the same gate: a past-due but inaccessible draft
+// is held, not pushed live (the scheduler already ran on the first request).
+[, , $b] = req('GET', "$base/");
+check('scheduler does not publish a failing draft', !str_contains($b, 'Bad Schedule'));
+[, , $b] = req('GET', "$base/dashboard", $authed);
+check('dashboard flags the held scheduled post', str_contains($b, 'Bad Schedule') && str_contains($b, 'scheduled publish held'));
 
 // --------------------------------------------------------------- passkeys --
 

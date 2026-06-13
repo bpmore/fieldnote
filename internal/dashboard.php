@@ -49,6 +49,9 @@ $renderList = function (array $posts, bool $isDraft) use ($router, $renderAction
                         <?php if ($isDraft && !empty($p['scheduledFor'])): ?>
                             &middot; <span class="badge text-bg-info">publishes <?= e(date('M j, H:i', (int) $p['scheduledFor'])) ?></span>
                         <?php endif; ?>
+                        <?php if ($isDraft && !empty($p['scheduleBlocked'])): ?>
+                            &middot; <span class="badge text-bg-warning">scheduled publish held — fails the accessibility check; edit, then publish or reschedule</span>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <div class="d-flex gap-1 flex-wrap"><?= $renderActions($p, $isDraft) ?></div>
