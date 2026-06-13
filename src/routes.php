@@ -870,6 +870,13 @@ $router->map('GET|POST', '/settings', function () use ($configStore, $siteConfig
             'sessionEpoch' => $sessionEpoch,
             'template'     => basename(fn_clean($_POST['blogTemplate'])),
             'themeOfDay'   => !empty($_POST['blogThemeOfDay']),
+            // Curated rotation pool: keep only real installed themes, drop the
+            // rest (a stale name can't poison the rotation). Empty = all.
+            'themePool'    => array_values(array_intersect(
+                fn_template_names(),
+                array_map('basename', array_map('strval', (array) ($_POST['blogThemePool'] ?? [])))
+            )),
+            'themeRotateDays' => ((int) ($_POST['blogThemeRotateDays'] ?? 1)) === 7 ? 7 : 1,
             // Not part of this form; carried over or it would vanish on
             // every settings save. (Theme-keyed: inert after a switch.)
             'paletteOverrides' => $siteConfig['paletteOverrides'] ?? [],

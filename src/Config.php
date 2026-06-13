@@ -31,7 +31,9 @@ final class Config
         'password'     => '',
         'sessionEpoch' => '',
         'template'     => 'gazette',
-        'themeOfDay'   => false,     // rotate a different installed theme each day
+        'themeOfDay'   => false,     // rotate themes on a schedule
+        'themePool'    => [],        // names to rotate among; empty = all installed
+        'themeRotateDays' => 1,      // rotation period in days (1 = daily, 7 = weekly)
         'paletteOverrides' => [],
         'searchEnabled' => true,
         'statsEnabled' => true,

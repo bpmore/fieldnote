@@ -71,9 +71,22 @@ $isNew = ($siteConfig['name'] === '');
                 <div class="form-check my-2">
                     <input class="form-check-input" type="checkbox" name="blogThemeOfDay" id="blogThemeOfDay"
                            <?= !empty($siteConfig['themeOfDay']) ? 'checked' : '' ?>>
-                    <label class="form-check-label" for="blogThemeOfDay">Theme of the day — rotate a different theme each day</label>
+                    <label class="form-check-label" for="blogThemeOfDay">Rotate themes on a schedule</label>
                 </div>
-                <small class="text-muted d-block mb-2">When on, the public site cycles through every installed theme, one per day (your pick above is used when this is off). Today: <strong><?= e(Fieldnote\fn_theme_of_day($siteConfig)) ?></strong>.</small>
+                <small class="text-muted d-block mb-2">When on, the public site cycles through a set of themes automatically (your fixed pick above is used when this is off). Same theme for every visitor within each period, so it stays cacheable.</small>
+                <?php $themePool = (array) ($siteConfig['themePool'] ?? []); ?>
+                <label for="blogThemeRotateDays">Change theme</label>
+                <select class="form-select" name="blogThemeRotateDays" id="blogThemeRotateDays">
+                    <option value="1" <?= (int) ($siteConfig['themeRotateDays'] ?? 1) !== 7 ? 'selected' : '' ?>>Daily</option>
+                    <option value="7" <?= (int) ($siteConfig['themeRotateDays'] ?? 1) === 7 ? 'selected' : '' ?>>Weekly (every 7 days)</option>
+                </select>
+                <label for="blogThemePool">Themes in rotation</label>
+                <select class="form-select" name="blogThemePool[]" id="blogThemePool" multiple size="8">
+                    <?php foreach (Fieldnote\fn_template_names() as $tplName): ?>
+                        <option value="<?= e($tplName) ?>" <?= in_array($tplName, $themePool, true) ? 'selected' : '' ?>><?= e($tplName) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <small class="text-muted d-block mb-2">Pick the themes to rotate among (Ctrl/Cmd-click for several). Leave all unselected to rotate every installed theme. Showing now: <strong><?= e(Fieldnote\fn_theme_of_day($siteConfig)) ?></strong>.</small>
                 <label><?php i18n("settings_posts_per_page"); ?></label>
                 <input class="form-control" type="number" name="blogPostsPerPage" min="1" required value="<?= e((string) $siteConfig['postsPerPage']) ?>" />
                 <label><?php i18n("settings_blog_OGImage"); ?></label>

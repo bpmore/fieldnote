@@ -971,8 +971,28 @@ $writeCfg(['template' => 'gazette', 'themeOfDay' => true, 'timezone' => 'UTC']);
 check('themeOfDay on renders the daily theme', $s === 200 && str_contains($b, "/themes/$today/theme.css"), "today=$today status $s");
 check('themeOfDay is stable within the day', $s2 === 200 && str_contains($b2, "/themes/$today/theme.css"));
 
+// Independent expected-pick for a given pool + cadence (mirrors fn_theme_of_day, tz=UTC).
+$rotPick = function (array $pool, int $days) use ($tNames): string {
+    $set = $pool ? array_values(array_intersect($tNames, $pool)) : $tNames;
+    $period = (int) floor(((int) floor(time() / 86400)) / max(1, $days));
+    return $set[$period % count($set)];
+};
+
+// Curated pool: rotation is restricted to the selected themes.
+$pool    = ['mono', 'zen'];
+$expPool = $rotPick($pool, 1);
+$writeCfg(['template' => 'gazette', 'themeOfDay' => true, 'timezone' => 'UTC', 'themePool' => $pool, 'themeRotateDays' => 1]);
+[$s, , $b] = req('GET', "$base/", []);
+check('themeOfDay pool restricts to selected themes', $s === 200 && in_array($expPool, $pool, true) && str_contains($b, "/themes/$expPool/theme.css"), "exp=$expPool status $s");
+
+// Weekly cadence: the pick follows the 7-day period, not the day.
+$expWk = $rotPick($pool, 7);
+$writeCfg(['template' => 'gazette', 'themeOfDay' => true, 'timezone' => 'UTC', 'themePool' => $pool, 'themeRotateDays' => 7]);
+[$s, , $b] = req('GET', "$base/", []);
+check('themeOfDay weekly cadence picks the period theme', $s === 200 && str_contains($b, "/themes/$expWk/theme.css"), "exp=$expWk status $s");
+
 // Restore the fixture default so later sections are unaffected.
-$writeCfg(['template' => 'gazette', 'themeOfDay' => false, 'timezone' => 'UTC']);
+$writeCfg(['template' => 'gazette', 'themeOfDay' => false, 'timezone' => 'UTC', 'themePool' => [], 'themeRotateDays' => 1]);
 
 /** @return array<string,array<string,string>> scheme => token => hex */
 function formColors(string $html, string $type): array

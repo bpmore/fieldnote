@@ -851,18 +851,36 @@ function fn_template_dir(string $name): string
 }
 
 /**
- * "Theme of the day": pick one installed theme deterministically per calendar
- * day, so every visitor that day sees the same theme (fully cacheable) and the
- * site cycles through the whole set with no repeat until all have shown.
+ * Resolve the rotation set: the curated `themePool` (filtered to currently
+ * installed themes, so a deleted theme silently drops out) when one is set,
+ * otherwise every installed theme. Always alphabetical for determinism.
+ */
+function fn_theme_pool(array $siteConfig = [], ?array $names = null): array
+{
+    $names = $names ?? fn_template_names();
+    $pool  = array_map('strval', (array) ($siteConfig['themePool'] ?? []));
+    if ($pool) {
+        $filtered = array_values(array_intersect($names, $pool));
+        if ($filtered) {
+            return $filtered;
+        }
+    }
+    return $names;
+}
+
+/**
+ * "Theme of the day": pick one theme deterministically per rotation period, so
+ * every visitor in that period sees the same theme (fully cacheable) and the
+ * site cycles through the rotation set with no repeat until all have shown.
  *
- * The day index ticks over at the site's local midnight (config timezone), and
- * the order follows fn_template_names()'s alphabetical sort. $epochDay is
- * injectable for tests.
+ * The period index ticks over at the site's local midnight (config timezone);
+ * its length is `themeRotateDays` (1 = daily, 7 = weekly). The set comes from
+ * fn_theme_pool(). $epochDay is injectable for tests.
  */
 function fn_theme_of_day(array $siteConfig = [], ?int $epochDay = null, ?array $names = null): string
 {
-    $names = $names ?? fn_template_names();
-    if (!$names) {
+    $set = fn_theme_pool($siteConfig, $names);
+    if (!$set) {
         return 'liquid-new';
     }
     if ($epochDay === null) {
@@ -874,8 +892,10 @@ function fn_theme_of_day(array $siteConfig = [], ?int $epochDay = null, ?array $
         // Shift by the zone offset so the counter increments at local midnight.
         $epochDay = (int) floor(($now->getTimestamp() + $now->getOffset()) / 86400);
     }
-    $count = count($names);
-    return $names[(($epochDay % $count) + $count) % $count];
+    $days   = max(1, (int) ($siteConfig['themeRotateDays'] ?? 1));
+    $period = (int) floor($epochDay / $days);
+    $count  = count($set);
+    return $set[(($period % $count) + $count) % $count];
 }
 
 /**
