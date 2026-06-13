@@ -1,0 +1,39 @@
+/* cairn — stacked stone: warm stone ground, charcoal type, generous air, thin lines. */
+:root {
+    color-scheme: light;
+    --bg: #e8e6e1; --surface: #e8e6e1; --text: #2b2a27; --muted: #5d5b55;
+    --accent: #5e564a; --accent-contrast: #e8e6e1; --line: #6f6a5f; --focus: #5e564a;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #1a1a18; --surface: #1a1a18; --text: #e3e1db; --muted: #a3a098;
+        --accent: #b6ab97; --accent-contrast: #1a1a18; --line: #807b70; --focus: #b6ab97;
+    }
+}
+* { box-sizing: border-box; }
+html { color-scheme: light dark; }
+body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.8;
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; }
+.col { max-width: 40rem; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
+a { color: var(--accent); }
+.top { text-align: center; margin-bottom: 3.5rem; }
+.top::before { content: "\2022\A\2022\2022\A\2022\2022\2022"; white-space: pre; display: block; color: var(--muted); font-size: .6rem; line-height: 1.3; margin-bottom: 1.2rem; }
+.site-title { display: block; font-size: 1.7rem; font-weight: 400; letter-spacing: .2em; text-transform: uppercase; text-decoration: none; color: var(--text); }
+.site-info { margin: .7rem 0 0; color: var(--muted); font-style: italic; }
+.index { list-style: none; margin: 0; padding: 0; }
+.index-item { padding: 1.6rem 0; border-bottom: 1px solid var(--line); text-align: center; }
+.index-title { margin: 0; font-size: 1.3rem; font-weight: 400; }
+.index-title a { color: var(--text); text-decoration: none; }
+.index-title a:hover { color: var(--accent); }
+.index-meta { margin: .5rem 0 0; color: var(--muted); font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; }
+.piece-title { margin: 0 0 .5rem; font-size: 2rem; font-weight: 400; text-align: center; letter-spacing: .02em; }
+.piece-meta { margin: 0 0 2rem; color: var(--muted); text-align: center; letter-spacing: .14em; text-transform: uppercase; font-size: .78rem; }
+.piece-image, .piece-body img { max-width: 100%; height: auto; }
+.piece-body { font-size: 1.08rem; }
+.piece-body blockquote { border-left: 1px solid var(--accent); margin: 1.4rem 0; padding-left: 1.2rem; font-style: italic; color: var(--muted); }
+.piece-body pre { border: 1px solid var(--line); padding: .8rem; overflow-x: auto; font-family: ui-monospace, Menlo, monospace; }
+.empty-state { color: var(--muted); font-style: italic; text-align: center; }
+.back { margin-top: 3rem; text-align: center; }
+.back-link { color: var(--accent); letter-spacing: .1em; text-transform: uppercase; text-decoration: none; }
+.bottom { margin-top: 4rem; border-top: 1px solid var(--line); padding-top: 1.5rem; text-align: center; color: var(--muted); letter-spacing: .08em; font-size: .76rem; }
+.bottom a { color: var(--accent); }

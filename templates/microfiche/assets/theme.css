@@ -1,0 +1,37 @@
+/* microfiche — amber CRT reader: warm black, phosphor amber, film-frame borders, mono. */
+:root {
+    color-scheme: dark;
+    --bg: #0e0b05; --surface: #0e0b05; --text: #ffb000; --muted: #d49a3a;
+    --accent: #ffd28a; --accent-contrast: #0e0b05; --line: #7a5a20; --focus: #ffd28a;
+}
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg: #14100a; --surface: #14100a; --text: #ffbb1a; --muted: #dca84a;
+        --accent: #ffdc9a; --accent-contrast: #14100a; --line: #8a6526; --focus: #ffdc9a;
+    }
+}
+* { box-sizing: border-box; }
+html { color-scheme: dark; }
+body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.7;
+    font-family: ui-monospace, "VT323", "IBM Plex Mono", Menlo, Consolas, monospace; }
+.col { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1.25rem 5rem; }
+a { color: var(--accent); }
+.top { border: 2px solid var(--line); padding: 1rem 1.1rem; margin-bottom: 2rem; position: relative; }
+.top::before { content: "FRAME 001"; position: absolute; top: -.65rem; left: .8rem; background: var(--bg); padding: 0 .4rem; font-size: .65rem; letter-spacing: .2em; color: var(--muted); }
+.site-title { display: block; font-size: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: .18em; text-decoration: none; color: var(--text); }
+.site-info { margin: .4rem 0 0; color: var(--muted); letter-spacing: .04em; font-size: .85rem; }
+.index { list-style: none; margin: 0; padding: 0; }
+.index-item { border: 2px solid var(--line); padding: .9rem 1.1rem; margin-bottom: 1rem; }
+.index-title { margin: 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: .03em; }
+.index-title a { color: var(--text); text-decoration: none; }
+.index-meta { margin: .35rem 0 0; color: var(--muted); font-size: .76rem; letter-spacing: .1em; }
+.piece-title { margin: 0 0 .3rem; font-size: 1.5rem; text-transform: uppercase; letter-spacing: .06em; }
+.piece-meta { margin: 0 0 1rem; color: var(--muted); font-size: .76rem; letter-spacing: .08em; border-bottom: 2px solid var(--line); padding-bottom: 1rem; }
+.piece-image, .piece-body img { max-width: 100%; height: auto; }
+.piece-body blockquote { border-left: 3px solid var(--accent); margin: 1rem 0; padding-left: 1rem; color: var(--muted); }
+.piece-body pre { border: 1px solid var(--line); padding: .8rem; overflow-x: auto; }
+.empty-state { color: var(--muted); letter-spacing: .1em; }
+.back { margin-top: 2rem; }
+.back-link { color: var(--accent); text-transform: uppercase; letter-spacing: .1em; text-decoration: none; }
+.bottom { margin-top: 3rem; border-top: 2px solid var(--line); padding-top: 1rem; color: var(--muted); letter-spacing: .06em; font-size: .76rem; }
+.bottom a { color: var(--accent); }

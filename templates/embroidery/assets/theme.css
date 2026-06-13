@@ -1,0 +1,38 @@
+/* embroidery — cross-stitch sampler: linen ground, thread colors, dotted stitch borders. */
+:root {
+    color-scheme: light;
+    --bg: #efe7d6; --surface: #efe7d6; --text: #3a2d22; --muted: #6b5742;
+    --accent: #2f6e46; --accent-contrast: #efe7d6; --line: #8a7659; --focus: #2f6e46;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #1c1812; --surface: #1c1812; --text: #e8dcc6; --muted: #b39d77;
+        --accent: #6fae82; --accent-contrast: #1c1812; --line: #8a7659; --focus: #6fae82;
+    }
+}
+* { box-sizing: border-box; }
+html { color-scheme: light dark; }
+body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.65;
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; }
+.col { max-width: 44rem; margin: 0 auto; padding: 1.5rem 1.4rem 5rem; }
+a { color: var(--accent); }
+.top { text-align: center; border: 3px dotted var(--accent); padding: 1.3rem 1rem; margin-bottom: 2rem; }
+.site-title { display: block; font-size: 1.9rem; font-weight: 700; letter-spacing: .08em; text-decoration: none; color: var(--accent); }
+.site-info { margin: .5rem 0 0; color: var(--muted); font-style: italic; }
+.index { list-style: none; margin: 0; padding: 0; }
+.index-item { border-bottom: 3px dotted var(--line); padding: 1rem 0; text-align: center; }
+.index-title { margin: 0; font-size: 1.25rem; }
+.index-title a { color: var(--text); text-decoration: none; }
+.index-title a:hover { color: var(--accent); }
+.index-meta { margin: .3rem 0 0; color: var(--muted); font-size: .82rem; letter-spacing: .12em; text-transform: uppercase; }
+.piece-title { margin: 0 0 .35rem; font-size: 2rem; text-align: center; }
+.piece-meta { margin: 0 0 1.2rem; color: var(--muted); text-align: center; letter-spacing: .1em; text-transform: uppercase; font-size: .82rem; }
+.piece-image, .piece-body img { max-width: 100%; height: auto; }
+.piece-body { margin-top: 1.4rem; }
+.piece-body blockquote { border-left: 3px dotted var(--accent); margin: 1rem 0; padding-left: 1rem; font-style: italic; color: var(--muted); }
+.piece-body pre { border: 1px solid var(--line); padding: .8rem; overflow-x: auto; font-family: ui-monospace, Menlo, monospace; }
+.empty-state { color: var(--muted); font-style: italic; text-align: center; }
+.back { margin-top: 2rem; text-align: center; }
+.back-link { color: var(--accent); text-decoration: none; }
+.bottom { margin-top: 3rem; border-top: 3px dotted var(--line); padding-top: 1.2rem; text-align: center; color: var(--muted); font-style: italic; font-size: .85rem; }
+.bottom a { color: var(--accent); }
