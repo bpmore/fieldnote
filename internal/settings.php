@@ -21,6 +21,7 @@ $isNew = ($siteConfig['name'] === '');
         <form method="post" action="<?= e($router->generate('settings')) ?>">
             <?= csrf_field() ?>
             <fieldset class="my-3">
+                <legend class="fs-6">Site</legend>
                 <label><?php i18n("settings_i18n"); ?></label>
                 <select class="form-select" name="blogI18N" id="blogI18N" required>
                     <?php foreach (['en_US' => 'English', 'fr_FR' => 'Francais', 'uk_UA' => 'Українська'] as $code => $label): ?>
@@ -50,17 +51,34 @@ $isNew = ($siteConfig['name'] === '');
                         <li><strong>Set the field above</strong> to <code>https://yourdomain.com</code> and save. This drives canonical URLs,
                             feeds, and the sitemap — and any request that arrives on a different host is permanently
                             redirected here, so www/apex and old addresses can't serve duplicates.</li>
-                        <li><strong>Behind Cloudflare or a reverse proxy?</strong> Also fill in the trusted proxy field below so
+                        <li><strong>Behind Cloudflare or a reverse proxy?</strong> Also fill in the trusted proxy field in Advanced so
                             login rate-limiting sees real visitor addresses.</li>
                     </ol>
                     <p class="mb-0"><small class="text-muted">Changing the domain later is safe: posts, images, and themes store nothing host-specific.</small></p>
                 </details>
+                <label><?php i18n("settings_timezone"); ?></label>
+                <input class="form-control" type="text" name="blogTimezone" required value="<?= e($siteConfig['timezone']) ?>" />
+            </fieldset>
+
+            <fieldset class="my-3">
+                <legend class="fs-6">Appearance</legend>
+                <label><?php i18n("settings_template"); ?></label>
+                <select class="form-select" name="blogTemplate" required>
+                    <?php foreach (Fieldnote\fn_template_names() as $tplName): ?>
+                        <option value="<?= e($tplName) ?>" <?= $siteConfig['template'] === $tplName ? 'selected' : '' ?>><?= e($tplName) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <label><?php i18n("settings_posts_per_page"); ?></label>
+                <input class="form-control" type="number" name="blogPostsPerPage" min="1" required value="<?= e((string) $siteConfig['postsPerPage']) ?>" />
                 <label><?php i18n("settings_blog_OGImage"); ?></label>
                 <input class="form-control" type="text" name="blogOGImage" value="<?= e($siteConfig['OGImage']) ?>" />
+            </fieldset>
+
+            <fieldset class="my-3">
+                <legend class="fs-6">Footer</legend>
                 <label><?php i18n("settings_footer_message"); ?></label>
                 <input class="form-control" type="text" name="blogFooter" value="<?= e($siteConfig['footer']) ?>" />
-
-                <label for="blogCopyright" class="mt-2">Footer copyright line</label>
+                <label for="blogCopyright" class="mt-2">Copyright line</label>
                 <div class="d-flex gap-2">
                     <select class="form-select" name="blogCopyright" id="blogCopyright">
                         <?php $cw = (string) ($siteConfig['copyright'] ?? 'off'); ?>
@@ -73,29 +91,23 @@ $isNew = ($siteConfig['name'] === '');
                            value="<?= e((string) ($siteConfig['copyrightStartYear'] ?? '')) ?>" />
                 </div>
                 <small class="text-muted">The current year is automatic; a start year shows a range (e.g. 2021&ndash;<?= e(date('Y')) ?>).</small>
+            </fieldset>
 
-                <fieldset class="mt-2">
-                    <legend class="fs-6">Social links in the footer</legend>
-                    <small class="text-muted d-block mb-1">Optional. Leave blank to hide. Profile URLs (https); for Email, just the address. Links carry <code>rel="me"</code> for fediverse verification.</small>
-                    <?php foreach (Fieldnote\Social::NETWORKS as $netKey => $netMeta):
-                        $isEmail = !empty($netMeta['email']); ?>
-                        <label for="blogSocial_<?= e($netKey) ?>" class="small mb-0"><?= e($netMeta['label']) ?></label>
-                        <input class="form-control form-control-sm mb-1" id="blogSocial_<?= e($netKey) ?>"
-                               type="<?= $isEmail ? 'email' : 'url' ?>" name="blogSocial_<?= e($netKey) ?>"
-                               placeholder="<?= $isEmail ? 'you@example.com' : 'https://&hellip;' ?>"
-                               value="<?= e((string) ($siteConfig['social'][$netKey] ?? '')) ?>" />
-                    <?php endforeach; ?>
-                </fieldset>
+            <fieldset class="my-3">
+                <legend class="fs-6">Social links</legend>
+                <small class="text-muted d-block mb-1">Optional, shown in the footer. Leave blank to hide. Profile URLs (https); for Email, just the address. Links carry <code>rel="me"</code> for fediverse verification.</small>
+                <?php foreach (Fieldnote\Social::NETWORKS as $netKey => $netMeta):
+                    $isEmail = !empty($netMeta['email']); ?>
+                    <label for="blogSocial_<?= e($netKey) ?>" class="small mb-0"><?= e($netMeta['label']) ?></label>
+                    <input class="form-control form-control-sm mb-1" id="blogSocial_<?= e($netKey) ?>"
+                           type="<?= $isEmail ? 'email' : 'url' ?>" name="blogSocial_<?= e($netKey) ?>"
+                           placeholder="<?= $isEmail ? 'you@example.com' : 'https://&hellip;' ?>"
+                           value="<?= e((string) ($siteConfig['social'][$netKey] ?? '')) ?>" />
+                <?php endforeach; ?>
+            </fieldset>
 
-                <label><?php i18n("settings_header_inject"); ?></label>
-                <textarea class="form-control" name="blogHeaderInject" rows="3"><?= e($siteConfig['headerInject']) ?></textarea>
-                <small class="text-muted">Raw HTML, inserted into every page head. Only use trusted snippets (for example, analytics).</small>
-                <label><?php i18n("settings_template"); ?></label>
-                <select class="form-select" name="blogTemplate" required>
-                    <?php foreach (Fieldnote\fn_template_names() as $tplName): ?>
-                        <option value="<?= e($tplName) ?>" <?= $siteConfig['template'] === $tplName ? 'selected' : '' ?>><?= e($tplName) ?></option>
-                    <?php endforeach; ?>
-                </select>
+            <fieldset class="my-3">
+                <legend class="fs-6">Features</legend>
                 <div class="form-check my-2">
                     <input class="form-check-input" type="checkbox" name="blogSearchEnabled" id="blogSearchEnabled"
                            <?= !empty($siteConfig['searchEnabled']) ? 'checked' : '' ?>>
@@ -129,18 +141,23 @@ $isNew = ($siteConfig['name'] === '');
                     <input class="form-control" type="text" name="blogApHandle"
                            value="<?= e($fedHandle) ?>" />
                 <?php endif; ?>
-                <label><?php i18n("settings_posts_per_page"); ?></label>
-                <input class="form-control" type="number" name="blogPostsPerPage" min="1" required value="<?= e((string) $siteConfig['postsPerPage']) ?>" />
-                <label><?php i18n("settings_timezone"); ?></label>
-                <input class="form-control" type="text" name="blogTimezone" required value="<?= e($siteConfig['timezone']) ?>" />
-                <label><?php i18n("settings_basepath"); ?></label>
-                <input class="form-control" type="text" name="blogBase" value="<?= e($siteConfig['basePath']) ?>" />
-                <label>Trusted proxy IPs/CIDRs (comma-separated)</label>
-                <input class="form-control" type="text" name="blogTrustedProxies"
-                       placeholder="Only if behind Cloudflare or a reverse proxy"
-                       value="<?= e((string) ($siteConfig['trustedProxies'] ?? '')) ?>" />
-                <small class="text-muted">Login rate-limiting keys on the visitor address. Behind a proxy, list the proxy here so the real client IP (from X-Forwarded-For) is used instead — otherwise all visitors share one lockout bucket.</small>
             </fieldset>
+
+            <details class="settings-help my-3">
+                <summary>Advanced</summary>
+                <fieldset class="mt-2">
+                    <label><?php i18n("settings_header_inject"); ?></label>
+                    <textarea class="form-control" name="blogHeaderInject" rows="3"><?= e($siteConfig['headerInject']) ?></textarea>
+                    <small class="text-muted">Raw HTML, inserted into every page head. Only use trusted snippets (for example, analytics).</small>
+                    <label><?php i18n("settings_basepath"); ?></label>
+                    <input class="form-control" type="text" name="blogBase" value="<?= e($siteConfig['basePath']) ?>" />
+                    <label>Trusted proxy IPs/CIDRs (comma-separated)</label>
+                    <input class="form-control" type="text" name="blogTrustedProxies"
+                           placeholder="Only if behind Cloudflare or a reverse proxy"
+                           value="<?= e((string) ($siteConfig['trustedProxies'] ?? '')) ?>" />
+                    <small class="text-muted">Login rate-limiting keys on the visitor address. Behind a proxy, list the proxy here so the real client IP (from X-Forwarded-For) is used instead — otherwise all visitors share one lockout bucket.</small>
+                </fieldset>
+            </details>
             <?php if (Fieldnote\Security::isAuthenticated() && !$isNew): ?>
                 <fieldset class="my-3">
                     <legend class="fs-6">Two-factor login</legend>
