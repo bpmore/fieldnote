@@ -47,6 +47,10 @@ Security::setSessionEpoch((string) ($siteConfig['sessionEpoch'] ?? ''));
 $dbOptions = ['timeout' => false];
 $blogStore  = new Store('blog', FN_DB_DIR, $dbOptions);
 $imageStore = new Store('images', FN_DB_DIR, $dbOptions);
+// Standalone pages (the profile page) live in their own collection so they
+// never surface in any post query — feed, home, search, tag, and sitemap all
+// read 'blog', so the exclusion is structural, not a filter to maintain.
+$pagesStore = new Store('pages', FN_DB_DIR, $dbOptions);
 
 // One-time migration: give pre-3.1 posts a URL slug. Marker file keeps this
 // from scanning the store on every request.
@@ -311,6 +315,21 @@ function fn_search_status(?string $query, int $count): void
         ? $count . ' result' . ($count === 1 ? '' : 's') . ' for “' . $query . '”'
         : 'No results for “' . $query . '”.';
     echo '<p class="search-status" role="status">' . e($msg) . '</p>' . "\n";
+}
+
+/**
+ * Header nav link to the profile page, or nothing when it's disabled (config
+ * profilePage = off). The slug doubles as the link label (About / Now / …), so
+ * a theme can call this unconditionally in header.php. Styled by .profile-link.
+ */
+function fn_profile_link(\AltoRouter $router, array $siteConfig): void
+{
+    $slug = (string) ($siteConfig['profilePage'] ?? 'off');
+    if (!in_array($slug, Config::PROFILE_SLUGS, true)) {
+        return;
+    }
+    echo '<a class="profile-link" href="' . e($router->generate('profilePage')) . '">'
+        . e(ucfirst($slug)) . '</a>' . "\n";
 }
 
 function fn_search_form(\AltoRouter $router, array $siteConfig, string $value = ''): void

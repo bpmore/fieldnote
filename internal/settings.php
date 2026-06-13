@@ -108,6 +108,20 @@ $isNew = ($siteConfig['name'] === '');
 
             <fieldset class="my-3">
                 <legend class="fs-6">Features</legend>
+                <label for="blogProfilePage">Profile page</label>
+                <div class="d-flex gap-2 align-items-center">
+                    <select class="form-select" name="blogProfilePage" id="blogProfilePage">
+                        <?php $pp = (string) ($siteConfig['profilePage'] ?? 'off'); ?>
+                        <option value="off" <?= $pp === 'off' ? 'selected' : '' ?>>Off</option>
+                        <?php foreach (Fieldnote\Config::PROFILE_SLUGS as $ps): ?>
+                            <option value="<?= e($ps) ?>" <?= $pp === $ps ? 'selected' : '' ?>>/<?= e($ps) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if (in_array($pp, Fieldnote\Config::PROFILE_SLUGS, true)): ?>
+                        <a class="btn btn-sm btn-secondary text-nowrap" href="<?= e($router->generate('editProfile')) ?>">Edit the page</a>
+                    <?php endif; ?>
+                </div>
+                <small class="text-muted d-block mb-2">A personal "about / now" page at the chosen URL, linked in the header. Save this form first, then edit the page.</small>
                 <div class="form-check my-2">
                     <input class="form-check-input" type="checkbox" name="blogSearchEnabled" id="blogSearchEnabled"
                            <?= !empty($siteConfig['searchEnabled']) ? 'checked' : '' ?>>

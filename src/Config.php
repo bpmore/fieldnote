@@ -17,6 +17,9 @@ final class Config
     private string $configFile;
 
     /** Sensible defaults used before a config exists. */
+    /** Slugs the profile page may use; 'off' disables it. Each is its own URL and nav label. */
+    public const PROFILE_SLUGS = ['about', 'now', 'profile', 'brag'];
+
     public const DEFAULTS = [
         'name'         => '',
         'info'         => '',
@@ -32,6 +35,7 @@ final class Config
         'searchEnabled' => true,
         'statsEnabled' => true,
         'accessibilityBadge' => false,
+        'profilePage' => 'off',      // off | about | now | profile | brag
         'copyright' => 'off',        // off | blog | author
         'copyrightStartYear' => '',  // optional; renders a range when set
         'social' => [],              // network => url (see Social::NETWORKS)

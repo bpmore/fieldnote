@@ -124,8 +124,15 @@ versioned — the external schema will move. Not built in v1.
 
 | Phase | Scope | Size |
 |---|---|---|
-| 1 — page + slug/label setting + nav link + exclusions + smoke | S–M |
+| 1 — page + slug/label setting + nav link + exclusions + smoke | S–M — **SHIPPED** |
 | 2 — JSON/microformat export for directory submission | S (deferred) |
+
+Phase 1 shipped: config `profilePage` (off/about/now/profile/brag); stored in a
+separate `pages` SleekDB collection (structural exclusion from feed/home/
+search/sitemap); public route renders the markdown through the active theme;
+admin editor at `/admin/profile` reuses the EasyMDE editor and the ContentLint
+gate with last-10 revisions; header nav link via `fn_profile_link` injected
+into all 70 themes; dashboard + settings edit links.
 
 Recommendation: build phase 1 with storage option (B); ship it as a calm
 personal page (default Off, on-tone labels), and leave directory coupling for

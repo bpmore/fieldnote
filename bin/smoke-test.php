@@ -296,6 +296,32 @@ check('search box hidden when search is disabled', !str_contains($b, 'role="sear
 check('disabled search route 404s', $s === 404, "status $s");
 file_put_contents($cfgFile, "<?php\nreturn " . var_export($config, true) . ";\n");
 
+// --------------------------------------------------------- profile page --
+[$s] = req('GET', "$base/about");
+check('profile route 404s when off', $s === 404, "status $s");
+[, , $b] = req('GET', "$base/");
+check('no profile nav link when off', !str_contains($b, 'profile-link'));
+
+file_put_contents($cfgFile, "<?php\nreturn " . var_export(array_merge($config, ['profilePage' => 'about']), true) . ";\n");
+[, , $b] = req('GET', "$base/");
+check('profile nav link appears in the header when enabled', str_contains($b, 'class="profile-link"') && str_contains($b, '>About</a>'));
+[$s, , $b] = req('GET', "$base/admin/profile", $authed);
+check('profile editor renders for the owner', $s === 200 && str_contains($b, 'Save profile page'), "status $s");
+preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+[$s, , $b] = req('POST', "$base/admin/profile", $authed + ['body' => http_build_query(['csrf_token' => $m[1], 'pageContent' => "## A\n\n#### skips a level"])]);
+check('profile save is blocked when it fails the a11y check', $s === 200 && str_contains($b, 'accessibility issues'), "status $s");
+[, , $b] = req('GET', "$base/admin/profile", $authed);
+preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+[$s] = req('POST', "$base/admin/profile", $authed + ['body' => http_build_query(['csrf_token' => $m[1], 'pageContent' => "## About me\n\nSENTINEL-PROFILE-BODY"])]);
+check('a clean profile save succeeds', $s === 302, "status $s");
+[$s, , $b] = req('GET', "$base/about");
+check('profile page renders saved content through the theme', $s === 200 && str_contains($b, 'SENTINEL-PROFILE-BODY'), "status $s");
+[, , $b] = req('GET', "$base/");
+check('profile content stays out of the homepage', !str_contains($b, 'SENTINEL-PROFILE-BODY'));
+[, , $b] = req('GET', "$base/feed");
+check('profile content stays out of the feed', !str_contains($b, 'SENTINEL-PROFILE-BODY'));
+file_put_contents($cfgFile, "<?php\nreturn " . var_export($config, true) . ";\n");
+
 // ------------------------------------------------------------------- feed --
 
 [$s, $h, $b] = req('GET', "$base/feed");

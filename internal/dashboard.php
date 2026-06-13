@@ -75,6 +75,9 @@ if (is_array($importResult)): ?>
         <?php endif; ?>
     </div>
 <?php endif; ?>
+<?php if (in_array((string) ($siteConfig['profilePage'] ?? 'off'), Fieldnote\Config::PROFILE_SLUGS, true)): ?>
+    <p class="text-center mt-2"><a href="<?= e($router->generate('editProfile')) ?>">Edit your profile page (/<?= e((string) $siteConfig['profilePage']) ?>)</a></p>
+<?php endif; ?>
 <?php
 $contentLint = $_SESSION['content_lint'] ?? null;
 unset($_SESSION['content_lint']);

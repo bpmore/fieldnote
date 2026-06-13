@@ -453,6 +453,67 @@ MD;
     require fn_template_dir($siteConfig['template']) . '/post.php';
 }, 'accessibility');
 
+// Personal profile page (docs/brag-spec.md). Owner-authored markdown, rendered
+// through the active theme like /accessibility, at the owner-chosen slug
+// (about/now/profile/brag). Lives in the 'pages' store, so it never appears in
+// the feed, home, search, tag, or sitemap. The route only exists when enabled.
+$fnProfileSlug = (string) ($siteConfig['profilePage'] ?? 'off');
+if (in_array($fnProfileSlug, Config::PROFILE_SLUGS, true)) {
+    $router->map('GET', '/' . $fnProfileSlug, function () use ($requireConfig, $siteConfig, $pagesStore, $router, $fnProfileSlug) {
+        $requireConfig();
+        $page = $pagesStore->findOneBy(['key', '=', 'profile']);
+        $post = [
+            'title'    => ucfirst($fnProfileSlug),
+            'author'   => $siteConfig['author'] !== '' ? $siteConfig['author'] : ($siteConfig['name'] ?: 'Fieldnote'),
+            'date'     => (int) ($page['updatedAt'] ?? time()),
+            'content'  => (string) ($page['content'] ?? ''),
+            'imageUrl' => '',
+            'tags'     => [],
+        ];
+        $pageTitle = ucfirst($fnProfileSlug);
+        require fn_template_dir($siteConfig['template']) . '/post.php';
+    }, 'profilePage');
+}
+
+// Admin editor for the profile page. Fixed path (independent of the slug). The
+// body is markdown through the same ContentLint accessibility gate as a public
+// post; a failing save is refused and re-rendered with the fixes. Revisions
+// are kept (last 10) on the page record.
+$router->map('GET|POST', '/admin/profile', function () use ($requireConfig, $requireAuth, $siteConfig, $pagesStore, $router, $redirect) {
+    $requireConfig();
+    $requireAuth();
+    if (!in_array((string) ($siteConfig['profilePage'] ?? 'off'), Config::PROFILE_SLUGS, true)) {
+        $redirect('settings'); // disabled — nothing to edit
+    }
+    $page = $pagesStore->findOneBy(['key', '=', 'profile']);
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $newContent = (string) ($_POST['pageContent'] ?? '');
+        $lintErrors = ContentLint::check($newContent);
+        if ($lintErrors !== []) {
+            $pageContent = $newContent;
+            $pageTitle = 'Edit profile page';
+            require FN_INTERNAL_DIR . '/edit-page.php';
+            return;
+        }
+        if ($page === null) {
+            $pagesStore->insert(['key' => 'profile', 'content' => $newContent, 'revisions' => [], 'updatedAt' => time()]);
+        } else {
+            $revisions = (array) ($page['revisions'] ?? []);
+            if ($newContent !== (string) ($page['content'] ?? '')) {
+                $revisions = array_slice(array_merge($revisions, [[
+                    'content' => (string) ($page['content'] ?? ''),
+                    'savedAt' => time(),
+                ]]), -10);
+            }
+            $pagesStore->updateById((int) $page['_id'], ['content' => $newContent, 'revisions' => $revisions, 'updatedAt' => time()]);
+        }
+        $redirect('dashboard');
+    }
+    $pageContent = (string) ($page['content'] ?? '');
+    $pageTitle = 'Edit profile page';
+    require FN_INTERNAL_DIR . '/edit-page.php';
+}, 'editProfile');
+
 // Zero-JS visitor search: a server-rendered scan of published posts through
 // the theme's home view. Title matches outrank body matches; protected post
 // bodies are never searched (their titles are public, so titles still match).
@@ -768,6 +829,10 @@ $router->map('GET|POST', '/settings', function () use ($configStore, $siteConfig
             $postsPerPage = 1;
         }
 
+        $profilePage = in_array($_POST['blogProfilePage'] ?? 'off', Config::PROFILE_SLUGS, true)
+            ? (string) $_POST['blogProfilePage']
+            : 'off';
+
         // Footer copyright + curated social links.
         $copyright = in_array($_POST['blogCopyright'] ?? 'off', ['blog', 'author'], true)
             ? (string) $_POST['blogCopyright']
@@ -810,6 +875,7 @@ $router->map('GET|POST', '/settings', function () use ($configStore, $siteConfig
             'searchEnabled' => !empty($_POST['blogSearchEnabled']),
             'statsEnabled' => !empty($_POST['blogStatsEnabled']),
             'accessibilityBadge' => !empty($_POST['blogAccessibilityBadge']),
+            'profilePage' => $profilePage,
             'copyright' => $copyright,
             'copyrightStartYear' => $copyrightStartYear,
             'social' => $social,
