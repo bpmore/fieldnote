@@ -1032,6 +1032,25 @@ preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
 [, , $css] = req('GET', "$base/palette.css");
 check('suggested palette saves and renders', $s === 302 && str_contains($b2, 'palette.css?v=') && str_contains($css, '@media (prefers-color-scheme: light){:root{--text:'), "status $s");
 
+// Rotation + palette: overrides are keyed to the theme they were authored
+// for (gazette, above). On a rotation day showing a DIFFERENT theme they
+// must not leak in; on a day showing the authored theme they still apply.
+// A single-theme pool makes the day's pick deterministic.
+$cfgNow = require $tmp . '/data/config.php';
+$rotCfg = function (array $over) use ($tmp, $cfgNow): void {
+    file_put_contents(
+        $tmp . '/data/config.php',
+        "<?php\nreturn " . var_export(array_merge($cfgNow, $over), true) . ";\n"
+    );
+};
+$rotCfg(['themeOfDay' => true, 'themePool' => ['mono'], 'themeRotateDays' => 1]);
+[, , $b2] = req('GET', "$base/");
+check('rotation onto another theme suppresses palette overrides', str_contains($b2, '/themes/mono/theme.css') && !str_contains($b2, 'palette.css?v='));
+$rotCfg(['themeOfDay' => true, 'themePool' => ['gazette'], 'themeRotateDays' => 1]);
+[, , $b2] = req('GET', "$base/");
+check('rotation onto the authored theme keeps palette overrides', str_contains($b2, '/themes/gazette/theme.css') && str_contains($b2, 'palette.css?v='));
+$rotCfg([]); // restore: rotation off, overrides intact for the reset test below
+
 // Reset restores stock rendering.
 [, , $b] = req('GET', "$base/admin/palette", $authed);
 preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);

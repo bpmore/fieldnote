@@ -552,6 +552,8 @@ function fn_pagination(\AltoRouter $router, int $page, int $numPages): void
  * Admin palette overrides as CSS, or '' when none apply. Overrides are tied
  * to the theme they were authored for (template name stored alongside), so
  * switching themes silently retires them instead of corrupting the new theme.
+ * Compared against the EFFECTIVE template: with theme-of-day rotation on,
+ * overrides only emit on days the rotation lands on the authored theme.
  * Both schemes are emitted media-scoped — polarity-independent: light
  * overrides apply in light mode whether the theme is light- or dark-default.
  *
@@ -560,7 +562,7 @@ function fn_pagination(\AltoRouter $router, int $page, int $numPages): void
 function fn_palette_css(array $siteConfig): string
 {
     $overrides = $siteConfig['paletteOverrides'] ?? [];
-    if (!is_array($overrides) || ($overrides['theme'] ?? '') !== $siteConfig['template']) {
+    if (!is_array($overrides) || ($overrides['theme'] ?? '') !== fn_effective_template($siteConfig)) {
         return '';
     }
     $block = static function (array $tokens): string {
