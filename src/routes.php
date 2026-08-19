@@ -831,31 +831,30 @@ $router->map('GET|POST', '/settings', function () use ($configStore, $siteConfig
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $required = ['blogName', 'blogDomain', 'blogTemplate', 'blogTimezone', 'blogI18N'];
-        foreach ($required as $field) {
-            if (!isset($_POST[$field]) || $_POST[$field] === '') {
-                $redirect('settings');
-            }
-        }
-
         $firstRun = !$configStore->exists();
 
-        // Password: set on first run; on later edits keep the existing hash
-        // unless a new password was actually typed.
-        if ($firstRun) {
-            $password = password_hash((string) $_POST['blogPassword'], PASSWORD_DEFAULT);
-        } elseif (!empty($_POST['blogPassword'])) {
-            $password = password_hash((string) $_POST['blogPassword'], PASSWORD_DEFAULT);
-        } else {
-            $password = $siteConfig['password'];
+        // The admin password is required on first run and optional afterwards,
+        // where blank means "keep the current one". Enforced here rather than
+        // trusting the form's `required` attribute: /settings is reachable
+        // unauthenticated before a config exists, so a bare POST that omits
+        // the field used to store password_hash('') — a valid hash that no
+        // input can ever satisfy, because /login refuses an empty submission
+        // before it verifies. That locked the site permanently, recoverable
+        // only by deleting data/config.php.
+        $newPassword = (string) ($_POST['blogPassword'] ?? '');
+        if ($firstRun && $newPassword === '') {
+            $redirect('settings');
         }
 
         // A new password mints a new session epoch: every other logged-in
         // device dies with the credential it was minted under. The session
         // submitting this form is re-stamped below so the admin stays in.
-        $sessionEpoch = ($firstRun || !empty($_POST['blogPassword']))
-            ? bin2hex(random_bytes(16))
-            : (string) ($siteConfig['sessionEpoch'] ?? '');
+        // One predicate for both, so the hash and the epoch cannot disagree.
+        // Note !== '' rather than !empty(), or a literal "0" password would
+        // silently keep the old hash and skip the rotation.
+        $rotating     = $newPassword !== '';
+        $password     = $rotating ? password_hash($newPassword, PASSWORD_DEFAULT) : (string) $siteConfig['password'];
+        $sessionEpoch = $rotating ? bin2hex(random_bytes(16)) : (string) ($siteConfig['sessionEpoch'] ?? '');
 
         $postsPerPage = (int) ($_POST['blogPostsPerPage'] ?? 1);
         if ($postsPerPage < 1) {
@@ -890,10 +889,10 @@ $router->map('GET|POST', '/settings', function () use ($configStore, $siteConfig
         }
 
         $new = [
-            'name'         => fn_clean($_POST['blogName']),
+            'name'         => fn_clean($_POST['blogName'] ?? ''),
             'info'         => fn_clean($_POST['blogInfo'] ?? ''),
             'author'       => fn_clean($_POST['blogAuthor'] ?? ''),
-            'domain'       => fn_clean_url($_POST['blogDomain']),
+            'domain'       => fn_clean_url($_POST['blogDomain'] ?? ''),
             'OGImage'      => fn_clean($_POST['blogOGImage'] ?? ''),
             'footer'       => fn_clean($_POST['blogFooter'] ?? ''),
             // headerInject is intentional raw markup (analytics snippets), only
@@ -901,7 +900,7 @@ $router->map('GET|POST', '/settings', function () use ($configStore, $siteConfig
             'headerInject' => (string) ($_POST['blogHeaderInject'] ?? ''),
             'password'     => $password,
             'sessionEpoch' => $sessionEpoch,
-            'template'     => basename(fn_clean($_POST['blogTemplate'])),
+            'template'     => basename(fn_clean($_POST['blogTemplate'] ?? '')),
             'themeOfDay'   => !empty($_POST['blogThemeOfDay']),
             // Curated rotation pool: keep only real installed themes, drop the
             // rest (a stale name can't poison the rotation). Empty = all.
@@ -929,9 +928,30 @@ $router->map('GET|POST', '/settings', function () use ($configStore, $siteConfig
             'trustedProxies' => fn_clean($_POST['blogTrustedProxies'] ?? ''),
             'postsPerPage' => $postsPerPage,
             'basePath'     => fn_clean($_POST['blogBase'] ?? ''),
-            'timezone'     => fn_clean($_POST['blogTimezone']),
-            'I18N'         => fn_clean($_POST['blogI18N']),
+            'timezone'     => fn_clean($_POST['blogTimezone'] ?? ''),
+            'I18N'         => fn_clean($_POST['blogI18N'] ?? ''),
         ];
+
+        // Validate what is about to be STORED, not what was posted. The old
+        // gate checked raw $_POST fifty lines above this array, before the
+        // normalizers ran — so blogName=" " passed and stored '', which the
+        // settings view reads as "not configured yet": it reverted to the
+        // first-run form and hid the 2FA and passkey sections with it.
+        // fn_clean_url() likewise turns a malformed domain into '', silently
+        // disabling canonical-host enforcement. Template and timezone get
+        // checked against reality for the same reason themePool already is:
+        // an unknown template falls back at render time so stored config
+        // disagrees with the gallery, and an unknown timezone throws on every
+        // request once theme-of-day is on.
+        foreach (['name', 'domain', 'template', 'timezone', 'I18N'] as $requiredKey) {
+            if ((string) $new[$requiredKey] === '') {
+                $redirect('settings');
+            }
+        }
+        if (!in_array($new['template'], fn_template_names(), true)
+            || !in_array($new['timezone'], \DateTimeZone::listIdentifiers(\DateTimeZone::ALL_WITH_BC), true)) {
+            $redirect('settings');
+        }
 
         if (!$configStore->save($new)) {
             http_response_code(500);
