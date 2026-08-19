@@ -406,7 +406,10 @@ $draftUrl = isset($m[1]) ? $base . $m[1] : '';
 if (isset($m[1])) {
     [$s, , $b] = req('GET', $base . $m[1]); // logged out on purpose
     check('share link renders the draft logged-out', $s === 200 && str_contains($b, 'SENTINEL-DRAFT-BODY'), "status $s");
-    [$s] = req('GET', $base . substr($m[1], 0, -1) . '0');
+    // Flip the final character to one it is not: a token that already ends
+    // in 0 would otherwise make this the untampered URL, and the check a coin
+    // flip that passes fifteen runs in sixteen.
+    [$s] = req('GET', $base . substr($m[1], 0, -1) . (str_ends_with($m[1], '0') ? '1' : '0'));
     check('tampered share token 404s', $s === 404, "status $s");
     [$s] = req('GET', $base . preg_replace('#/(\d+)/([a-f0-9]{32})$#', '/1111111111/$2', $m[1]));
     check('tampered share expiry 404s', $s === 404, "status $s");
@@ -1160,6 +1163,42 @@ preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
 [, , $b2] = req('GET', "$base/");
 check('palette reset clears overrides', $s === 302 && !str_contains($b2, 'palette.css?'), "status $s");
 
+// ------------------------------------------------- settings validation --
+
+// The gate has to run on what gets STORED, not on what was posted: the
+// normalizers between the two can empty or rewrite a value. A rejected save
+// redirects to /settings and a good one to /dashboard, so the target is the
+// only honest signal — and the stored config is checked either way.
+$settingsBody = static function (array $over) use ($csrfFor): array {
+    return ['body' => http_build_query(array_merge([
+        'csrf_token'   => $csrfFor('/settings'),
+        'blogName'     => 'Smoke',
+        'blogInfo'     => 'Smoke-test fixture',
+        'blogDomain'   => $base, // the test server itself: a real domain would 301 every later request away
+        'blogTemplate' => 'gazette',
+        'blogTimezone' => 'UTC',
+        'blogI18N'     => 'en_US',
+        'blogPostsPerPage' => '6',
+    ], $over))];
+};
+foreach ([
+    'whitespace-only name'   => ['blogName' => '   '],
+    'malformed domain'       => ['blogDomain' => 'not a url'],
+    'unknown template'       => ['blogTemplate' => 'no-such-theme'],
+    'unknown timezone'       => ['blogTimezone' => 'Mars/Phobos'],
+] as $label => $over) {
+    [$s, $h] = req('POST', "$base/settings", $authed + $settingsBody($over));
+    check(
+        "settings save rejects a $label",
+        $s === 302 && str_contains($h['location'] ?? '', '/settings'),
+        "status $s -> " . ($h['location'] ?? '(none)')
+    );
+}
+// The admin must still be able to reach 2FA and passkeys — the whitespace-name
+// save, had it landed, would have blanked the site name and hidden both.
+[, , $b] = req('GET', "$base/settings", $authed);
+check('a rejected save left the site configured', str_contains($b, 'Two-factor') && str_contains($b, 'Passkeys'), 'settings page fell back to first-run');
+
 // ----------------------------------------- session epoch (password change) --
 
 // Changing the password must log out every OTHER session while the session
@@ -1236,6 +1275,73 @@ foreach (["/.well-known/webfinger?resource=acct:smoke@127.0.0.1:$port", '/ap/act
 }
 [$s] = req('POST', "$base/ap/inbox", ['body' => '{}', 'headers' => ['Content-Type: application/activity+json']]);
 check('federation off: all AP endpoints 404', $s === 404, "inbox status $s");
+
+// ------------------------------------------------------- first-run setup --
+// Runs last: it takes the config away, so nothing after it can rely on one.
+// /settings is reachable unauthenticated while no config exists, so a bare
+// POST that omitted blogPassword used to store password_hash(''), a valid
+// hash that no input can satisfy — /login refuses an empty submission before
+// it verifies. The site was then permanently unloggable, recoverable only by
+// deleting data/config.php. The form's `required` attribute was the only
+// thing standing in the way, and curl does not read HTML.
+$cfgPath = $tmp . '/data/config.php';
+$cfgHeld = (string) file_get_contents($cfgPath);
+@unlink($cfgPath);
+
+$firstRunFields = [
+    'blogName'     => 'Fresh',
+    'blogDomain'   => $base, // the test server itself: a real domain would 301 every later request away
+    'blogTemplate' => 'gazette',
+    'blogTimezone' => 'UTC',
+    'blogI18N'     => 'en_US',
+    'blogPostsPerPage' => '6',
+];
+// A CSRF token only holds inside the session that issued it, and these
+// requests are anonymous — mint one session and keep it for the whole flow.
+$setupSid = 'fnsmoke' . bin2hex(random_bytes(8));
+file_put_contents("$sessionDir/sess_$setupSid", '');
+$setup = ['cookie' => 'fieldnote_sess=' . $setupSid];
+[, , $b] = req('GET', "$base/settings", $setup);
+preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+[$s, $h] = req('POST', "$base/settings", $setup + ['body' => http_build_query($firstRunFields + ['csrf_token' => $m[1] ?? ''])]);
+check(
+    'first-run setup refuses to create a passwordless site',
+    $s === 302 && str_contains($h['location'] ?? '', '/settings') && !is_file($cfgPath),
+    "status $s -> " . ($h['location'] ?? '(none)') . ', config ' . (is_file($cfgPath) ? 'CREATED' : 'absent')
+);
+
+[, , $b] = req('GET', "$base/settings", $setup);
+preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+[$s, $h] = req('POST', "$base/settings", $setup + ['body' => http_build_query($firstRunFields + [
+    'csrf_token'   => $m[1] ?? '',
+    'blogPassword' => 'chosen-at-setup',
+])]);
+check('first-run setup with a password creates the site', $s === 302 && str_contains($h['location'] ?? '', '/dashboard') && is_file($cfgPath), "status $s -> " . ($h['location'] ?? '(none)'));
+
+// The credential chosen at setup must actually work.
+$loginSid = 'fnsmoke' . bin2hex(random_bytes(8));
+file_put_contents("$sessionDir/sess_$loginSid", '');
+$loginAs = ['cookie' => 'fieldnote_sess=' . $loginSid];
+[, , $b] = req('GET', "$base/login", $loginAs);
+preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+[$s, $h] = req('POST', "$base/login", $loginAs + ['body' => http_build_query(['csrf_token' => $m[1] ?? '', 'blogPassword' => 'chosen-at-setup'])]);
+@unlink("$sessionDir/sess_$loginSid");
+// 2FA is on in the fixture, so a correct password advances to the second
+// factor; a wrong one would land back on /login with an error. Either way the
+// point is that the credential chosen during setup is usable at all, which is
+// what storing password_hash('') used to make impossible.
+check(
+    'the password chosen at setup is accepted',
+    $s === 302 && str_contains($h['location'] ?? '', '/login/verify'),
+    "status $s -> " . ($h['location'] ?? '(none)')
+);
+
+// Put the original config back, byte for byte, via the same temp-and-rename
+// the rest of the harness uses.
+$cfgRestore = $cfgPath . '.restore.tmp';
+file_put_contents($cfgRestore, $cfgHeld, LOCK_EX);
+rename($cfgRestore, $cfgPath);
+@unlink("$sessionDir/sess_$setupSid");
 
 // ---------------------------------------------------------------- summary --
 
