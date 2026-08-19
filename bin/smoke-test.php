@@ -46,7 +46,19 @@ $config = array_merge(Fieldnote\Config::DEFAULTS, [
     'federationEnabled' => true,
     'apHandle' => 'smoke',
 ]);
-file_put_contents($tmp . '/data/config.php', "<?php\nreturn " . var_export($config, true) . ";\n");
+// The server reads data/config.php on every request while these checks rewrite
+// it. file_put_contents() truncates before it writes, so a worker that requires
+// the file inside that window sees zero bytes, Config::load() falls back to
+// DEFAULTS, and an unrelated check fails somewhere downstream. Write through a
+// temp file and rename instead — the same guarantee Config::save() gives the
+// app, so a reader always sees either the old config or the new one.
+function fn_smoke_write_cfg(string $path, array $cfg): void
+{
+    $tmpFile = $path . '.' . bin2hex(random_bytes(6)) . '.tmp';
+    file_put_contents($tmpFile, "<?php\nreturn " . var_export($cfg, true) . ";\n", LOCK_EX);
+    rename($tmpFile, $path);
+}
+fn_smoke_write_cfg($tmp . '/data/config.php', $config);
 
 // 2FA enabled() is just "totp.json exists" — enough to render the verify page.
 file_put_contents($tmp . '/data/totp.json', json_encode([
@@ -235,23 +247,23 @@ check('accessibility statement renders from Wcag constants', $s === 200 && str_c
 $cfgFile = $tmp . '/data/config.php';
 [, , $b] = req('GET', "$base/");
 check('a11y badge hidden by default', !str_contains($b, 'a11y-badge'));
-file_put_contents($cfgFile, "<?php\nreturn " . var_export(array_merge($config, ['accessibilityBadge' => true]), true) . ";\n");
+fn_smoke_write_cfg($cfgFile, array_merge($config, ['accessibilityBadge' => true]));
 [, , $b] = req('GET', "$base/");
 check('a11y badge shows when enabled and links to the statement', str_contains($b, 'class="a11y-badge"') && str_contains($b, 'href="/accessibility"') && str_contains($b, 'WCAG'));
-file_put_contents($cfgFile, "<?php\nreturn " . var_export($config, true) . ";\n");
+fn_smoke_write_cfg($cfgFile, $config);
 
 // Footer copyright + curated social links: off by default, opt-in via config.
 [, , $b] = req('GET', "$base/");
 check('footer copyright + social hidden by default', !str_contains($b, 'footer-copyright') && !str_contains($b, 'social-links'));
-file_put_contents($cfgFile, "<?php\nreturn " . var_export(array_merge($config, [
+fn_smoke_write_cfg($cfgFile, array_merge($config, [
     'copyright' => 'author',
     'copyrightStartYear' => '2021',
     'social' => ['mastodon' => 'https://mastodon.social/@fieldnote', 'github' => 'https://github.com/bpmore/fieldnote'],
-]), true) . ";\n");
+]));
 [, , $b] = req('GET', "$base/");
 check('footer copyright renders name and a year range', str_contains($b, 'footer-copyright') && str_contains($b, 'Tester') && str_contains($b, '2021') && str_contains($b, date('Y')));
 check('footer social links render rel=me with labelled icons', str_contains($b, 'class="social-links"') && str_contains($b, 'rel="me"') && str_contains($b, 'mastodon.social/@fieldnote') && str_contains($b, '>Mastodon</span>') && str_contains($b, '>GitHub</span>'));
-file_put_contents($cfgFile, "<?php\nreturn " . var_export($config, true) . ";\n");
+fn_smoke_write_cfg($cfgFile, $config);
 
 // Inline owner controls on a public post: invisible to visitors, present for
 // the authenticated owner; delete routes through a server-rendered confirm.
@@ -289,12 +301,12 @@ check('search status never appears off the search page', !str_contains($b, 'sear
 check('search box appears in the header when enabled', str_contains($b, 'role="search"'));
 [, , $b] = req('GET', "$base/search");
 check('the search page shows the box with no query', str_contains($b, 'role="search"'));
-file_put_contents($cfgFile, "<?php\nreturn " . var_export(array_merge($config, ['searchEnabled' => false]), true) . ";\n");
+fn_smoke_write_cfg($cfgFile, array_merge($config, ['searchEnabled' => false]));
 [, , $b] = req('GET', "$base/");
 check('search box hidden when search is disabled', !str_contains($b, 'role="search"'));
 [$s] = req('GET', "$base/search");
 check('disabled search route 404s', $s === 404, "status $s");
-file_put_contents($cfgFile, "<?php\nreturn " . var_export($config, true) . ";\n");
+fn_smoke_write_cfg($cfgFile, $config);
 
 // --------------------------------------------------------- profile page --
 [$s] = req('GET', "$base/about");
@@ -302,7 +314,7 @@ check('profile route 404s when off', $s === 404, "status $s");
 [, , $b] = req('GET', "$base/");
 check('no profile nav link when off', !str_contains($b, 'profile-link'));
 
-file_put_contents($cfgFile, "<?php\nreturn " . var_export(array_merge($config, ['profilePage' => 'about']), true) . ";\n");
+fn_smoke_write_cfg($cfgFile, array_merge($config, ['profilePage' => 'about']));
 [, , $b] = req('GET', "$base/");
 check('profile nav link appears in the header when enabled', str_contains($b, 'class="profile-link"') && str_contains($b, '>About</a>'));
 [$s, , $b] = req('GET', "$base/admin/profile", $authed);
@@ -320,7 +332,7 @@ check('profile page renders saved content through the theme', $s === 200 && str_
 check('profile content stays out of the homepage', !str_contains($b, 'SENTINEL-PROFILE-BODY'));
 [, , $b] = req('GET', "$base/feed");
 check('profile content stays out of the feed', !str_contains($b, 'SENTINEL-PROFILE-BODY'));
-file_put_contents($cfgFile, "<?php\nreturn " . var_export($config, true) . ";\n");
+fn_smoke_write_cfg($cfgFile, $config);
 
 // ------------------------------------------------------------------- feed --
 
@@ -945,10 +957,7 @@ req('POST', "$base/admin/themes/apply", $authed + ['body' => 'theme=gazette&csrf
 // ------------------------------------------------------- theme of the day --
 // Rewrite the served config in place; the next request reads it fresh.
 $writeCfg = function (array $over) use ($tmp, $config): void {
-    file_put_contents(
-        $tmp . '/data/config.php',
-        "<?php\nreturn " . var_export(array_merge($config, $over), true) . ";\n"
-    );
+    fn_smoke_write_cfg($tmp . '/data/config.php', array_merge($config, $over));
 };
 // Expected daily pick, computed independently of the helper: sorted installed
 // themes, indexed by the UTC epoch-day (matches fn_theme_of_day for tz=UTC).
@@ -1038,10 +1047,7 @@ check('suggested palette saves and renders', $s === 302 && str_contains($b2, 'pa
 // A single-theme pool makes the day's pick deterministic.
 $cfgNow = require $tmp . '/data/config.php';
 $rotCfg = function (array $over) use ($tmp, $cfgNow): void {
-    file_put_contents(
-        $tmp . '/data/config.php',
-        "<?php\nreturn " . var_export(array_merge($cfgNow, $over), true) . ";\n"
-    );
+    fn_smoke_write_cfg($tmp . '/data/config.php', array_merge($cfgNow, $over));
 };
 $rotCfg(['themeOfDay' => true, 'themePool' => ['mono'], 'themeRotateDays' => 1]);
 [, , $b2] = req('GET', "$base/");
@@ -1064,7 +1070,7 @@ check('palette reset clears overrides', $s === 302 && !str_contains($b2, 'palett
 // that changed it stays in. Run last: it rewrites the fixture config.
 [, , $b] = req('GET', "$base/settings", $authed);
 preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
-[$s] = req('POST', "$base/settings", $authed + ['body' => http_build_query([
+[$s, $hSave] = req('POST', "$base/settings", $authed + ['body' => http_build_query([
     'csrf_token'   => $m[1],
     'blogName'     => 'Smoke',
     'blogInfo'     => 'Smoke-test fixture',
@@ -1078,7 +1084,11 @@ preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
     'blogPassword' => 'rotated-password',
 ])]);
 [$s2] = req('GET', "$base/dashboard", $authed);
-check('password change keeps the changing session', $s === 302 && $s2 === 200, "save $s, dashboard $s2");
+check(
+    'password change keeps the changing session',
+    $s === 302 && str_contains($hSave['location'] ?? '', '/dashboard') && $s2 === 200,
+    "save $s -> " . ($hSave['location'] ?? '(none)') . ", dashboard $s2"
+);
 
 $staleSid = 'fnsmoke' . bin2hex(random_bytes(8));
 file_put_contents("$sessionDir/sess_$staleSid", 'isAuthenticated|b:1;');
