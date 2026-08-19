@@ -1068,6 +1068,16 @@ check('palette reset clears overrides', $s === 302 && !str_contains($b2, 'palett
 
 // Changing the password must log out every OTHER session while the session
 // that changed it stays in. Run last: it rewrites the fixture config.
+// Syndication validators must move when a settings change alters what the
+// feeds render. The save below sets `domain`, which rewrites every <link>,
+// <guid>, <loc> and feed_url — so an unchanged ETag here means subscribers
+// would hold a feed pointing at the old address indefinitely.
+$feedEtagBefore = [];
+foreach (['/feed', '/feed.json', '/sitemap.xml'] as $synPath) {
+    [, $hSyn] = req('GET', $base . $synPath);
+    $feedEtagBefore[$synPath] = $hSyn['etag'] ?? '';
+}
+
 [, , $b] = req('GET', "$base/settings", $authed);
 preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
 [$s, $hSave] = req('POST', "$base/settings", $authed + ['body' => http_build_query([
@@ -1089,6 +1099,19 @@ check(
     $s === 302 && str_contains($hSave['location'] ?? '', '/dashboard') && $s2 === 200,
     "save $s -> " . ($hSave['location'] ?? '(none)') . ", dashboard $s2"
 );
+
+foreach ($feedEtagBefore as $synPath => $etagBefore) {
+    [$sSyn, $hSyn] = req('GET', $base . $synPath);
+    $etagAfter = $hSyn['etag'] ?? '';
+    check(
+        "settings change busts the $synPath validator",
+        $sSyn === 200 && $etagBefore !== '' && $etagAfter !== '' && $etagAfter !== $etagBefore,
+        "status $sSyn, before " . ($etagBefore ?: '(none)') . ", after " . ($etagAfter ?: '(none)')
+    );
+    // And the stale validator must no longer satisfy a revalidating reader.
+    [$sSyn] = req('GET', $base . $synPath, ['headers' => ['If-None-Match: ' . $etagBefore]]);
+    check("stale $synPath validator revalidates to 200", $sSyn === 200, "status $sSyn");
+}
 
 $staleSid = 'fnsmoke' . bin2hex(random_bytes(8));
 file_put_contents("$sessionDir/sess_$staleSid", 'isAuthenticated|b:1;');
