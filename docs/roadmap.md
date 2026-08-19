@@ -168,17 +168,24 @@ Themes are enforced; the writing isn't. Lint the rendered post on save.
 **Plan:** `src/ContentLint.php` runs over Parsedown-safe-mode output:
 - heading jumps (post body opening with `<h1>` — themes own the h1 — or
   skipping levels h2→h4);
-- link text on a deny-list (`click here`, `here`, `read more`, `link`) or a
-  bare URL as its own text;
-- images in markdown with empty alt AND no adjacent caption text;
+- link text on a deny-list (see `ContentLint::VAGUE_LINKS`) or a bare URL as
+  its own text;
+- images in markdown with empty alt — no decorative exemption, every image
+  needs a description;
 - all-caps runs > 10 words (screen-reader letter-by-letter trap).
-Findings stored in session on save, rendered as a dismissible warning list
-on the write screen ("published anyway — these are suggestions"). Never
-blocks publishing.
 
-**Accept:** a post with `[click here](url)` and an h2→h4 jump shows exactly
-two warnings after save; a clean post shows none; warnings survive the
-redirect (flash pattern, same as `login_error`).
+Severity is keyed on **post state**, not on which rule fired. While a post is
+a draft the findings are advisory — flashed after a save, the writer stays in
+charge. At the public boundary they are enforced: publishing, editing an
+already-public post, saving the profile page, and a scheduled auto-publish are
+all refused while any issue remains. Drafting is never blocked. The class
+docblock in `src/ContentLint.php` is the authority on this; keep it there
+rather than restating the rules here.
+
+**Accept:** a draft with `[click here](url)` and an h2→h4 jump shows two
+warnings after save and still saves; a clean post shows none; warnings survive
+the redirect (flash pattern, same as `login_error`); publishing that same post
+is refused and returns to the editor.
 
 ### 1.3 Public proof: /accessibility page + badge (S) — SHIPPED
 

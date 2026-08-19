@@ -57,9 +57,11 @@ final class ContentLint
         }
 
         // Images without alt text. The markdown ![](url) form renders alt="";
-        // in body content that's rarely intentional decoration.
+        // in body content that's rarely intentional decoration. There is no
+        // decorative escape hatch on purpose: this blocks at the public
+        // boundary, so the message must not suggest the issue is optional.
         if (preg_match('/<img[^>]*\salt=""/i', $html)) {
-            $warnings[] = 'An image has empty alt text. Describe what it shows — or if it is purely decorative, this is fine to ignore.';
+            $warnings[] = 'An image has empty alt text. Describe what it shows — every image needs a description before the post can go public.';
         }
 
         // Long all-caps passages are read letter-by-letter by some screen
@@ -68,6 +70,10 @@ final class ContentLint
             $warnings[] = 'A long all-caps passage — some screen readers spell capitalized runs letter by letter. Use normal case (themes can style emphasis).';
         }
 
-        return $warnings;
+        // One finding per distinct problem. The link loop runs per <a>, so a
+        // post with five "read more" links would otherwise repeat the same
+        // sentence five times. Distinct messages survive: two different
+        // heading jumps read differently and both still show.
+        return array_values(array_unique($warnings));
     }
 }
