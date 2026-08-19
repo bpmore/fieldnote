@@ -552,17 +552,19 @@ function fn_pagination(\AltoRouter $router, int $page, int $numPages): void
  * Admin palette overrides as CSS, or '' when none apply. Overrides are tied
  * to the theme they were authored for (template name stored alongside), so
  * switching themes silently retires them instead of corrupting the new theme.
- * Compared against the EFFECTIVE template: with theme-of-day rotation on,
- * overrides only emit on days the rotation lands on the authored theme.
+ * Compared against the EFFECTIVE template by default: with theme-of-day
+ * rotation on, overrides only emit on days the rotation lands on the authored
+ * theme. $forTemplate overrides that comparison for callers rendering a
+ * specific theme (the /palette.css route, theme previews).
  * Both schemes are emitted media-scoped — polarity-independent: light
  * overrides apply in light mode whether the theme is light- or dark-default.
  *
  * @param array<string,mixed> $siteConfig
  */
-function fn_palette_css(array $siteConfig): string
+function fn_palette_css(array $siteConfig, ?string $forTemplate = null): string
 {
     $overrides = $siteConfig['paletteOverrides'] ?? [];
-    if (!is_array($overrides) || ($overrides['theme'] ?? '') !== fn_effective_template($siteConfig)) {
+    if (!is_array($overrides) || ($overrides['theme'] ?? '') !== ($forTemplate ?? fn_effective_template($siteConfig))) {
         return '';
     }
     $block = static function (array $tokens): string {
@@ -630,9 +632,21 @@ function fn_render_head(array $siteConfig, \AltoRouter $router, string $pageTitl
     // time. A linked stylesheet (not inline) so the strict public CSP holds;
     // the version hash busts browser caches the moment the palette changes.
     // Linked before any preview scheme-force style so a forced preview wins.
-    $paletteCss = fn_palette_css($siteConfig);
+    // Resolve against the theme actually being rendered, not the clock. Themes
+    // pass their own name in $themeCssHref, so this works for pages that
+    // deliberately ignore the daily rotation (draft shares, previews) — those
+    // used to render theme X while the palette was compared against whatever
+    // the rotation picked, silently dropping X's overrides on most days. The
+    // theme travels to the stylesheet route too, so the page and the sheet it
+    // links can never disagree across a midnight rollover between the two
+    // requests. Unrecognized href shape falls back to the old behavior.
+    $renderedTheme = fn_rendered_theme($themeCssHref);
+    $paletteCss = fn_palette_css($siteConfig, $renderedTheme !== '' ? $renderedTheme : null);
     if ($paletteCss !== '') {
-        echo '<link rel="stylesheet" href="' . e($router->generate('paletteCss')) . '?v=' . substr(sha1($paletteCss), 0, 8) . '">' . "\n";
+        $paletteHref = $router->generate('paletteCss')
+            . ($renderedTheme !== '' ? '?t=' . rawurlencode($renderedTheme) . '&amp;v=' : '?v=')
+            . substr(sha1($paletteCss), 0, 8);
+        echo '<link rel="stylesheet" href="' . $paletteHref . '">' . "\n";
     }
     // Admin theme previews force a color scheme by re-declaring the token
     // block AFTER the stylesheet, where it outranks the theme's own
@@ -929,6 +943,23 @@ function fn_effective_template(array $siteConfig): string
         return (string) ($siteConfig['template'] ?? '');
     }
     return fn_theme_of_day($siteConfig);
+}
+
+/**
+ * The theme a page is actually rendering, read back out of the stylesheet href
+ * its header passed us. Every theme builds that href with
+ * $router->generate('themeAsset', ['theme' => '<its own name>', ...]), so the
+ * name is already in hand — which beats re-deriving it from config and a clock
+ * that may disagree with what the page chose. Returns '' when the href isn't
+ * a theme asset, so callers can fall back.
+ */
+function fn_rendered_theme(string $themeCssHref): string
+{
+    if (!preg_match('~/themes/([^/?\#]+)/~', $themeCssHref, $m)) {
+        return '';
+    }
+    $name = rawurldecode($m[1]);
+    return $name === basename($name) ? $name : '';
 }
 
 /**
