@@ -58,9 +58,14 @@
 
     // Client-side guard matching the server's effective upload cap, which the
     // write view passes in via data-max-bytes (min of app cap and PHP limits).
+    // No fallback figure on purpose: the attribute carries the EFFECTIVE cap,
+    // which is lower than the app cap wherever PHP's own limits bind. Guessing
+    // one here would tell the writer the server accepts 10 MB on a host that
+    // accepts 2 — worse than staying quiet. fn_resolve_image() rejects an
+    // oversized file server-side either way, so skipping the hint is safe.
     var upload = document.getElementById('imageUpload');
-    if (upload) {
-        var maxBytes = parseInt(upload.getAttribute('data-max-bytes'), 10) || 10485760;
+    var maxBytes = upload ? parseInt(upload.getAttribute('data-max-bytes'), 10) : 0;
+    if (upload && maxBytes > 0) {
         upload.addEventListener('change', function () {
             if (this.files[0] && this.files[0].size > maxBytes) {
                 window.alert(

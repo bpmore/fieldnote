@@ -9,6 +9,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN a2enmod rewrite headers
 
+# Upload limits, kept in step with public/.user.ini. That file is the FPM
+# half of this pair and is inert here: .user.ini is read only by CGI/FastCGI
+# SAPIs, and this image runs mod_php. Without these two lines the container
+# silently falls back to PHP's 2M/8M defaults, so the editor correctly but
+# confusingly advertises a 2 MB cap on a build whose app limit is 10 MB.
+# Change one file and change the other.
+RUN { \
+        echo 'upload_max_filesize = 12M'; \
+        echo 'post_max_size = 16M'; \
+    } > "$PHP_INI_DIR/conf.d/fieldnote-uploads.ini"
+
 # Serve from public/ so config and data are never under the web root.
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
