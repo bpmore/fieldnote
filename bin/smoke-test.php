@@ -429,6 +429,77 @@ preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
 [, , $b] = req('GET', "$base/post/1/edit", $authed);
 check('restore brings the original text back', $s === 302 && str_contains($b, 'A **published** fixture post.'), "status $s");
 
+// A restore is a save to an already-public post, so it clears the same
+// accessibility gate as publish and edit. Build a genuinely failing revision
+// the only way the app allows: hide the post (drafts save freely), save a
+// failing body under a recognisable title, then save clean text again so the
+// failing version becomes the snapshot. Republish, and that revision is a
+// loaded gun pointed at the public boundary.
+$csrfFor = static function (string $path) use ($base, $authed): string {
+    [, , $page] = req('GET', $base . $path, $authed);
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $page, $cm);
+    return $cm[1] ?? '';
+};
+req('POST', "$base/post/1/hide", $authed + ['body' => 'csrf_token=' . $csrfFor('/dashboard')]);
+req('POST', "$base/post/1/edit", $authed + ['body' => http_build_query([
+    'csrf_token'      => $csrfFor('/post/1/edit'),
+    'blogPostTitle'   => 'Bad Revision Source',
+    'blogPostAuthor'  => 'Tester',
+    'blogPostContent' => "## Section\n\n#### Skips a level",
+])]);
+req('POST', "$base/post/1/edit", $authed + ['body' => http_build_query([
+    'csrf_token'      => $csrfFor('/post/1/edit'),
+    'blogPostTitle'   => 'Hello World',
+    'blogPostAuthor'  => 'Tester',
+    'blogPostContent' => 'A **published** fixture post.',
+    'blogPostTags'    => 'notes, testing',
+])]);
+req('POST', "$base/post/1/publish", $authed + ['body' => 'csrf_token=' . $csrfFor('/dashboard')]);
+
+[, , $b] = req('GET', "$base/post/1/edit", $authed);
+preg_match('#Bad Revision Source.*?name="revision" value="(\d+)"#s', $b, $rm);
+$badRev = $rm[1] ?? '';
+check('a failing revision is available to restore', $badRev !== '' && str_contains($b, 'A **published** fixture post.'), 'index ' . ($badRev !== '' ? $badRev : '(none)'));
+
+if ($badRev !== '') {
+    // Both outcomes redirect to the editor, so the status cannot tell them
+    // apart — the post's own text is the only honest evidence of a refusal.
+    [$s] = req('POST', "$base/post/1/restore", $authed + ['body' => "revision=$badRev&csrf_token=" . $csrfFor('/post/1/edit')]);
+    [, , $b] = req('GET', "$base/post/1/edit", $authed);
+    check(
+        'restoring a failing revision onto a live post is refused',
+        $s === 302 && str_contains($b, 'A **published** fixture post.') && !str_contains($b, 'Skips a level'),
+        "status $s, live text " . (str_contains($b, 'Skips a level') ? 'REPLACED' : 'intact')
+    );
+    check('the refused restore says why', str_contains($b, 'accessibility issues') && str_contains($b, 'Heading levels jump'));
+
+    // The gate is the public boundary, not the restore button: the identical
+    // restore succeeds once the post is a draft again.
+    req('POST', "$base/post/1/hide", $authed + ['body' => 'csrf_token=' . $csrfFor('/dashboard')]);
+    [$s] = req('POST', "$base/post/1/restore", $authed + ['body' => "revision=$badRev&csrf_token=" . $csrfFor('/post/1/edit')]);
+    [, , $b] = req('GET', "$base/post/1/edit", $authed);
+    check('the same restore is allowed while the post is a draft', $s === 302 && str_contains($b, 'Skips a level'), "status $s");
+
+    // Restoring a revision whose text is already current must not snapshot a
+    // no-op. Ten of those would push the real history out through the cap.
+    req('POST', "$base/post/1/restore", $authed + ['body' => 'revision=0&csrf_token=' . $csrfFor('/post/1/edit')]);
+    [, , $b] = req('GET', "$base/post/1/edit", $authed);
+    $revCount = substr_count($b, 'name="revision"');
+    req('POST', "$base/post/1/restore", $authed + ['body' => 'revision=0&csrf_token=' . $csrfFor('/post/1/edit')]);
+    [, , $b] = req('GET', "$base/post/1/edit", $authed);
+    check('restoring an already-current revision does not churn history', substr_count($b, 'name="revision"') === $revCount, "before $revCount, after " . substr_count($b, 'name="revision"'));
+
+    // Leave post 1 exactly as the later checks expect it.
+    req('POST', "$base/post/1/edit", $authed + ['body' => http_build_query([
+        'csrf_token'      => $csrfFor('/post/1/edit'),
+        'blogPostTitle'   => 'Hello World',
+        'blogPostAuthor'  => 'Tester',
+        'blogPostContent' => 'A **published** fixture post.',
+        'blogPostTags'    => 'notes, testing',
+    ])]);
+    req('POST', "$base/post/1/publish", $authed + ['body' => 'csrf_token=' . $csrfFor('/dashboard')]);
+}
+
 // ----------------------------------------------------------- content lint --
 
 [, , $b] = req('GET', "$base/dashboard", $authed);

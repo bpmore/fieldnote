@@ -591,7 +591,7 @@ $router->map('POST', '/post/[i:id]/publish', function ($id) use ($requireConfig,
     // and the post stays a draft.
     $lintErrors = ContentLint::check((string) ($post['content'] ?? ''));
     if ($lintErrors !== []) {
-        $_SESSION['content_lint_block'] = $lintErrors;
+        $_SESSION['content_lint_block'] = ['id' => (int) $id, 'errors' => $lintErrors];
         $redirect('editPost', ['id' => (int) $id]);
     }
     $update = ['draft' => false, 'scheduledFor' => 0, 'scheduleBlocked' => false]; // manual publish supersedes a schedule
@@ -741,20 +741,45 @@ $router->map('POST', '/post/[i:id]/restore', function ($id) use ($requireConfig,
     if (!isset($revisions[$index])) {
         $notFound();
     }
-    $restore     = $revisions[$index];
-    $revisions[] = [
-        'title'   => (string) ($post['title'] ?? ''),
-        'content' => (string) ($post['content'] ?? ''),
-        'author'  => (string) ($post['author'] ?? ''),
-        'savedAt' => time(),
-    ];
-    $post['revisions'] = array_slice($revisions, -10);
-    if (($restore['title'] ?? '') !== ($post['title'] ?? '')) {
-        $post['slug'] = fn_unique_slug($blogStore, (string) $restore['title'], (int) $id);
+    $restore    = $revisions[$index];
+    $newTitle   = (string) ($restore['title'] ?? '');
+    $newAuthor  = (string) ($restore['author'] ?? '');
+    $newContent = (string) ($restore['content'] ?? '');
+
+    // A restore is a save to an already-public post, so it clears the same
+    // public boundary as publishing or editing one. Without this the writer
+    // could reinstate exactly the content the edit route had just refused, by
+    // restoring the revision that refusal snapshotted. Checked before anything
+    // is written, so a refused restore leaves the live post untouched. Drafts
+    // stay free to restore, matching the edit flow.
+    if (empty($post['draft'])) {
+        $lintErrors = ContentLint::check($newContent);
+        if ($lintErrors !== []) {
+            $_SESSION['content_lint_block'] = ['id' => (int) $id, 'errors' => $lintErrors];
+            $redirect('editPost', ['id' => (int) $id]);
+        }
     }
-    $post['title']   = (string) ($restore['title'] ?? '');
-    $post['author']  = (string) ($restore['author'] ?? '');
-    $post['content'] = (string) ($restore['content'] ?? '');
+
+    // Snapshot the version being replaced, but only when it actually differs —
+    // the edit route guards the same way. Restoring one revision repeatedly
+    // would otherwise push no-op entries through the ten-deep cap and evict
+    // the real history.
+    if ($newTitle !== ($post['title'] ?? '') || $newContent !== ($post['content'] ?? '') || $newAuthor !== ($post['author'] ?? '')) {
+        $revisions[] = [
+            'title'   => (string) ($post['title'] ?? ''),
+            'content' => (string) ($post['content'] ?? ''),
+            'author'  => (string) ($post['author'] ?? ''),
+            'savedAt' => time(),
+        ];
+    }
+    $post['revisions'] = array_slice($revisions, -10);
+    // Re-slug on a title change, or when a pre-slug post is restored.
+    if ($newTitle !== ($post['title'] ?? '') || empty($post['slug'])) {
+        $post['slug'] = fn_unique_slug($blogStore, $newTitle, (int) $id);
+    }
+    $post['title']   = $newTitle;
+    $post['author']  = $newAuthor;
+    $post['content'] = $newContent;
     $blogStore->update($post);
     $redirect('editPost', ['id' => (int) $id]);
 }, 'restoreRevision');

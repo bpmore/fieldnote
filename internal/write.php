@@ -16,11 +16,21 @@ $uploadLimitMb = rtrim(rtrim(number_format($uploadLimit / 1048576, 1), '0'), '.'
 // field is shown blank; leaving it blank on edit keeps the existing password.
 //
 // Blocking accessibility errors: passed directly by the edit handler when a
-// save to a public post is refused, or stashed by the publish route before it
-// redirects here. Distinct from the dashboard's advisory flash — these
-// actually stopped a save or publish.
-$lintErrors = $lintErrors ?? ($_SESSION['content_lint_block'] ?? null);
+// save to a public post is refused, or stashed by the publish and restore
+// routes before they redirect here. Distinct from the dashboard's advisory
+// flash — these actually stopped a save, publish, or restore.
+//
+// The stash names the post it belongs to, and is always drained even when it
+// is not shown. An interrupted redirect used to leave it set, and the next
+// render — including /write, a blank new-post form — would announce another
+// post's failures above a form nothing was submitted to.
+$blocked = $_SESSION['content_lint_block'] ?? null;
 unset($_SESSION['content_lint_block']);
+$lintErrors = $lintErrors ?? null;
+if ($lintErrors === null && $isEdit && is_array($blocked)
+    && (int) ($blocked['id'] ?? 0) === (int) ($post['_id'] ?? 0)) {
+    $lintErrors = $blocked['errors'] ?? null;
+}
 ?>
 <h1 class="setupH1 setup text-center"><?php i18n("write_title"); ?></h1>
 <?php if (!empty($lintErrors)): ?>
