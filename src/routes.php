@@ -386,8 +386,16 @@ $router->map('GET', '/draft/[i:id]/[i:exp]/[:token]', function ($id, $exp, $toke
 // Palette overrides as a real stylesheet (no inline <style> on public pages,
 // so the strict CSP holds). Versioned by content hash at link time.
 $router->map('GET', '/palette.css', function () use ($siteConfig) {
-    $css = fn_palette_css($siteConfig);
-    fn_conditional_get('palette|' . $css, time() - 60);
+    // ?t names the theme the linking page rendered. Without it this request
+    // would re-resolve against the clock, so a page rendered just before a
+    // theme-of-day rollover could link a stylesheet served just after it.
+    // Validated against installed themes; anything else falls back.
+    $forTheme = basename((string) ($_GET['t'] ?? ''));
+    if ($forTheme !== '' && !in_array($forTheme, fn_template_names(), true)) {
+        $forTheme = '';
+    }
+    $css = fn_palette_css($siteConfig, $forTheme !== '' ? $forTheme : null);
+    fn_conditional_get('palette|' . $forTheme . '|' . $css, time() - 60);
     header('Content-Type: text/css; charset=utf-8');
     echo $css;
     exit;
@@ -1087,6 +1095,12 @@ $router->map('GET', '/admin/themes/preview/[:theme]', function ($theme) use ($re
         $notFound();
     }
 
+    // Render the preview AS this theme: pin the local config copy so palette
+    // overrides (keyed to their authored theme) apply exactly when previewing
+    // that theme — and never leak onto the others, rotation on or off.
+    $siteConfig['template']   = $name;
+    $siteConfig['themeOfDay'] = false;
+
     // ?scheme=light|dark forces a palette regardless of the OS preference:
     // re-declare the matching token block after the stylesheet (later in the
     // cascade beats the theme's own prefers-color-scheme override). When the
@@ -1097,11 +1111,12 @@ $router->map('GET', '/admin/themes/preview/[:theme]', function ($theme) use ($re
         $css  = (string) @file_get_contents(fn_template_dir($name) . '/assets/theme.css');
         $body = CssTokens::schemeBlock($css, $scheme) ?? CssTokens::rootBlock($css);
         if ($body !== null) {
-            // Previewing the active theme: replay saved palette overrides
-            // after the theme tokens so the miniature matches the live site.
+            // Previewing the theme the overrides were authored for: replay
+            // them after the theme tokens so the miniature matches the live
+            // site.
             $extra = '';
             $po = $siteConfig['paletteOverrides'] ?? [];
-            if ($name === $siteConfig['template'] && is_array($po) && ($po['theme'] ?? '') === $name) {
+            if (is_array($po) && ($po['theme'] ?? '') === $name) {
                 foreach ((array) ($po[$scheme] ?? []) as $tok => $val) {
                     if (preg_match('/^--[a-z0-9-]+$/', (string) $tok) && preg_match('/^#[0-9a-f]{6}$/i', (string) $val)) {
                         $extra .= $tok . ':' . $val . ';';

@@ -401,6 +401,8 @@ check('dashboard shows view counts', str_contains($b, 'cookie-less') && str_cont
 [, , $b] = req('GET', "$base/dashboard", $authed);
 preg_match('#(/draft/\d+/\d+/[a-f0-9]{32})#', $b, $m);
 check('dashboard offers a draft share link', isset($m[1]));
+// Kept for the palette-pinning checks far below; $m is reused constantly.
+$draftUrl = isset($m[1]) ? $base . $m[1] : '';
 if (isset($m[1])) {
     [$s, , $b] = req('GET', $base . $m[1]); // logged out on purpose
     check('share link renders the draft logged-out', $s === 200 && str_contains($b, 'SENTINEL-DRAFT-BODY'), "status $s");
@@ -1038,8 +1040,8 @@ preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
     'body' => http_build_query(['csrf_token' => $m[1], 'tok' => $suggested]),
 ]);
 [$s2, , $b2] = req('GET', "$base/");
-[, , $css] = req('GET', "$base/palette.css");
-check('suggested palette saves and renders', $s === 302 && str_contains($b2, 'palette.css?v=') && str_contains($css, '@media (prefers-color-scheme: light){:root{--text:'), "status $s");
+[, , $css] = req('GET', "$base/palette.css?t=gazette");
+check('suggested palette saves and renders', $s === 302 && str_contains($b2, 'palette.css?') && str_contains($css, '@media (prefers-color-scheme: light){:root{--text:'), "status $s");
 
 // Rotation + palette: overrides are keyed to the theme they were authored
 // for (gazette, above). On a rotation day showing a DIFFERENT theme they
@@ -1051,10 +1053,33 @@ $rotCfg = function (array $over) use ($tmp, $cfgNow): void {
 };
 $rotCfg(['themeOfDay' => true, 'themePool' => ['mono'], 'themeRotateDays' => 1]);
 [, , $b2] = req('GET', "$base/");
-check('rotation onto another theme suppresses palette overrides', str_contains($b2, '/themes/mono/theme.css') && !str_contains($b2, 'palette.css?v='));
+check('rotation onto another theme suppresses palette overrides', str_contains($b2, '/themes/mono/theme.css') && !str_contains($b2, 'palette.css?'));
 $rotCfg(['themeOfDay' => true, 'themePool' => ['gazette'], 'themeRotateDays' => 1]);
 [, , $b2] = req('GET', "$base/");
-check('rotation onto the authored theme keeps palette overrides', str_contains($b2, '/themes/gazette/theme.css') && str_contains($b2, 'palette.css?v='));
+check('rotation onto the authored theme keeps palette overrides', str_contains($b2, '/themes/gazette/theme.css') && str_contains($b2, 'palette.css?'));
+// The stylesheet must be keyed to the theme that linked it, not re-resolved
+// against the clock — otherwise a page rendered either side of a rotation
+// boundary can link a sheet that disagrees with it.
+$rotCfg(['themeOfDay' => true, 'themePool' => ['gazette'], 'themeRotateDays' => 1]);
+[, , $b2] = req('GET', "$base/");
+preg_match('#palette\.css\?t=([a-z0-9-]+)&amp;v=#', $b2, $pm);
+check('palette link names the theme it was rendered for', ($pm[1] ?? '') === 'gazette', 'got ' . ($pm[1] ?? '(none)'));
+[, , $cssMine]  = req('GET', "$base/palette.css?t=gazette");
+[, , $cssOther] = req('GET', "$base/palette.css?t=mono");
+check('palette stylesheet honours the requested theme', $cssMine !== '' && $cssOther === '', 'mine ' . strlen($cssMine) . 'b, other ' . strlen($cssOther) . 'b');
+
+// A draft share deliberately renders the STORED theme, ignoring the rotation.
+// Its palette must follow the theme on the page, not the day's pick.
+$rotCfg(['themeOfDay' => true, 'themePool' => ['mono'], 'themeRotateDays' => 1]);
+[, , $b2] = req('GET', "$base/");
+check('public page rotated away from the authored theme', str_contains($b2, '/themes/mono/theme.css'));
+[, , $bDraft] = req('GET', $draftUrl);
+check(
+    'draft share keeps the authored palette while rotation points elsewhere',
+    str_contains($bDraft, '/themes/gazette/theme.css') && str_contains($bDraft, 'palette.css?t=gazette'),
+    'draft head did not pair the stored theme with its palette'
+);
+
 $rotCfg([]); // restore: rotation off, overrides intact for the reset test below
 
 // Reset restores stock rendering.
@@ -1062,7 +1087,7 @@ $rotCfg([]); // restore: rotation off, overrides intact for the reset test below
 preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
 [$s] = req('POST', "$base/admin/palette", $authed + ['body' => 'paletteAction=reset&csrf_token=' . $m[1]]);
 [, , $b2] = req('GET', "$base/");
-check('palette reset clears overrides', $s === 302 && !str_contains($b2, 'palette.css?v='), "status $s");
+check('palette reset clears overrides', $s === 302 && !str_contains($b2, 'palette.css?'), "status $s");
 
 // ----------------------------------------- session epoch (password change) --
 
