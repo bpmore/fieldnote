@@ -702,29 +702,47 @@ function fn_invalidate_published_count(): void
 }
 
 /**
- * Conditional-GET plumbing for feed-style responses. Sends ETag,
- * Last-Modified, and Cache-Control, then ends the request with an empty 304
- * when the client's validators still match. Call before producing the body —
- * feed readers poll constantly and shouldn't cost a render each time.
- */
-/**
- * ETag seed for syndication endpoints (RSS, JSON feed, sitemap): every field
- * that can change an item, so edits to already-published posts bust caches.
+ * ETag seed for syndication endpoints (RSS, JSON feed, sitemap).
+ *
+ * Hashes the whole post record and the whole config, rather than a hand-picked
+ * field list. The previous whitelist claimed to cover "every field that can
+ * change an item" but silently omitted `author` and `publishedAt`, and of the
+ * config carried only `name` — so editing the tagline or moving the site to a
+ * new domain changed every feed body without changing the ETag, and
+ * subscribers holding the old validator got a 304 forever with every item URL
+ * still pointing at the old address. Hashing wholesale leaves no whitelist to
+ * drift out of sync with what the renderers actually read.
+ *
+ * Two exclusions, both of which provably cannot alter a feed body: `revisions`
+ * are never syndicated, and the credential fields are secrets. Excluding the
+ * latter also keeps a password rotation from pointlessly busting every
+ * subscriber's cache.
  *
  * @param array<int,array<string,mixed>> $posts
  * @param array<string,mixed>            $siteConfig
  */
 function fn_feed_seed(string $route, array $posts, int $publishedCount, array $siteConfig): string
 {
-    return $route . '|' . $siteConfig['name'] . '|' . $publishedCount . '|' . sha1(serialize(array_map(
-        static fn (array $p): array => [
-            $p['_id'], $p['date'], $p['title'] ?? '', $p['slug'] ?? '',
-            $p['content'] ?? '', !empty($p['password']), $p['tags'] ?? [],
-        ],
+    $records = array_map(
+        static function (array $post): array {
+            unset($post['revisions']);
+            return $post;
+        },
         $posts
-    )));
+    );
+    unset($siteConfig['password'], $siteConfig['sessionEpoch']);
+
+    return $route . '|' . $publishedCount
+        . '|' . sha1(serialize($siteConfig))
+        . '|' . sha1(serialize($records));
 }
 
+/**
+ * Conditional-GET plumbing for feed-style responses. Sends ETag,
+ * Last-Modified, and Cache-Control, then ends the request with an empty 304
+ * when the client's validators still match. Call before producing the body —
+ * feed readers poll constantly and shouldn't cost a render each time.
+ */
 function fn_conditional_get(string $etagSeed, int $lastModified): void
 {
     $etag = '"' . sha1($etagSeed) . '"';
