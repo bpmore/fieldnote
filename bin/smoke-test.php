@@ -705,6 +705,32 @@ if (!class_exists(ZipArchive::class)) {
     check('export frontmatter round-trips title and tags', str_contains($helloMd, 'title: "Hello World"') && str_contains($helloMd, '"notes"'));
     $zipRead->close();
 
+    // The form and the dispatch come from one table, so an id can never be
+    // offered without a converter behind it, nor handled without being
+    // offered. Every option the form shows must be one the route accepts.
+    [, , $b] = req('GET', "$base/admin/import", $authed);
+    preg_match_all('/<option value="([a-z-]+)"/', $b, $optMatch);
+    $offered = $optMatch[1] ?? [];
+    $handled = array_filter(
+        $offered,
+        static fn (string $id): bool => $id === 'auto' || Fieldnote\Importers::isKnown($id)
+    );
+    check(
+        'every source the import form offers is one the registry handles',
+        count($offered) === 13 && count($handled) === count($offered),
+        count($offered) . ' offered, ' . count($handled) . ' handled'
+    );
+
+    // An id the registry does not know degrades to sniffing rather than
+    // failing: the form only offers known ones, so anything else is stale.
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+    [$s, , $b] = req('POST', "$base/admin/import", $authed + ['body' => [
+        'csrf_token'   => $m[1],
+        'importSource' => 'no-such-platform',
+        'importZip'    => new CURLFile("$tmp/export.zip", 'application/zip', 'export.zip'),
+    ]]);
+    check('an unknown source falls back to auto-detect', $s === 200 && str_contains($b, 'Nothing has been written'), "status $s");
+
     // A foreign, Jekyll-shaped archive with a featured image.
     $jekyllZip = "$tmp/jekyll.zip";
     $zipWrite  = new ZipArchive();
