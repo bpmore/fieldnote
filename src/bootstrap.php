@@ -104,15 +104,10 @@ if ((!is_file($schedMarker) || (int) filemtime($schedMarker) < time() - 60) && i
                 ]);
                 continue;
             }
-            $update = ['draft' => false, 'scheduledFor' => 0, 'scheduleBlocked' => false];
-            // Same first-publish stamping as the manual publish route: the
-            // permalink embeds the date, so it is set once and never moves.
-            if (empty($scheduledPost['publishedAt'])) {
-                $update['date']        = $at;
-                $update['publishedAt'] = $at;
-            }
-            $blogStore->updateById((int) $scheduledPost['_id'], $update);
-            fn_invalidate_published_count();
+            // $at, not time(): the post counts as published at the moment it
+            // was scheduled for, so its permalink does not depend on when the
+            // next request happened to arrive.
+            fn_publish_post($blogStore, $scheduledPost, $at);
         }
     }
 }
@@ -713,6 +708,40 @@ function fn_published_count(Store $blogStore): int
 function fn_invalidate_published_count(): void
 {
     @unlink(FN_DATA_DIR . '/cache/published-count');
+}
+
+/**
+ * The single writer of the published-state transition.
+ *
+ * Going public sets five correlated fields at once, and any one of them left
+ * behind puts the post somewhere nothing else expects: a live post still
+ * carrying a schedule, which the sweep will never revisit because it only
+ * looks at drafts, or a live post still flagged as held. The manual route and
+ * the scheduler each used to spell this out for themselves, byte for byte,
+ * with only a comment claiming they agreed.
+ *
+ * $publishAt is the instant the post counts as published. The scheduler passes
+ * the SCHEDULED time rather than the request time, so a permalink does not
+ * drift by however long it took the next visitor to show up.
+ *
+ * Deliberately does no lint check, touches no session and emits nothing: it
+ * runs during bootstrap before routing as well as from a route, and the two
+ * callers gate differently — one sends the writer back to the editor, the
+ * other holds the post and flags it on the dashboard.
+ *
+ * @param array<string,mixed> $post
+ */
+function fn_publish_post(Store $blogStore, array $post, int $publishAt): void
+{
+    $update = ['draft' => false, 'scheduledFor' => 0, 'scheduleBlocked' => false];
+    // The permalink embeds the publish date, so it is stamped once and never
+    // moves: hiding and re-publishing later must not change a live URL.
+    if (empty($post['publishedAt'])) {
+        $update['date']        = $publishAt;
+        $update['publishedAt'] = $publishAt;
+    }
+    $blogStore->updateById((int) $post['_id'], $update);
+    fn_invalidate_published_count();
 }
 
 /**

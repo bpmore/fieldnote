@@ -594,16 +594,9 @@ $router->map('POST', '/post/[i:id]/publish', function ($id) use ($requireConfig,
         $_SESSION['content_lint_block'] = ['id' => (int) $id, 'errors' => $lintErrors];
         $redirect('editPost', ['id' => (int) $id]);
     }
-    $update = ['draft' => false, 'scheduledFor' => 0, 'scheduleBlocked' => false]; // manual publish supersedes a schedule
-    // First publish stamps the post's date (which the permalink embeds).
-    // Hiding and re-publishing later must not move it, so remember it.
-    if (empty($post['publishedAt'])) {
-        $now = time();
-        $update['date']        = $now;
-        $update['publishedAt'] = $now;
-    }
-    $blogStore->updateById((int) $id, $update);
-    fn_invalidate_published_count();
+    // A manual publish supersedes any pending schedule; fn_publish_post owns
+    // that rule so the scheduler and this route cannot drift apart.
+    fn_publish_post($blogStore, $post, time());
     $redirect('dashboard');
 }, 'publish');
 
