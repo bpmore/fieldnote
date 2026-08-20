@@ -20,19 +20,11 @@ require __DIR__ . '/header.php';
         <?= csrf_field() ?>
         <label for="importSource" class="form-label mb-0">Source</label>
         <select class="form-select mb-2" name="importSource" id="importSource">
-            <option value="auto">Auto-detect</option>
-            <option value="markdown">Markdown / Fieldnote export (.zip of .md with frontmatter)</option>
-            <option value="wordpress">WordPress (.xml export)</option>
-            <option value="squarespace">Squarespace (.xml export, WordPress format)</option>
-            <option value="substack">Substack (.zip export)</option>
-            <option value="medium">Medium (.zip export)</option>
-            <option value="notion">Notion (Markdown .zip export)</option>
-            <option value="ghost">Ghost (.json export)</option>
-            <option value="writefreely">WriteFreely / Write.as (.json export)</option>
-            <option value="devto">DEV / dev.to (.json export)</option>
-            <option value="hashnode">Hashnode (.json export)</option>
-            <option value="blogger">Blogger / Blogspot (.xml export)</option>
-            <option value="rss">RSS / Atom feed (file or URL below)</option>
+            <?php /* Derived from the importer registry, so a platform cannot
+                     be importable but unofferable, or offered but unhandled. */ ?>
+            <?php foreach (Fieldnote\Importers::options() as $importId => $importLabel): ?>
+                <option value="<?= e($importId) ?>"><?= e($importLabel) ?></option>
+            <?php endforeach; ?>
         </select>
         <input type="file" name="importZip" accept=".zip,.xml,.json,application/xml,text/xml,application/json,application/rss+xml,application/atom+xml" class="form-control">
         <label for="importUrl" class="form-label mb-0 mt-2">&hellip; or a feed URL</label>

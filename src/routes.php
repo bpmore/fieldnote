@@ -1487,13 +1487,11 @@ $router->map('GET|POST', '/admin/import', function () use ($requireConfig, $requ
         }
 
         if ($importError === '') {
-            $source = in_array($_POST['importSource'] ?? 'auto', ['markdown', 'wordpress', 'squarespace', 'rss', 'substack', 'ghost', 'writefreely', 'medium', 'blogger', 'notion', 'devto', 'hashnode'], true)
-                ? (string) $_POST['importSource']
-                : 'auto';
-            // Squarespace exports in WordPress's WXR format — same converter.
-            if ($source === 'squarespace') {
-                $source = 'wordpress';
-            }
+            $posted = (string) ($_POST['importSource'] ?? 'auto');
+            // Unknown ids fall back to sniffing rather than failing: the form
+            // only offers known ones, so anything else is a stale or hand-made
+            // request. Aliases resolve to the converter that actually runs.
+            $source = Importers::isKnown($posted) ? Importers::canonical($posted) : 'auto';
             if ($source === 'auto') {
                 $head = (string) file_get_contents($stored, false, null, 0, 4096);
                 if (str_starts_with($head, "PK\x03\x04")) {
@@ -1526,19 +1524,12 @@ $router->map('GET|POST', '/admin/import', function () use ($requireConfig, $requ
             }
 
             $porter   = new Porter($blogStore, $imageStore, $images, FN_UPLOAD_DIR);
-            $analysis = match ($source) {
-                'wordpress'   => $porter->analyzeEntries(WordPressImporter::parse($stored)),
-                'rss'         => $porter->analyzeEntries(RssImporter::parse($stored)),
-                'substack'    => $porter->analyzeEntries(SubstackImporter::parse($stored)),
-                'ghost'       => $porter->analyzeEntries(GhostImporter::parse($stored)),
-                'writefreely' => $porter->analyzeEntries(WriteFreelyImporter::parse($stored)),
-                'medium'      => $porter->analyzeEntries(MediumImporter::parse($stored)),
-                'blogger'     => $porter->analyzeEntries(BloggerImporter::parse($stored)),
-                'notion'      => $porter->analyzeEntries(NotionImporter::parse($stored)),
-                'devto'       => $porter->analyzeEntries(DevtoImporter::parse($stored)),
-                'hashnode'    => $porter->analyzeEntries(HashnodeImporter::parse($stored)),
-                default       => $porter->analyze($stored),
-            };
+            // null: no converter for this id, so it is a Fieldnote/markdown zip
+            // and Porter reads the archive itself.
+            $entries  = Importers::parse($source, $stored);
+            $analysis = $entries === null
+                ? $porter->analyze($stored)
+                : $porter->analyzeEntries($entries);
             if ($analysis['posts'] === []) {
                 $importError = implode(' ', $analysis['errors']) ?: 'Nothing importable found.';
                 $analysis = null;
@@ -1564,19 +1555,11 @@ $router->map('POST', '/admin/import/confirm', function () use ($requireConfig, $
         $redirect('import');
     }
     $porter = new Porter($blogStore, $imageStore, $images, FN_UPLOAD_DIR);
-    $_SESSION['import_result'] = match ($pending['source'] ?? 'markdown') {
-        'wordpress' => $porter->importEntries(WordPressImporter::parse($pending['path']), $siteConfig),
-        'rss'       => $porter->importEntries(RssImporter::parse($pending['path']), $siteConfig),
-        'substack'  => $porter->importEntries(SubstackImporter::parse($pending['path']), $siteConfig),
-        'ghost'       => $porter->importEntries(GhostImporter::parse($pending['path']), $siteConfig),
-        'writefreely' => $porter->importEntries(WriteFreelyImporter::parse($pending['path']), $siteConfig),
-        'medium'      => $porter->importEntries(MediumImporter::parse($pending['path']), $siteConfig),
-        'blogger'     => $porter->importEntries(BloggerImporter::parse($pending['path']), $siteConfig),
-        'notion'      => $porter->importEntries(NotionImporter::parse($pending['path']), $siteConfig),
-        'devto'       => $porter->importEntries(DevtoImporter::parse($pending['path']), $siteConfig),
-        'hashnode'    => $porter->importEntries(HashnodeImporter::parse($pending['path']), $siteConfig),
-        default       => $porter->import($pending['path'], $siteConfig),
-    };
+    // Same table as the dry run, by construction rather than by review.
+    $entries = Importers::parse((string) ($pending['source'] ?? 'markdown'), $pending['path']);
+    $_SESSION['import_result'] = $entries === null
+        ? $porter->import($pending['path'], $siteConfig)
+        : $porter->importEntries($entries, $siteConfig);
     @unlink($pending['path']);
     $redirect('dashboard');
 }, 'importConfirm');

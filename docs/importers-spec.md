@@ -55,6 +55,20 @@ Each converter implements one method: take the uploaded file(s), return
 normalized entries (or errors). `Porter` grows one entry point that accepts
 in-memory entries in addition to its current "read .md files from a zip" path.
 
+**Registering one.** A platform is listed once, in `Importers::PLATFORMS`
+(`src/Importers.php`): its id, its parser, and the label the import form
+shows. The allowlist, the dry-run dispatch, the confirm dispatch, and the
+form's `<option>` list all derive from that entry. This used to be four
+hand-maintained lists; the two dispatch tables were the same ten rows and both
+fell through to the markdown-zip reader by default, so an id present in one
+and missing from the other ran the wrong importer rather than failing — the
+user saw a correct dry run, confirmed it, and got "0 created".
+
+The auto-detect chain in the import route stays hand-written. Its order is
+load-bearing (WriteFreely is sniffed after Ghost and depends on it), and an
+`if`/`elseif` ladder says so where an array would need a comment explaining
+that its order is semantic.
+
 ### Import as drafts + accessibility report
 
 Import inserts posts directly, which bypasses the publish-time gate. So every
