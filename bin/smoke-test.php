@@ -1300,6 +1300,31 @@ foreach (["/.well-known/webfinger?resource=acct:smoke@127.0.0.1:$port", '/ap/act
 [$s] = req('POST', "$base/ap/inbox", ['body' => '{}', 'headers' => ['Content-Type: application/activity+json']]);
 check('federation off: all AP endpoints 404', $s === 404, "inbox status $s");
 
+// --------------------------------------------------------- pagination --
+// The published count drives $numPages, and it used to come from a cache
+// file that six call sites had to remember to delete. Nothing tested that
+// pagination tracked reality, which is exactly what would break if one of
+// them was ever missed. One post per page makes the boundary the count.
+$patchCfg(['postsPerPage' => 1]);
+$publishedNow = static function () use ($tmp): int {
+    return count((new Store('blog', $tmp . '/data/siteDatabase', ['timeout' => false]))
+        ->findBy(['draft', '=', false]));
+};
+$lastPage = $publishedNow();
+[$s] = req('GET', "$base/$lastPage");
+check('pagination reaches the last page', $s === 200, "page $lastPage status $s");
+[$s] = req('GET', $base . '/' . ($lastPage + 1));
+check('pagination stops after the last page', $s === 404, 'page ' . ($lastPage + 1) . " status $s");
+
+// Hiding a post has to move the boundary on the very NEXT request.
+req('POST', "$base/post/1/hide", $authed + ['body' => 'csrf_token=' . $csrfFor('/dashboard')]);
+[$s] = req('GET', "$base/$lastPage");
+check('hiding a post shrinks pagination immediately', $s === 404, "page $lastPage status $s");
+req('POST', "$base/post/1/publish", $authed + ['body' => 'csrf_token=' . $csrfFor('/dashboard')]);
+[$s] = req('GET', "$base/$lastPage");
+check('publishing a post grows pagination immediately', $s === 200, "page $lastPage status $s");
+$patchCfg(['postsPerPage' => 6]);
+
 // ------------------------------------------------------- first-run setup --
 // Runs last: it takes the config away, so nothing after it can rely on one.
 // /settings is reachable unauthenticated while no config exists, so a bare

@@ -40,13 +40,22 @@ prune script reports zero on a clean store; dry-run by default.
 on every request — including theme-asset and feed hits — just to count them.
 
 **Plan:** `fn_published_count(Store $blogStore): int` backed by a cache file
-`data/cache/published-count` (int + mtime). Invalidate (delete) the file in
-the four places that change published-ness: publish, hide, deletePost, and
-first-publish inside edit/write saves. Regenerate lazily on next read.
+`data/cache/published-count`, invalidated by hand wherever published-ness
+changes.
 
-**Accept:** steady-state request makes zero blog-store scans for counting;
-publish/hide/delete immediately reflect in pagination; cache file absent →
-regenerated.
+**Superseded.** The hand-invalidated file is gone. It was a second cache for a
+fact the store already caches: SleekDB runs with `auto_cache` on and drops its
+query cache on every write, so the count expires when the data changes rather
+than when someone remembers to delete a file. Six call sites across three files
+had to stay correct forever, a stale value was stale permanently, and the
+symptom was silent — `/2` either hiding real posts or serving an empty page.
+
+`fn_published_count()` is now a `select(['_id'])` query and there is nothing to
+invalidate. The cost profile is unchanged: one small cached read per request,
+one scan after any write.
+
+**Accept:** pagination tracks publish, hide, and delete on the very next
+request. Covered by four checks; before this there were none.
 
 ### 0.3 Conditional GET on the feed (S) — SHIPPED
 

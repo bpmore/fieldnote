@@ -690,24 +690,15 @@ function fn_render_head(array $siteConfig, \AltoRouter $router, string $pageTitl
  */
 function fn_published_count(Store $blogStore): int
 {
-    $cacheFile = FN_DATA_DIR . '/cache/published-count';
-    if (is_file($cacheFile)) {
-        $cached = trim((string) @file_get_contents($cacheFile));
-        if ($cached !== '' && ctype_digit($cached)) {
-            return (int) $cached;
-        }
-    }
-    $count = count($blogStore->findBy(['draft', '=', false]));
-    $dir = dirname($cacheFile);
-    if (is_dir($dir) || (mkdir($dir, 0750, true) || is_dir($dir))) {
-        @file_put_contents($cacheFile, (string) $count, LOCK_EX);
-    }
-    return $count;
-}
-
-function fn_invalidate_published_count(): void
-{
-    @unlink(FN_DATA_DIR . '/cache/published-count');
+    // select(_id) so the cached entry holds ids rather than whole posts:
+    // SleekDB applies the field selection before it writes the cache.
+    return count(
+        $blogStore->createQueryBuilder()
+            ->where(['draft', '=', false])
+            ->select(['_id'])
+            ->getQuery()
+            ->fetch()
+    );
 }
 
 /**
@@ -741,7 +732,6 @@ function fn_publish_post(Store $blogStore, array $post, int $publishAt): void
         $update['publishedAt'] = $publishAt;
     }
     $blogStore->updateById((int) $post['_id'], $update);
-    fn_invalidate_published_count();
 }
 
 /**

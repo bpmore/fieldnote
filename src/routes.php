@@ -607,7 +607,6 @@ $router->map('POST', '/post/[i:id]/hide', function ($id) use ($requireConfig, $r
         $notFound();
     }
     $blogStore->updateById((int) $id, ['draft' => true]);
-    fn_invalidate_published_count();
     $redirect('dashboard');
 }, 'hide');
 
@@ -631,7 +630,6 @@ $router->map('GET|POST', '/post/[i:id]/delete', function ($id) use ($requireConf
     // Clean up the linked image record and its file on disk.
     fn_delete_image($imageStore, $post['image'] ?? null);
     $blogStore->deleteById((int) $id);
-    fn_invalidate_published_count();
     $redirect('dashboard');
 }, 'deletePost');
 
