@@ -19,8 +19,20 @@ use SleekDB\Store;
  */
 final class Porter
 {
-    /** Don't chew through hostile archives forever. */
+    /**
+     * Don't chew through hostile archives forever.
+     *
+     * MAX_ENTRIES counts POSTS, not archive members. It used to bound the
+     * member index, which quietly made the real limit depend on how many
+     * non-post members happened to sit between the posts — and exportZip
+     * writes an image member before each post that has one, so a blog with
+     * cover images hit the ceiling at roughly half its post count and the
+     * remainder was dropped without a word. MAX_MEMBERS keeps the original
+     * protection: an archive of a million tiny files still stops early,
+     * it just no longer takes real posts down with it.
+     */
     private const MAX_ENTRIES = 2000;
+    private const MAX_MEMBERS = 20000;
     private const MAX_MD_BYTES = 2 * 1024 * 1024;
 
     public function __construct(
@@ -89,15 +101,25 @@ final class Porter
      *
      * @return array{posts: list<array{file:string,title:string,slug:string,draft:bool,collision:bool,image:string}>, errors: list<string>}
      */
-    public function analyze(string $zipPath): array
+    /**
+     * Walk the markdown posts in an open archive, newest concern first: the
+     * .md filter, the size cap, and the post budget live here once instead of
+     * being restated by the dry run and the import. They used to be two
+     * copies, and import's own comment deferred its correctness to "already
+     * reported by analyze" — a promise nothing enforced.
+     *
+     * Deliberately NOT merged into one method behind a $dryRun flag: these are
+     * separate requests with different return types, and a mode flag would
+     * only move the branching. What they share is the traversal.
+     *
+     * @param list<string> $errors collects skip messages, by reference
+     * @return \Generator<int, array{0:string, 1:array<string,mixed>}>
+     */
+    private function eachMarkdownPost(\ZipArchive $zip, array &$errors): \Generator
     {
-        $zip = new \ZipArchive();
-        if ($zip->open($zipPath) !== true) {
-            return ['posts' => [], 'errors' => ['Could not open the archive.']];
-        }
-        $posts  = [];
-        $errors = [];
-        for ($i = 0; $i < min($zip->numFiles, self::MAX_ENTRIES); $i++) {
+        $seen    = 0;
+        $members = min($zip->numFiles, self::MAX_MEMBERS);
+        for ($i = 0; $i < $members && $seen < self::MAX_ENTRIES; $i++) {
             $name = (string) $zip->getNameIndex($i);
             if (!preg_match('/\.md$/i', $name) || str_ends_with($name, '/')) {
                 continue;
@@ -107,7 +129,20 @@ final class Porter
                 $errors[] = "$name: skipped (over 2 MB)";
                 continue;
             }
-            $post = $this->entryToPost($name, (string) $zip->getFromIndex($i));
+            $seen++;
+            yield [$name, $this->entryToPost($name, (string) $zip->getFromIndex($i))];
+        }
+    }
+
+    public function analyze(string $zipPath): array
+    {
+        $zip = new \ZipArchive();
+        if ($zip->open($zipPath) !== true) {
+            return ['posts' => [], 'errors' => ['Could not open the archive.']];
+        }
+        $posts  = [];
+        $errors = [];
+        foreach ($this->eachMarkdownPost($zip, $errors) as [$name, $post]) {
             $image = (string) $post['imageZipPath'];
             if ($image !== '' && $zip->locateName($image) === false) {
                 $image = ''; // referenced but not in the archive
@@ -142,16 +177,10 @@ final class Porter
         $created = $skipped = $importedImages = 0;
         $errors  = [];
 
-        for ($i = 0; $i < min($zip->numFiles, self::MAX_ENTRIES); $i++) {
-            $name = (string) $zip->getNameIndex($i);
-            if (!preg_match('/\.md$/i', $name) || str_ends_with($name, '/')) {
-                continue;
-            }
-            $stat = $zip->statIndex($i);
-            if (($stat['size'] ?? 0) > self::MAX_MD_BYTES) {
-                continue; // already reported by analyze
-            }
-            $post = $this->entryToPost($name, (string) $zip->getFromIndex($i));
+        // Oversize skips are reported by analyze, which the user has already
+        // seen; collecting them again here would double them up in the result.
+        $ignored = [];
+        foreach ($this->eachMarkdownPost($zip, $ignored) as [$name, $post]) {
             if ($this->blogStore->findOneBy(['slug', '=', $post['slug']]) !== null) {
                 $skipped++;
                 continue;

@@ -733,6 +733,47 @@ if (!class_exists(ZipArchive::class)) {
     [, , $b2] = req('GET', "$base/tag/imported");
     check('imported tags work', str_contains($b2, 'Imported Note'));
 
+    // The budget has to count POSTS, not archive members. exportZip writes an
+    // image member before each post that has one, so on a blog with cover
+    // images the old member-index ceiling was reached at roughly half the post
+    // count and everything past it vanished — no error, no "nothing found",
+    // just fewer posts than you exported. Padding the front of the archive
+    // pushes the posts past that ceiling and makes the same defect exact.
+    $padZip = "$tmp/padded.zip";
+    $z = new ZipArchive();
+    $z->open($padZip, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+    for ($i = 0; $i < 2010; $i++) {
+        $z->addFromString(sprintf('uploads/pad-%04d.bin', $i), 'x');
+    }
+    for ($i = 0; $i < 5; $i++) {
+        $z->addFromString(
+            sprintf('posts/2024-05-%02d-padded-%d.md', $i + 1, $i),
+            "---\ntitle: Padded $i\n---\n\nPast the old ceiling.\n"
+        );
+    }
+    $z->close();
+
+    [, , $b] = req('GET', "$base/dashboard", $authed);
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+    [$s, , $b] = req('POST', "$base/admin/import", $authed + ['body' => [
+        'csrf_token' => $m[1],
+        'importZip'  => new CURLFile($padZip, 'application/zip', 'padded.zip'),
+    ]]);
+    check(
+        'posts past the member ceiling are still found',
+        $s === 200 && substr_count($b, 'padded-') === 5,
+        'found ' . substr_count($b, 'padded-') . ' of 5'
+    );
+    // And the dry run must promise exactly what the import delivers.
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+    [$s] = req('POST', "$base/admin/import/confirm", $authed + ['body' => 'csrf_token=' . $m[1]]);
+    [, , $b] = req('GET', "$base/dashboard", $authed);
+    check(
+        'the dry run promised exactly what the import created',
+        $s === 302 && str_contains($b, 'Import finished: 5 created'),
+        'dashboard did not report 5 created'
+    );
+
     // Same archive again: collision = skip, never duplicate.
     [, , $b] = req('GET', "$base/dashboard", $authed);
     preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
