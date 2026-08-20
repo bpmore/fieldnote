@@ -98,9 +98,10 @@ $blog->insert([
     'date' => time(), 'draft' => true,
     'content' => 'SENTINEL-DRAFT-BODY', 'password' => '',
 ]);
+$scheduledAt = time() - 30;
 $blog->insert([
     'title' => 'Scheduled Post', 'slug' => 'scheduled-post', 'author' => 'Tester',
-    'date' => time(), 'draft' => true, 'scheduledFor' => time() - 30,
+    'date' => time(), 'draft' => true, 'scheduledFor' => $scheduledAt,
     'content' => 'Came from the scheduler.', 'password' => '',
 ]);
 // Past-due, but its body fails the a11y check: the scheduler must hold it as a
@@ -251,6 +252,18 @@ check('unknown URL 404s', $s === 404, "status $s");
 // first request of this run.
 [, , $b] = req('GET', "$base/");
 check('past-due scheduled draft auto-published', str_contains($b, 'Scheduled Post'));
+
+// It must be stamped with the instant it was scheduled FOR, not the instant a
+// visitor happened to arrive. The permalink embeds that date, so using request
+// time would make a post URL depend on traffic. Read through a fresh store so
+// the harness sees what the server actually wrote.
+$schedRecord = (new Store('blog', $tmp . '/data/siteDatabase', ['timeout' => false]))
+    ->findOneBy(['slug', '=', 'scheduled-post']);
+check(
+    'scheduler stamps the scheduled instant, not request time',
+    (int) ($schedRecord['publishedAt'] ?? 0) === $scheduledAt && (int) ($schedRecord['date'] ?? 0) === $scheduledAt,
+    'publishedAt ' . ($schedRecord['publishedAt'] ?? 'null') . ', date ' . ($schedRecord['date'] ?? 'null') . ', expected ' . $scheduledAt
+);
 
 [$s, , $b] = req('GET', "$base/accessibility");
 check('accessibility statement renders from Wcag constants', $s === 200 && str_contains($b, '4.5:1') && str_contains($b, 'prefers-reduced-motion'), "status $s");
@@ -1286,6 +1299,31 @@ foreach (["/.well-known/webfinger?resource=acct:smoke@127.0.0.1:$port", '/ap/act
 }
 [$s] = req('POST', "$base/ap/inbox", ['body' => '{}', 'headers' => ['Content-Type: application/activity+json']]);
 check('federation off: all AP endpoints 404', $s === 404, "inbox status $s");
+
+// --------------------------------------------------------- pagination --
+// The published count drives $numPages, and it used to come from a cache
+// file that six call sites had to remember to delete. Nothing tested that
+// pagination tracked reality, which is exactly what would break if one of
+// them was ever missed. One post per page makes the boundary the count.
+$patchCfg(['postsPerPage' => 1]);
+$publishedNow = static function () use ($tmp): int {
+    return count((new Store('blog', $tmp . '/data/siteDatabase', ['timeout' => false]))
+        ->findBy(['draft', '=', false]));
+};
+$lastPage = $publishedNow();
+[$s] = req('GET', "$base/$lastPage");
+check('pagination reaches the last page', $s === 200, "page $lastPage status $s");
+[$s] = req('GET', $base . '/' . ($lastPage + 1));
+check('pagination stops after the last page', $s === 404, 'page ' . ($lastPage + 1) . " status $s");
+
+// Hiding a post has to move the boundary on the very NEXT request.
+req('POST', "$base/post/1/hide", $authed + ['body' => 'csrf_token=' . $csrfFor('/dashboard')]);
+[$s] = req('GET', "$base/$lastPage");
+check('hiding a post shrinks pagination immediately', $s === 404, "page $lastPage status $s");
+req('POST', "$base/post/1/publish", $authed + ['body' => 'csrf_token=' . $csrfFor('/dashboard')]);
+[$s] = req('GET', "$base/$lastPage");
+check('publishing a post grows pagination immediately', $s === 200, "page $lastPage status $s");
+$patchCfg(['postsPerPage' => 6]);
 
 // ------------------------------------------------------- first-run setup --
 // Runs last: it takes the config away, so nothing after it can rely on one.

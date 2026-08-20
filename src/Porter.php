@@ -188,9 +188,6 @@ final class Porter
             $created++;
         }
         $zip->close();
-        if ($created > 0) {
-            fn_invalidate_published_count();
-        }
         return ['created' => $created, 'skipped' => $skipped, 'images' => $importedImages, 'errors' => $errors];
     }
 
@@ -282,9 +279,6 @@ final class Porter
 
             $this->blogStore->insert($record);
             $created++;
-        }
-        if ($created > 0) {
-            fn_invalidate_published_count();
         }
         return ['created' => $created, 'skipped' => $skipped, 'images' => $images, 'errors' => $errors];
     }
