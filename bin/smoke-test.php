@@ -118,28 +118,43 @@ $base = "http://127.0.0.1:$port";
 // FN_AP_ALLOW_PRIVATE lets the federation checks talk to loopback;
 // CLI_SERVER_WORKERS keeps the self-delivered Accept from deadlocking
 // the single-threaded built-in server.
+// Sessions live inside the fixture, not the system temp dir. Pinning
+// save_path on the server makes the harness and the process under test agree
+// by construction — they used to agree only by accident, because this CLI
+// process and the server happened to read the same ini. Any host that set
+// session.save_path for CLI only would have turned every authenticated check
+// into a 302-to-login, sixty failures pointing at sixty unrelated routes
+// instead of at the one broken fixture. It also means `rm -rf $tmp` is the
+// whole cleanup: nothing of ours survives a crash outside that directory.
+$sessionDir = $tmp . '/sessions';
+mkdir($sessionDir, 0700, true);
+
 $pid  = (int) shell_exec(sprintf(
-    'FN_AP_ALLOW_PRIVATE=1 PHP_CLI_SERVER_WORKERS=4 FN_DATA_DIR=%s FN_UPLOAD_DIR=%s php -S 127.0.0.1:%d -t %s %s > %s 2>&1 & echo $!',
+    'FN_AP_ALLOW_PRIVATE=1 PHP_CLI_SERVER_WORKERS=4 FN_DATA_DIR=%s FN_UPLOAD_DIR=%s php -d session.save_path=%s -d session.serialize_handler=php -S 127.0.0.1:%d -t %s %s > %s 2>&1 & echo $!',
     escapeshellarg($tmp . '/data'),
     escapeshellarg($tmp . '/uploads'),
+    escapeshellarg($sessionDir),
     $port,
     escapeshellarg($root . '/public'),
     escapeshellarg($root . '/public/index.php'),
     escapeshellarg($tmp . '/server.log')
 ));
 
-$sessionDir = session_save_path() ?: sys_get_temp_dir();
-$authedSid  = 'fnsmoke' . bin2hex(random_bytes(8));
-$pendingSid = 'fnsmoke' . bin2hex(random_bytes(8));
-file_put_contents("$sessionDir/sess_$authedSid", 'isAuthenticated|b:1;');
-file_put_contents("$sessionDir/sess_$pendingSid", 'pending_2fa|i:' . time() . ';');
+// Auth is faked by writing the session file the server will read. Returns the
+// cookie option array, so a sid can never exist without the cookie that uses
+// it. The payload format is pinned by serialize_handler above.
+$session = static function (string $payload = '') use ($sessionDir): array {
+    $sid = 'fnsmoke' . bin2hex(random_bytes(8));
+    file_put_contents("$sessionDir/sess_$sid", $payload);
+    return ['cookie' => 'fieldnote_sess=' . $sid];
+};
+$authed  = $session('isAuthenticated|b:1;');
+$pending = $session('pending_2fa|i:' . time() . ';');
 
-register_shutdown_function(static function () use ($pid, $tmp, $sessionDir, $authedSid, $pendingSid): void {
+register_shutdown_function(static function () use ($pid, $tmp): void {
     if ($pid > 0) {
         posix_kill($pid, SIGTERM) || shell_exec('kill ' . $pid . ' 2>/dev/null');
     }
-    @unlink("$sessionDir/sess_$authedSid");
-    @unlink("$sessionDir/sess_$pendingSid");
     shell_exec('rm -rf ' . escapeshellarg($tmp));
 });
 
@@ -209,8 +224,6 @@ function check(string $name, bool $ok, string $detail = ''): void
     }
 }
 
-$authed  = ['cookie' => 'fieldnote_sess=' . $authedSid];
-$pending = ['cookie' => 'fieldnote_sess=' . $pendingSid];
 
 // ----------------------------------------------------------------- public --
 
@@ -568,9 +581,7 @@ check('dashboard flags the held scheduled post', str_contains($b, 'Bad Schedule'
 
 // A logged-out visitor session (cookie reuse matters: the CSRF token and
 // WebAuthn challenge both live in it, exactly like the real JS flow).
-$visitorSid = 'fnsmoke' . bin2hex(random_bytes(8));
-file_put_contents("$sessionDir/sess_$visitorSid", '');
-$visitor = ['cookie' => 'fieldnote_sess=' . $visitorSid];
+$visitor = $session();
 
 [$s, , $b] = req('GET', "$base/login", $visitor);
 check('login page offers passkey sign-in', $s === 200 && str_contains($b, 'id="passkeyLogin"') && str_contains($b, 'passkeys.js'), "status $s");
@@ -588,7 +599,6 @@ check('garbage passkey assertion fails closed', $s === 400 && str_contains($b, '
     'csrf_token' => $m[1], 'id' => 'bm9wZQ', 'clientDataJSON' => 'AAAA', 'authenticatorData' => 'AAAA', 'signature' => 'AAAA',
 ])]);
 check('replayed challenge is rejected', $s === 400, "status $s");
-@unlink("$sessionDir/sess_$visitorSid");
 
 [, , $b] = req('GET', "$base/settings", $authed);
 check('settings shows passkey management', str_contains($b, 'id="passkeySection"') && str_contains($b, 'Fixture key'));
@@ -1032,8 +1042,13 @@ req('POST', "$base/admin/themes/apply", $authed + ['body' => 'theme=gazette&csrf
 
 // ------------------------------------------------------- theme of the day --
 // Rewrite the served config in place; the next request reads it fresh.
-$writeCfg = function (array $over) use ($tmp, $config): void {
-    fn_smoke_write_cfg($tmp . '/data/config.php', array_merge($config, $over));
+// Patch the config that is actually on disk. The two closures this replaces
+// merged over two different in-memory snapshots, so whether a key written by
+// the app survived a harness write depended on which one you called -- and one
+// of them silently reset paletteOverrides, which the checks below depend on.
+$patchCfg = static function (array $over) use ($tmp): void {
+    $path = $tmp . '/data/config.php';
+    fn_smoke_write_cfg($path, array_merge((array) (require $path), $over));
 };
 // Expected daily pick, computed independently of the helper: sorted installed
 // themes, indexed by the UTC epoch-day (matches fn_theme_of_day for tz=UTC).
@@ -1046,11 +1061,11 @@ foreach (glob($root . '/templates/*', GLOB_ONLYDIR) ?: [] as $d) {
 sort($tNames);
 $today = $tNames[((int) floor(time() / 86400)) % count($tNames)];
 
-$writeCfg(['template' => 'gazette', 'themeOfDay' => false, 'timezone' => 'UTC']);
+$patchCfg(['template' => 'gazette', 'themeOfDay' => false, 'timezone' => 'UTC']);
 [$s, , $b] = req('GET', "$base/", []);
 check('themeOfDay off uses the fixed template', $s === 200 && str_contains($b, '/themes/gazette/theme.css'), "status $s");
 
-$writeCfg(['template' => 'gazette', 'themeOfDay' => true, 'timezone' => 'UTC']);
+$patchCfg(['template' => 'gazette', 'themeOfDay' => true, 'timezone' => 'UTC']);
 [$s, , $b]   = req('GET', "$base/", []);
 [$s2, , $b2] = req('GET', "$base/", []);
 check('themeOfDay on renders the daily theme', $s === 200 && str_contains($b, "/themes/$today/theme.css"), "today=$today status $s");
@@ -1066,18 +1081,18 @@ $rotPick = function (array $pool, int $days) use ($tNames): string {
 // Curated pool: rotation is restricted to the selected themes.
 $pool    = ['mono', 'zen'];
 $expPool = $rotPick($pool, 1);
-$writeCfg(['template' => 'gazette', 'themeOfDay' => true, 'timezone' => 'UTC', 'themePool' => $pool, 'themeRotateDays' => 1]);
+$patchCfg(['template' => 'gazette', 'themeOfDay' => true, 'timezone' => 'UTC', 'themePool' => $pool, 'themeRotateDays' => 1]);
 [$s, , $b] = req('GET', "$base/", []);
 check('themeOfDay pool restricts to selected themes', $s === 200 && in_array($expPool, $pool, true) && str_contains($b, "/themes/$expPool/theme.css"), "exp=$expPool status $s");
 
 // Weekly cadence: the pick follows the 7-day period, not the day.
 $expWk = $rotPick($pool, 7);
-$writeCfg(['template' => 'gazette', 'themeOfDay' => true, 'timezone' => 'UTC', 'themePool' => $pool, 'themeRotateDays' => 7]);
+$patchCfg(['template' => 'gazette', 'themeOfDay' => true, 'timezone' => 'UTC', 'themePool' => $pool, 'themeRotateDays' => 7]);
 [$s, , $b] = req('GET', "$base/", []);
 check('themeOfDay weekly cadence picks the period theme', $s === 200 && str_contains($b, "/themes/$expWk/theme.css"), "exp=$expWk status $s");
 
 // Restore the fixture default so later sections are unaffected.
-$writeCfg(['template' => 'gazette', 'themeOfDay' => false, 'timezone' => 'UTC', 'themePool' => [], 'themeRotateDays' => 1]);
+$patchCfg(['template' => 'gazette', 'themeOfDay' => false, 'timezone' => 'UTC', 'themePool' => [], 'themeRotateDays' => 1]);
 
 /** @return array<string,array<string,string>> scheme => token => hex */
 function formColors(string $html, string $type): array
@@ -1121,20 +1136,17 @@ check('suggested palette saves and renders', $s === 302 && str_contains($b2, 'pa
 // for (gazette, above). On a rotation day showing a DIFFERENT theme they
 // must not leak in; on a day showing the authored theme they still apply.
 // A single-theme pool makes the day's pick deterministic.
-$cfgNow = require $tmp . '/data/config.php';
-$rotCfg = function (array $over) use ($tmp, $cfgNow): void {
-    fn_smoke_write_cfg($tmp . '/data/config.php', array_merge($cfgNow, $over));
-};
-$rotCfg(['themeOfDay' => true, 'themePool' => ['mono'], 'themeRotateDays' => 1]);
+
+$patchCfg(['themeOfDay' => true, 'themePool' => ['mono'], 'themeRotateDays' => 1]);
 [, , $b2] = req('GET', "$base/");
 check('rotation onto another theme suppresses palette overrides', str_contains($b2, '/themes/mono/theme.css') && !str_contains($b2, 'palette.css?'));
-$rotCfg(['themeOfDay' => true, 'themePool' => ['gazette'], 'themeRotateDays' => 1]);
+$patchCfg(['themeOfDay' => true, 'themePool' => ['gazette'], 'themeRotateDays' => 1]);
 [, , $b2] = req('GET', "$base/");
 check('rotation onto the authored theme keeps palette overrides', str_contains($b2, '/themes/gazette/theme.css') && str_contains($b2, 'palette.css?'));
 // The stylesheet must be keyed to the theme that linked it, not re-resolved
 // against the clock — otherwise a page rendered either side of a rotation
 // boundary can link a sheet that disagrees with it.
-$rotCfg(['themeOfDay' => true, 'themePool' => ['gazette'], 'themeRotateDays' => 1]);
+$patchCfg(['themeOfDay' => true, 'themePool' => ['gazette'], 'themeRotateDays' => 1]);
 [, , $b2] = req('GET', "$base/");
 preg_match('#palette\.css\?t=([a-z0-9-]+)&amp;v=#', $b2, $pm);
 check('palette link names the theme it was rendered for', ($pm[1] ?? '') === 'gazette', 'got ' . ($pm[1] ?? '(none)'));
@@ -1144,7 +1156,7 @@ check('palette stylesheet honours the requested theme', $cssMine !== '' && $cssO
 
 // A draft share deliberately renders the STORED theme, ignoring the rotation.
 // Its palette must follow the theme on the page, not the day's pick.
-$rotCfg(['themeOfDay' => true, 'themePool' => ['mono'], 'themeRotateDays' => 1]);
+$patchCfg(['themeOfDay' => true, 'themePool' => ['mono'], 'themeRotateDays' => 1]);
 [, , $b2] = req('GET', "$base/");
 check('public page rotated away from the authored theme', str_contains($b2, '/themes/mono/theme.css'));
 [, , $bDraft] = req('GET', $draftUrl);
@@ -1154,7 +1166,9 @@ check(
     'draft head did not pair the stored theme with its palette'
 );
 
-$rotCfg([]); // restore: rotation off, overrides intact for the reset test below
+// Rotation off, overrides left intact for the reset check below. Spelled out
+// because a patch only changes the keys it names.
+$patchCfg(['themeOfDay' => false, 'themePool' => [], 'themeRotateDays' => 1]);
 
 // Reset restores stock rendering.
 [, , $b] = req('GET', "$base/admin/palette", $authed);
@@ -1248,10 +1262,7 @@ foreach ($feedEtagBefore as $synPath => $etagBefore) {
     check("stale $synPath validator revalidates to 200", $sSyn === 200, "status $sSyn");
 }
 
-$staleSid = 'fnsmoke' . bin2hex(random_bytes(8));
-file_put_contents("$sessionDir/sess_$staleSid", 'isAuthenticated|b:1;');
-[$s, $h] = req('GET', "$base/dashboard", ['cookie' => 'fieldnote_sess=' . $staleSid]);
-@unlink("$sessionDir/sess_$staleSid");
+[$s, $h] = req('GET', "$base/dashboard", $session('isAuthenticated|b:1;'));
 check('password change logs out other sessions', $s === 302 && str_contains($h['location'] ?? '', '/login'), "status $s");
 
 // ----------------------------------------------------- canonical host 301 --
@@ -1298,9 +1309,7 @@ $firstRunFields = [
 ];
 // A CSRF token only holds inside the session that issued it, and these
 // requests are anonymous — mint one session and keep it for the whole flow.
-$setupSid = 'fnsmoke' . bin2hex(random_bytes(8));
-file_put_contents("$sessionDir/sess_$setupSid", '');
-$setup = ['cookie' => 'fieldnote_sess=' . $setupSid];
+$setup = $session();
 [, , $b] = req('GET', "$base/settings", $setup);
 preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
 [$s, $h] = req('POST', "$base/settings", $setup + ['body' => http_build_query($firstRunFields + ['csrf_token' => $m[1] ?? ''])]);
@@ -1319,13 +1328,10 @@ preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
 check('first-run setup with a password creates the site', $s === 302 && str_contains($h['location'] ?? '', '/dashboard') && is_file($cfgPath), "status $s -> " . ($h['location'] ?? '(none)'));
 
 // The credential chosen at setup must actually work.
-$loginSid = 'fnsmoke' . bin2hex(random_bytes(8));
-file_put_contents("$sessionDir/sess_$loginSid", '');
-$loginAs = ['cookie' => 'fieldnote_sess=' . $loginSid];
+$loginAs = $session();
 [, , $b] = req('GET', "$base/login", $loginAs);
 preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
 [$s, $h] = req('POST', "$base/login", $loginAs + ['body' => http_build_query(['csrf_token' => $m[1] ?? '', 'blogPassword' => 'chosen-at-setup'])]);
-@unlink("$sessionDir/sess_$loginSid");
 // 2FA is on in the fixture, so a correct password advances to the second
 // factor; a wrong one would land back on /login with an error. Either way the
 // point is that the credential chosen during setup is usable at all, which is
@@ -1341,7 +1347,6 @@ check(
 $cfgRestore = $cfgPath . '.restore.tmp';
 file_put_contents($cfgRestore, $cfgHeld, LOCK_EX);
 rename($cfgRestore, $cfgPath);
-@unlink("$sessionDir/sess_$setupSid");
 
 // ---------------------------------------------------------------- summary --
 
