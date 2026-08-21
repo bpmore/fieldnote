@@ -27,9 +27,13 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 use SleekDB\Store;
 
-$root      = dirname(__DIR__);
-$dbDir     = $root . '/data/siteDatabase';
-$uploadDir = $root . '/public/uploads';
+$root = dirname(__DIR__);
+// Same env overrides bootstrap.php honours, so this can be pointed at a
+// disposable instance. Without them the only way to exercise a destructive
+// sweeper was to run it against the real install, which is why it had none.
+$dataDir   = getenv('FN_DATA_DIR') ?: $root . '/data';
+$dbDir     = $dataDir . '/siteDatabase';
+$uploadDir = getenv('FN_UPLOAD_DIR') ?: $root . '/public/uploads';
 $delete    = in_array('--delete', $argv, true);
 
 if (!is_dir($dbDir . '/images')) {
@@ -48,6 +52,26 @@ $resolve = static function (string $path) use ($uploadDir): string {
     }
     return str_starts_with($path, '/') ? $path : $uploadDir . '/' . $path;
 };
+
+// Is a resolved path somewhere this script is allowed to delete?
+//
+// A pre-migration record stores an absolute path, and nothing constrains where
+// it points: a record carried over from an old install, or hand-edited, could
+// name a file anywhere on disk, and --delete would unlink it. The record is
+// still an orphan and still worth reporting — but deleting a file outside the
+// uploads directory is not this script's business.
+$insideUploads = static function (string $path) use ($uploadDir): bool {
+    if ($path === '') {
+        return false;
+    }
+    $realUploads = realpath($uploadDir);
+    $realTarget  = realpath($path);
+    if ($realUploads === false || $realTarget === false) {
+        return false;
+    }
+    return str_starts_with($realTarget, rtrim($realUploads, '/') . '/');
+};
+$skippedOutside = [];
 
 $referencedIds = [];
 foreach ($blogStore->findAll() as $post) {
@@ -104,15 +128,26 @@ foreach ($orphanRecords as [$id, $path]) {
     printf("record #%d (no post references it)%s\n", $id, $path !== '' ? ' + ' . $path : '');
     if ($delete) {
         if ($path !== '' && is_file($path)) {
-            @unlink($path);
+            if ($insideUploads($path)) {
+                @unlink($path);
+            } else {
+                $skippedOutside[] = $path;
+            }
         }
+        // The record goes either way: it is an orphan whatever its file is.
         $imageStore->deleteById($id);
     }
 }
 foreach ($orphanFiles as $path) {
     printf("file %s (no image record references it)\n", $path);
     if ($delete) {
-        @unlink($path);
+        // These come from walking the uploads tree, so they are inside it by
+        // construction; checked anyway rather than assumed.
+        if ($insideUploads($path)) {
+            @unlink($path);
+        } else {
+            $skippedOutside[] = $path;
+        }
     }
 }
 
@@ -122,4 +157,14 @@ printf(
     count($orphanFiles),
     $delete ? 'deleted' : 'found — re-run with --delete to remove'
 );
+if ($skippedOutside !== []) {
+    printf(
+        "%d file(s) left alone: they sit outside %s and are not this script's to delete.\n",
+        count($skippedOutside),
+        $uploadDir
+    );
+    foreach ($skippedOutside as $path) {
+        printf("  kept %s\n", $path);
+    }
+}
 exit(0);
