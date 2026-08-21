@@ -43,6 +43,43 @@ final class CssTokens
     }
 
     /**
+     * Both schemes' resolved tokens, with the polarity rule applied once.
+     *
+     * The rule is small — `:root` holds the default scheme and the single
+     * media block overrides the other — but it was restated in three places,
+     * keyed three different ways: the palette editor as light/dark, the
+     * auditor as default/dark-or-light, and the preview implicitly, as
+     * "scheme block, else root". They agreed only by review, and the coupling
+     * is load-bearing: the editor's baseline has to match the auditor's, or a
+     * palette the gate would reject can be validated against the wrong
+     * scheme's defaults and saved.
+     *
+     * Returns null when the theme has no `:root` block or no second scheme —
+     * the two cases the auditor reports separately, which it can still tell
+     * apart from the block bodies.
+     *
+     * @return array{light: array<string,string>, dark: array<string,string>}|null
+     */
+    public static function schemeTokens(string $css): ?array
+    {
+        $rootBody = self::rootBlock($css);
+        if ($rootBody === null) {
+            return null;
+        }
+        $darkBody  = self::schemeBlock($css, 'dark');
+        $lightBody = self::schemeBlock($css, 'light');
+        if ($darkBody === null && $lightBody === null) {
+            return null;
+        }
+        $root     = self::extractTokens($rootBody);
+        $override = array_merge($root, self::extractTokens((string) ($darkBody ?? $lightBody)));
+
+        // A dark override means :root is the light scheme, and vice versa.
+        return $darkBody !== null
+            ? ['light' => $root, 'dark' => $override]
+            : ['light' => $override, 'dark' => $root];
+    }
+    /**
      * Extract custom-property declarations from a CSS block body.
      * Resolves var() indirection within the same map (up to 3 hops).
      *

@@ -1177,15 +1177,10 @@ $router->map('GET|POST', '/admin/palette', function () use ($requireConfig, $req
     $theme = (string) $siteConfig['template'];
     $css   = (string) @file_get_contents(fn_template_dir($theme) . '/assets/theme.css');
 
-    // Resolve the theme's own tokens per scheme, exactly as the auditor does:
-    // :root is the default scheme, the media block overrides the other one.
-    $rootTokens = CssTokens::extractTokens((string) CssTokens::rootBlock($css));
-    $darkBody   = CssTokens::schemeBlock($css, 'dark');
-    $lightBody  = CssTokens::schemeBlock($css, 'light');
-    $schemeTok  = CssTokens::extractTokens((string) ($darkBody ?? $lightBody ?? ''));
-    $themeTokens = ($darkBody !== null || $lightBody === null)
-        ? ['light' => $rootTokens, 'dark' => array_merge($rootTokens, $schemeTok)]
-        : ['dark' => $rootTokens, 'light' => array_merge($rootTokens, $schemeTok)];
+    // One implementation of the polarity rule, shared with the auditor — this
+    // baseline has to match the gate's or a palette the gate would reject can
+    // be validated against the wrong scheme's defaults and saved.
+    $themeTokens = CssTokens::schemeTokens($css) ?? ['light' => [], 'dark' => []];
 
     // Hex-normalized theme defaults (color inputs only accept #rrggbb).
     $themeDefaults = ['light' => [], 'dark' => []];
