@@ -676,6 +676,29 @@ check('removing one credential keeps the other', array_column($pk->list(), 'id')
 $pk->remove('cred-two');
 check('removing the last credential clears the store', $pk->list() === [] && !$pk->enabled() && !is_file($pkFile), 'file still present: ' . var_export(is_file($pkFile), true));
 
+// A pre-migration image record holds an absolute disk path. Three call sites
+// used to re-decide what to do with one and reached three different answers:
+// the export skipped it — silently dropping the featured image from the zip
+// and from any re-import — while deletion and pruning resolved it happily.
+$imgHandler = new Fieldnote\ImageHandler($tmp . '/uploads', '/uploads');
+check(
+    'a relative path resolves to a URL and a disk path',
+    $imgHandler->publicUrl('2025/01/a.jpg') === '/uploads/2025/01/a.jpg'
+        && $imgHandler->absolutePath('2025/01/a.jpg') === $tmp . '/uploads/2025/01/a.jpg',
+    'got ' . $imgHandler->publicUrl('2025/01/a.jpg')
+);
+check(
+    'a legacy absolute path inside uploads resolves the same way',
+    $imgHandler->publicUrl($tmp . '/uploads/2025/01/a.jpg') === '/uploads/2025/01/a.jpg'
+        && $imgHandler->absolutePath($tmp . '/uploads/2025/01/a.jpg') === $tmp . '/uploads/2025/01/a.jpg',
+    'got ' . $imgHandler->publicUrl($tmp . '/uploads/2025/01/a.jpg')
+);
+check(
+    'a path outside uploads resolves to nothing at all',
+    $imgHandler->publicUrl('/etc/passwd') === '' && $imgHandler->absolutePath('/etc/passwd') === null,
+    'a path outside the uploads dir was resolved'
+);
+
 // ----------------------------------------------------- federation (AP-1) --
 
 $apHost = '127.0.0.1:' . $port;

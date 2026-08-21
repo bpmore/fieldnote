@@ -998,6 +998,16 @@ function fn_rendered_theme(string $themeCssHref): string
 }
 
 /**
+ * The site-relative base every upload URL hangs off. Matches what routes.php
+ * hands ImageHandler at construction; here so the helpers that build a record
+ * URL agree with the handler that stored it.
+ */
+function fn_upload_base(): string
+{
+    global $siteConfig;
+    return rtrim((string) ($siteConfig['basePath'] ?? ''), '/') . '/uploads';
+}
+/**
  * Delete an image record and its file on disk. Stored paths are relative to
  * uploads/ (an absolute path means a pre-migration record). The single
  * cleanup path for post deletion AND image replacement — replacing used to
@@ -1012,11 +1022,9 @@ function fn_delete_image(Store $imageStore, int|string|null $id): void
     if ($record === null) {
         return;
     }
-    $path = (string) ($record['path'] ?? '');
-    if ($path !== '' && !str_starts_with($path, '/')) {
-        $path = FN_UPLOAD_DIR . '/' . $path;
-    }
-    if ($path !== '' && is_file($path)) {
+    $images = new ImageHandler(FN_UPLOAD_DIR, fn_upload_base());
+    $path   = $images->absolutePath((string) ($record['path'] ?? ''));
+    if ($path !== null && is_file($path)) {
         @unlink($path);
     }
     $imageStore->deleteById((int) $id);
@@ -1034,8 +1042,15 @@ function fn_with_image(array $post, Store $imageStore): array
     $post['imageUrl'] = '';
     if (isset($post['image']) && is_numeric($post['image'])) {
         $record = $imageStore->findById((int) $post['image']);
-        if ($record && !empty($record['url'])) {
-            $post['imageUrl'] = $record['url'];
+        if ($record !== null) {
+            // Derived from `path`, not read from the stored `url`: the two were
+            // written together and could disagree afterwards, and a stored URL
+            // still carries the basePath in force when it was written. Falls
+            // back to the stored value for a pre-migration record whose path
+            // points outside the uploads dir, which has no derivable URL.
+            $images = new ImageHandler(FN_UPLOAD_DIR, fn_upload_base());
+            $post['imageUrl'] = $images->publicUrl((string) ($record['path'] ?? ''))
+                ?: (string) ($record['url'] ?? '');
         }
     }
     return $post;
