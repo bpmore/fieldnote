@@ -1550,6 +1550,43 @@ check('repeated failed logins lock the address out', str_contains($b, 'Too many 
 $attemptLogin($lockClient, 'rotated-password');
 [$s] = req('GET', "$base/dashboard", $lockClient);
 check('the lockout refuses the correct password too', $s === 302, "dashboard status $s");
+// Pacing the failures must not shorten the lockout. Anchored on the first
+// failure it did: five spread across the window left a one-second lockout,
+// so an attacker who waited got no throttle at all. Written against the
+// stored entry, since the wall-clock version would need a 15-minute test.
+$clearThrottle();
+$pacedClient = $browser();
+for ($i = 0; $i < 6; $i++) {
+    $attemptLogin($pacedClient, 'not-the-password');
+}
+$throttleFile = $tmp . '/data/login_throttle.json';
+$throttleAll  = (array) (json_decode((string) file_get_contents($throttleFile), true) ?: []);
+$throttleKey  = (string) array_key_first($throttleAll);
+check('a failed login records a throttle entry', $throttleKey !== '' && isset($throttleAll[$throttleKey]['until']), 'entry ' . json_encode($throttleAll));
+
+// Age the record so it looks like the failures began almost a full window ago
+// — which is what an attacker who paces their attempts produces. Anchored on
+// the FIRST failure the next one leaves about a second of lockout; anchored on
+// the LAST it starts the window again. Faking the record beats a 15-minute test.
+// One below the threshold, so the next attempt is recorded rather than
+// refused early — a locked-out client is turned away before it can add one.
+$throttleAll[$throttleKey]['count'] = 4;
+// Comfortably live, but far short of a full window: anchored on the first
+// failure the lockout stays at this, anchored on the last it starts over.
+$throttleAll[$throttleKey]['until'] = time() + 60;
+file_put_contents($throttleFile, json_encode($throttleAll));
+$attemptLogin($browser(), 'not-the-password');
+$throttleAged = (array) (json_decode((string) file_get_contents($throttleFile), true) ?: []);
+$agedUntil    = (int) ($throttleAged[$throttleKey]['until'] ?? 0);
+check(
+    'a paced attack does not shorten the lockout',
+    ($agedUntil - time()) > 800,
+    'lockout would be ' . max(0, $agedUntil - time()) . 's'
+);
+// A stale record must not survive a read, so nothing downstream re-filters.
+file_put_contents($throttleFile, json_encode(['stale-key' => ['count' => 9, 'until' => time() - 1]]));
+check('an expired throttle record is dropped on read', Fieldnote\Security::loginLockedFor($tmp . '/data') === 0, 'still locked');
+
 // Left set, this leaks into the first-run checks below.
 $clearThrottle();
 

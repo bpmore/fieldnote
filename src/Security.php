@@ -66,34 +66,26 @@ final class Security
      */
     public static function loginLockedFor(string $dataDir): int
     {
-        $entry = self::throttleEntry($dataDir);
-        if ($entry === null) {
+        $entry = self::throttleRead($dataDir)[self::throttleKey()] ?? null;
+        if ($entry === null || $entry['count'] < self::LOGIN_MAX_FAILURES) {
             return 0;
         }
-        if ($entry['count'] >= self::LOGIN_MAX_FAILURES) {
-            $remaining = ($entry['first'] + self::LOGIN_WINDOW) - time();
-            return max(0, $remaining);
-        }
-        return 0;
+        return max(0, $entry['until'] - time());
     }
 
     public static function recordLoginFailure(string $dataDir): void
     {
-        $all = self::throttleRead($dataDir);
-        $key = self::throttleKey();
-        $now = time();
-        $entry = $all[$key] ?? ['count' => 0, 'first' => $now];
-        if ($now - $entry['first'] > self::LOGIN_WINDOW) {
-            $entry = ['count' => 0, 'first' => $now];
-        }
+        $all   = self::throttleRead($dataDir);
+        $key   = self::throttleKey();
+        $entry = $all[$key] ?? ['count' => 0, 'until' => 0];
         $entry['count']++;
-        $all[$key] = $entry;
-        // Prune stale entries so the file cannot grow without bound.
-        foreach ($all as $k => $e) {
-            if ($now - ($e['first'] ?? 0) > self::LOGIN_WINDOW) {
-                unset($all[$k]);
-            }
-        }
+        // Each failure pushes the expiry out, so the window is the quiet time
+        // since the last attempt rather than the age of the first. Anchoring
+        // on the first turned the lockout into 900 minus however long the
+        // attacker took: five failures paced across the window bought a
+        // one-second lockout, which is not a throttle.
+        $entry['until'] = time() + self::LOGIN_WINDOW;
+        $all[$key]      = $entry;
         self::throttleWrite($dataDir, $all);
     }
 
@@ -104,18 +96,18 @@ final class Security
         self::throttleWrite($dataDir, $all);
     }
 
-    /** @return array{count:int,first:int}|null */
-    private static function throttleEntry(string $dataDir): ?array
-    {
-        $all = self::throttleRead($dataDir);
-        $entry = $all[self::throttleKey()] ?? null;
-        if ($entry === null || time() - ($entry['first'] ?? 0) > self::LOGIN_WINDOW) {
-            return null;
-        }
-        return $entry;
-    }
-
-    /** @return array<string,array{count:int,first:int}> */
+    /**
+     * Live, well-shaped entries only. Normalizing here is what lets everything
+     * downstream stop re-deriving expiry: reads used to apply the same rule
+     * twice on the way to one answer, and pruning happened only on write, so
+     * the other two callers worked on maps still full of dead records.
+     *
+     * A legacy entry carries `first` instead of `until` and is dropped. This
+     * file is ephemeral rate-limit state, so the cost is that counters in
+     * flight at deploy time reset — worth naming, not worth engineering around.
+     *
+     * @return array<string,array{count:int,until:int}>
+     */
     private static function throttleRead(string $dataDir): array
     {
         $file = rtrim($dataDir, '/') . '/login_throttle.json';
@@ -123,10 +115,23 @@ final class Security
             return [];
         }
         $data = json_decode((string) file_get_contents($file), true);
-        return is_array($data) ? $data : [];
+        if (!is_array($data)) {
+            return [];
+        }
+        $now  = time();
+        $live = [];
+        foreach ($data as $key => $entry) {
+            if (!is_array($entry) || !isset($entry['count'], $entry['until'])) {
+                continue;
+            }
+            if ((int) $entry['until'] > $now) {
+                $live[$key] = ['count' => (int) $entry['count'], 'until' => (int) $entry['until']];
+            }
+        }
+        return $live;
     }
 
-    /** @param array<string,array{count:int,first:int}> $all */
+    /** @param array<string,array{count:int,until:int}> $all */
     private static function throttleWrite(string $dataDir, array $all): void
     {
         $file = rtrim($dataDir, '/') . '/login_throttle.json';
