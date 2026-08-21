@@ -149,6 +149,9 @@ $session = static function (string $payload = '') use ($sessionDir): array {
     file_put_contents("$sessionDir/sess_$sid", $payload);
     return ['cookie' => 'fieldnote_sess=' . $sid];
 };
+$browser = static function () use ($tmp): array {
+    return ['jar' => tempnam($tmp, 'jar')];
+};
 $authed  = $session('isAuthenticated|b:1;');
 $pending = $session('pending_2fa|i:' . time() . ';');
 
@@ -197,6 +200,10 @@ function req(string $method, string $url, array $opts = []): array
     ]);
     if (isset($opts['cookie'])) {
         curl_setopt($ch, CURLOPT_COOKIE, $opts['cookie']);
+    }
+    if (isset($opts['jar'])) {
+        curl_setopt($ch, CURLOPT_COOKIEJAR, $opts['jar']);
+        curl_setopt($ch, CURLOPT_COOKIEFILE, $opts['jar']);
     }
     if (isset($opts['headers'])) {
         curl_setopt($ch, CURLOPT_HTTPHEADER, $opts['headers']);
@@ -1479,6 +1486,93 @@ check(
 $cfgRestore = $cfgPath . '.restore.tmp';
 file_put_contents($cfgRestore, $cfgHeld, LOCK_EX);
 rename($cfgRestore, $cfgPath);
+
+// ------------------------------------------------- login throttle + 2FA --
+// Runs late, like the password rotation above it: driving real logins moves
+// shared state (the throttle file, the TOTP counter, session ids) that earlier
+// checks read. The password here is the ROTATED one, set by the settings save.
+//
+// None of this had coverage before. The throttle window, the replay guard on
+// the TOTP counter, and recovery-code consumption could each drift with
+// nothing going red.
+
+$attemptLogin = static function (array $client, string $password) use ($base): array {
+    [, , $page] = req('GET', "$base/login", $client);
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $page, $lm);
+    return req('POST', "$base/login", $client + ['body' => http_build_query([
+        'csrf_token'   => $lm[1] ?? '',
+        'blogPassword' => $password,
+    ])]);
+};
+$clearThrottle = static function () use ($tmp): void {
+    @unlink($tmp . '/data/login_throttle.json');
+};
+
+$clearThrottle();
+$lockClient = $browser();
+for ($i = 0; $i < 6; $i++) {
+    $attemptLogin($lockClient, 'not-the-password');
+}
+[, , $b] = req('GET', "$base/login", $lockClient);
+check('repeated failed logins lock the address out', str_contains($b, 'Too many failed attempts'), 'no lockout message');
+// The lockout has to hold against the RIGHT password too, or it only
+// inconveniences someone who already knows it.
+$attemptLogin($lockClient, 'rotated-password');
+[$s] = req('GET', "$base/dashboard", $lockClient);
+check('the lockout refuses the correct password too', $s === 302, "dashboard status $s");
+// Left set, this leaks into the first-run checks below.
+$clearThrottle();
+
+// Second factor. The fixture secret is known, so a real current code can be
+// computed rather than faked.
+$totpSecret   = 'JBSWY3DPEHPK3PXP';
+$recoveryCode = 'AB1C2-D3E4F';
+file_put_contents($tmp . '/data/totp.json', json_encode([
+    'secret'      => $totpSecret,
+    'lastCounter' => 0,
+    'recovery'    => [password_hash(Fieldnote\TwoFactor::normalizeRecoveryCode($recoveryCode), PASSWORD_DEFAULT)],
+]));
+
+// Password then code, on a client that follows its own cookies — the login
+// regenerates the session id, which a pinned cookie cannot follow.
+$fullLogin = static function (string $code) use ($base, $browser, $attemptLogin): array {
+    $client = $browser();
+    $attemptLogin($client, 'rotated-password');
+    [, , $vp] = req('GET', "$base/login/verify", $client);
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $vp, $vm);
+    [$st, $hd] = req('POST', "$base/login/verify", $client + ['body' => http_build_query([
+        'csrf_token' => $vm[1] ?? '',
+        'code'       => $code,
+    ])]);
+    return [$st, $hd, $client];
+};
+
+$firstFactor = $browser();
+[$s, $h] = $attemptLogin($firstFactor, 'rotated-password');
+check('a correct password with 2FA on stops at the second factor', $s === 302 && str_contains($h['location'] ?? '', '/login/verify'), "status $s -> " . ($h['location'] ?? '(none)'));
+[$s] = req('GET', "$base/dashboard", $firstFactor);
+check('the password alone does not authenticate', $s === 302, "dashboard status $s");
+
+$goodCode = (string) Fieldnote\Totp::hotp($totpSecret, (int) floor(time() / 30));
+[$s, $h] = $fullLogin('000000');
+check('a wrong second-factor code is refused', $s === 302 && !str_contains($h['location'] ?? '', '/dashboard'), "status $s -> " . ($h['location'] ?? '(none)'));
+
+[$s, $h, $verified] = $fullLogin($goodCode);
+check('a correct second-factor code completes the login', $s === 302 && str_contains($h['location'] ?? '', '/dashboard'), "status $s -> " . ($h['location'] ?? '(none)'));
+[$s] = req('GET', "$base/dashboard", $verified);
+check('the second factor authenticated the session', $s === 200, "dashboard status $s");
+
+// lastCounter is persisted precisely so a code cannot be presented twice.
+[$s, $h] = $fullLogin($goodCode);
+check('the same second-factor code cannot be replayed', $s === 302 && !str_contains($h['location'] ?? '', '/dashboard'), "status $s -> " . ($h['location'] ?? '(none)'));
+
+// A recovery code works once, and using it spends it.
+[$s, $h] = $fullLogin($recoveryCode);
+check('a recovery code completes the login', $s === 302 && str_contains($h['location'] ?? '', '/dashboard'), "status $s -> " . ($h['location'] ?? '(none)'));
+[$s, $h] = $fullLogin($recoveryCode);
+check('a spent recovery code is refused', $s === 302 && !str_contains($h['location'] ?? '', '/dashboard'), "status $s -> " . ($h['location'] ?? '(none)'));
+
+$clearThrottle();
 
 // ---------------------------------------------------------------- summary --
 
