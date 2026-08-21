@@ -1139,15 +1139,36 @@ foreach (glob($root . '/templates/*', GLOB_ONLYDIR) ?: [] as $d) {
     }
 }
 sort($tNames);
-$today = $tNames[((int) floor(time() / 86400)) % count($tNames)];
+// The pick is a function of the UTC day: computed here, rendered by the server
+// a moment later. A run that straddles midnight compares one day's expectation
+// against the next day's page — a red suite that says nothing about the code,
+// and one that only ever appears in the minutes after 00:00 UTC. Pair each
+// expectation with the request it describes, and retry if the day moves
+// underneath. Two seconds either side of a boundary really does change the
+// answer: gazette to gothic, zen to mono.
+$sameDay = static function (callable $fn) {
+    $result = null;
+    for ($attempt = 0; $attempt < 3; $attempt++) {
+        $dayBefore = (int) floor(time() / 86400);
+        $result    = $fn();
+        if ((int) floor(time() / 86400) === $dayBefore) {
+            return $result;
+        }
+    }
+    return $result;
+};
 
 $patchCfg(['template' => 'gazette', 'themeOfDay' => false, 'timezone' => 'UTC']);
 [$s, , $b] = req('GET', "$base/", []);
 check('themeOfDay off uses the fixed template', $s === 200 && str_contains($b, '/themes/gazette/theme.css'), "status $s");
 
 $patchCfg(['template' => 'gazette', 'themeOfDay' => true, 'timezone' => 'UTC']);
-[$s, , $b]   = req('GET', "$base/", []);
-[$s2, , $b2] = req('GET', "$base/", []);
+[$s, $b, $s2, $b2, $today] = $sameDay(static function () use ($base, $tNames): array {
+    $today = $tNames[((int) floor(time() / 86400)) % count($tNames)];
+    [$s, , $b]   = req('GET', "$base/", []);
+    [$s2, , $b2] = req('GET', "$base/", []);
+    return [$s, $b, $s2, $b2, $today];
+});
 check('themeOfDay on renders the daily theme', $s === 200 && str_contains($b, "/themes/$today/theme.css"), "today=$today status $s");
 check('themeOfDay is stable within the day', $s2 === 200 && str_contains($b2, "/themes/$today/theme.css"));
 
@@ -1159,16 +1180,22 @@ $rotPick = function (array $pool, int $days) use ($tNames): string {
 };
 
 // Curated pool: rotation is restricted to the selected themes.
-$pool    = ['mono', 'zen'];
-$expPool = $rotPick($pool, 1);
+$pool = ['mono', 'zen'];
 $patchCfg(['template' => 'gazette', 'themeOfDay' => true, 'timezone' => 'UTC', 'themePool' => $pool, 'themeRotateDays' => 1]);
-[$s, , $b] = req('GET', "$base/", []);
+[$s, $b, $expPool] = $sameDay(static function () use ($base, $rotPick, $pool): array {
+    $expPool = $rotPick($pool, 1);
+    [$s, , $b] = req('GET', "$base/", []);
+    return [$s, $b, $expPool];
+});
 check('themeOfDay pool restricts to selected themes', $s === 200 && in_array($expPool, $pool, true) && str_contains($b, "/themes/$expPool/theme.css"), "exp=$expPool status $s");
 
 // Weekly cadence: the pick follows the 7-day period, not the day.
-$expWk = $rotPick($pool, 7);
 $patchCfg(['template' => 'gazette', 'themeOfDay' => true, 'timezone' => 'UTC', 'themePool' => $pool, 'themeRotateDays' => 7]);
-[$s, , $b] = req('GET', "$base/", []);
+[$s, $b, $expWk] = $sameDay(static function () use ($base, $rotPick, $pool): array {
+    $expWk = $rotPick($pool, 7);
+    [$s, , $b] = req('GET', "$base/", []);
+    return [$s, $b, $expWk];
+});
 check('themeOfDay weekly cadence picks the period theme', $s === 200 && str_contains($b, "/themes/$expWk/theme.css"), "exp=$expWk status $s");
 
 // Restore the fixture default so later sections are unaffected.
