@@ -627,6 +627,36 @@ preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
 $json = json_decode($b, true);
 check('passkey create options exclude existing credential', $s === 200 && count($json['publicKey']['excludeCredentials'] ?? []) === 1 && ($json['publicKey']['authenticatorSelection']['requireResidentKey'] ?? false) === true, "status $s");
 
+// The credential store, exercised directly: add, remove and sign-count updates
+// are only reachable behind a real WebAuthn ceremony, so nothing covered them.
+// A scratch file keeps this clear of the fixture the routes above read.
+$pkDir = $tmp . '/pk-scratch';
+mkdir($pkDir, 0700, true);
+$pk     = new Fieldnote\Passkeys($pkDir);
+$pkFile = $pkDir . '/passkeys.json';
+$pk->add('cred-one', 'PEM-ONE', 3, 'Laptop');
+$pk->add('cred-two', 'PEM-TWO', 7, 'Phone');
+check('two credentials are both stored', count($pk->list()) === 2, 'count ' . count($pk->list()));
+check('credentials are returned in the order they were added', array_column($pk->list(), 'id') === ['cred-one', 'cred-two'], implode(',', array_column($pk->list(), 'id')));
+
+// Registering the same authenticator twice used to append a second record,
+// after which find/update/remove each disagreed about which one was "it".
+$pk->add('cred-one', 'PEM-ONE-AGAIN', 4, 'Laptop again');
+// Checked against the FILE, not the in-memory view: keying on read would
+// collapse a duplicate anyway, so only the stored form proves add() replaced.
+$pkStored = (array) (json_decode((string) file_get_contents($pkFile), true)['credentials'] ?? []);
+check('re-adding the same id replaces rather than duplicates', count($pkStored) === 2, 'stored ' . count($pkStored));
+check('the replacement is the record that is found', ($pk->find('cred-one')['publicKey'] ?? '') === 'PEM-ONE-AGAIN', 'got ' . ($pk->find('cred-one')['publicKey'] ?? 'null'));
+
+check('the sign count updates on the named credential', $pk->updateSignCount('cred-two', 99) && ($pk->find('cred-two')['signCount'] ?? 0) === 99, 'got ' . ($pk->find('cred-two')['signCount'] ?? 'null'));
+check('the other credential is left alone', ($pk->find('cred-one')['signCount'] ?? 0) === 4, 'got ' . ($pk->find('cred-one')['signCount'] ?? 'null'));
+check('updating an unknown credential reports failure', $pk->updateSignCount('no-such-cred', 1) === false);
+
+$pk->remove('cred-one');
+check('removing one credential keeps the other', array_column($pk->list(), 'id') === ['cred-two'], implode(',', array_column($pk->list(), 'id')));
+$pk->remove('cred-two');
+check('removing the last credential clears the store', $pk->list() === [] && !$pk->enabled() && !is_file($pkFile), 'file still present: ' . var_export(is_file($pkFile), true));
+
 // ----------------------------------------------------- federation (AP-1) --
 
 $apHost = '127.0.0.1:' . $port;
@@ -1525,13 +1555,13 @@ $clearThrottle();
 
 // Second factor. The fixture secret is known, so a real current code can be
 // computed rather than faked.
-$totpSecret   = 'JBSWY3DPEHPK3PXP';
-$recoveryCode = 'AB1C2-D3E4F';
-file_put_contents($tmp . '/data/totp.json', json_encode([
-    'secret'      => $totpSecret,
-    'lastCounter' => 0,
-    'recovery'    => [password_hash(Fieldnote\TwoFactor::normalizeRecoveryCode($recoveryCode), PASSWORD_DEFAULT)],
-]));
+$totpSecret = 'JBSWY3DPEHPK3PXP';
+// Enrol through the real path rather than hand-building the file: enable()
+// owns generating, normalizing and hashing the codes, and hands back the
+// plain ones exactly once — which is the only chance anyone gets to see them.
+$enrolled = (new Fieldnote\TwoFactor($tmp . '/data'))->enable($totpSecret, 1);
+check('enabling 2FA returns the recovery codes to show once', is_array($enrolled) && count($enrolled) === 1, 'got ' . var_export($enrolled, true));
+$recoveryCode = $enrolled[0] ?? 'unusable';
 
 // Password then code, on a client that follows its own cookies — the login
 // regenerates the session id, which a pinned cookie cannot follow.
