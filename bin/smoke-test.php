@@ -1274,7 +1274,26 @@ preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
 ]);
 [$s2, , $b2] = req('GET', "$base/");
 [, , $css] = req('GET', "$base/palette.css?t=gazette");
-check('suggested palette saves and renders', $s === 302 && str_contains($b2, 'palette.css?') && str_contains($css, '@media (prefers-color-scheme: light){:root{--text:'), "status $s");
+// The stored palette is the whole validated set now, so the light block no
+// longer happens to begin at --text. Assert the tokens are there rather
+// than the order they were written in.
+check(
+    'suggested palette saves and renders',
+    $s === 302
+        && str_contains($b2, 'palette.css?')
+        && str_contains($css, '@media (prefers-color-scheme: light){:root{')
+        && str_contains($css, '--text:'),
+    "status $s"
+);
+// Every required token is persisted, which is what makes the stored palette
+// the same one the contrast matrix passed.
+$storedPalette = (array) ((require $tmp . '/data/config.php')['paletteOverrides'] ?? []);
+check(
+    'the whole validated palette is stored, not a diff',
+    count($storedPalette['light'] ?? []) === count(Fieldnote\Wcag::REQUIRED_TOKENS)
+        && count($storedPalette['dark'] ?? []) === count(Fieldnote\Wcag::REQUIRED_TOKENS),
+    'light ' . count($storedPalette['light'] ?? []) . ', dark ' . count($storedPalette['dark'] ?? []) . ' of ' . count(Fieldnote\Wcag::REQUIRED_TOKENS)
+);
 
 // Rotation + palette: overrides are keyed to the theme they were authored
 // for (gazette, above). On a rotation day showing a DIFFERENT theme they

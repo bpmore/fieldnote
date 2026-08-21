@@ -1219,7 +1219,20 @@ $router->map('GET|POST', '/admin/palette', function () use ($requireConfig, $req
             $redirect('palette');
         }
 
+        // Store the palette that was validated, not its difference from the
+        // theme's current defaults. A diff is only meaningful against the
+        // theme.css it was taken from: edit that file — a theme upgrade, a
+        // hand tweak — and the live palette silently becomes new defaults plus
+        // an old diff, a combination the contrast matrix never saw. Both this
+        // route ("cannot be stored, only corrected") and the renderer ("both
+        // halves were validated at save time") claim an invariant that only
+        // storing the whole thing can keep.
+        //
+        // The trade is deliberate: a customized theme stops inheriting later
+        // theme.css colour changes. Predictable and checked beats current and
+        // unverified, for the one feature whose entire purpose is the check.
         $newOverrides = ['theme' => $theme, 'light' => [], 'dark' => []];
+        $differs      = false;
         foreach (['light', 'dark'] as $scheme) {
             $effective = [];
             foreach (Wcag::REQUIRED_TOKENS as $tok) {
@@ -1229,9 +1242,10 @@ $router->map('GET|POST', '/admin/palette', function () use ($requireConfig, $req
                 }
                 $effective[$tok] = $v;
                 if ($v !== $themeDefaults[$scheme][$tok]) {
-                    $newOverrides[$scheme][$tok] = $v;
+                    $differs = true;
                 }
             }
+            $newOverrides[$scheme] = $effective;
             foreach (Wcag::failingPairs($effective) as $f) {
                 $f['suggest'] = Wcag::suggestColor($effective[$f['fg']], $effective[$f['bg']], $f['min']);
                 $failures[$scheme][] = $f;
@@ -1240,8 +1254,9 @@ $router->map('GET|POST', '/admin/palette', function () use ($requireConfig, $req
         }
 
         if ($failures === []) {
-            $siteConfig['paletteOverrides'] =
-                ($newOverrides['light'] === [] && $newOverrides['dark'] === []) ? [] : $newOverrides;
+            // Nothing changed from the theme's own colours: store nothing, so a
+            // theme that was never customized keeps tracking its stylesheet.
+            $siteConfig['paletteOverrides'] = $differs ? $newOverrides : [];
             if (!$configStore->save($siteConfig)) {
                 http_response_code(500);
                 exit('Unable to write configuration. Check that the data/ directory is writable.');
