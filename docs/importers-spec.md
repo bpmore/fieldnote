@@ -181,7 +181,7 @@ draft vs published, that's recorded in the report — but everything still
 | 2 | **Substack** — **SHIPPED** (`SubstackImporter`). **Ghost** — **SHIPPED** (`GhostImporter`). **WriteFreely** — **SHIPPED** (`WriteFreelyImporter`; markdown-native JSON, #hashtags → tags) | M — **DONE** |
 | 3 | **Medium** — **SHIPPED**. **Blogger** — **SHIPPED**. **Notion** — **SHIPPED**. **Dev.to** — **SHIPPED**. **Hashnode** — **SHIPPED** (`HashnodeImporter`; markdown-native JSON). | M — **DONE** |
 
-All listed platforms shipped. Nine converters
+All listed platforms shipped. Ten converters
 (`WordPressImporter`, `RssImporter`, `SubstackImporter`, `GhostImporter`,
 `WriteFreelyImporter`, `MediumImporter`, `BloggerImporter`, `NotionImporter`,
 `DevtoImporter`, `HashnodeImporter`) plus the original frontmatter-markdown
