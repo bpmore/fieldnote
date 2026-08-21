@@ -3,7 +3,7 @@
 Status: proposed (June 2026). Items are ordered into phases; within a phase,
 order is flexible unless a dependency says otherwise. Sizes: S (an evening),
 M (a weekend), L (a week+). Each item carries acceptance criteria — done
-means all of them pass, plus `php bin/audit-themes.php` still at 70/70.
+means all of them pass, plus `php bin/audit-themes.php` still clean.
 
 Positioning context: the competitive set is Bear Blog / Mataroa (hosted,
 minimal), WriteFreely (federated), Ghost (heavy), Kirby/Grav (flat-file CMS).
@@ -167,7 +167,7 @@ injects token overrides server-side.
 
 **Accept:** an override that drops `--accent` on `--bg` below 4.5:1 cannot
 be saved and shows a passing suggestion; a passing override renders on the
-public site in both schemes; clearing restores stock; audit still 70/70
+public site in both schemes; clearing restores stock; audit still clean
 (theme files untouched).
 
 ### 1.2 Accessibility lint for post content (M) — SHIPPED
