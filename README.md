@@ -1,7 +1,7 @@
 # Fieldnote
 
 **A markdown blog that respects your readers.** No database, no JavaScript,
-no tracking, no build step. Write a post, pick one of 70 themes, done.
+no tracking, no build step. Write a post, pick one of 85 themes, done.
 Every page your visitors see is a single HTML file and one small stylesheet.
 
 Fieldnote (formerly Dropplets) is a modernized, security-hardened fork of
@@ -10,7 +10,7 @@ for PHP 8 and current security practice.
 
 ## Why Fieldnote
 
-**Accessibility first, enforced by a machine.** All 70 themes meet
+**Accessibility first, enforced by a machine.** Every theme meets
 WCAG 2.2 AA â€” in light mode *and* dark mode. That's not a pledge, it's a
 gate: `php bin/audit-themes.php` computes the contrast ratio of every
 color pair in every theme in both schemes, lints for skip links, heading
@@ -31,7 +31,7 @@ stylesheet. Nothing else. No webfonts, no CDNs, no analytics snippet
 phoning home â€” every asset is served from your own domain. Pages are fast
 because there is nothing to be slow.
 
-**70 themes, light and dark built into each one.** Photography walls,
+**85 themes, light and dark built into each one.** Photography walls,
 recipe cards, broadsheet front pages, phosphor terminals, wanted posters,
 risograph overprints. Every theme answers `prefers-color-scheme`, so your
 blog follows each reader's preference automatically. The full roster is
@@ -178,7 +178,7 @@ Keeping `data/` outside `public/` means your password hash and post store are ne
 
 ## Themes
 
-Seventy themes ship in `templates/`; pick one in Settings. Every theme is
+Eighty-five themes ship in `templates/`; pick one in Settings. Every theme is
 zero-JS, self-hosted, supports light **and** dark mode via
 `prefers-color-scheme`, and meets WCAG 2.2 AA (contrast, skip links, visible
 focus, 24px targets, reduced-motion, 320px reflow) in both schemes â€”
@@ -270,6 +270,21 @@ prefer one.
 | `velvet` | Lounge: jewel tones, gilt-edged panels (dark-identity) |
 | `ember` | Fireside: smoldering rules, rising glow (dark-identity) |
 | `orbit` | Astronomy: star field, mission-log cards (dark-identity) |
+| `almanac` | €” old reference book: warm cream, oxblood + ink, dense serif, double rules |
+| `blueprint` | €” architect's drawing: navy paper, cyan ink, faint grid, mono labels |
+| `cairn` | €” stacked stone: warm stone ground, charcoal type, generous air, thin lines |
+| `dossier` | €” manila file: buff stock, typewriter mono, ink black, redaction + stamp red |
+| `embroidery` | €” cross-stitch sampler: linen ground, thread colors, dotted stitch borders |
+| `isotype` | €” Neurath pictogram: flat blocks, heavy geometric sans, one strong blue |
+| `kraft` | €” brown kraft paper: warm tan stock, rubber-stamp red, taped labels |
+| `lab` | €” engineering notebook: faint graph grid, ink-blue accents, clean sans |
+| `marquee` | €” theatre playbill: dark house, gold lights, cream display serif, dotted bulbs |
+| `microfiche` | €” amber CRT reader: warm black, phosphor amber, film-frame borders, mono |
+| `observatory` | €” celestial chart: deep night, starlight type, gold, thin planisphere lines |
+| `receipt` | €” thermal POS slip: narrow column, monospace, dashed rules |
+| `tape` | €” cassette j-card: dark shell, orange band, condensed uppercase labels |
+| `telegram` | €” wire copy: pale stock, uppercase monospace, postal red, STOP rules |
+| `wayfinding` | €” transit signage: dark panels, bold sans, signal-yellow bars, arrows |
 
 `puddle`, `typewriter`, `bink`, and `benlk` are original reinterpretations of
 community themes made for the original Dropplets (by jacksondc, judges119, and

@@ -165,7 +165,11 @@ foreach ($themes as $name => $dir) {
                 $stripped = str_replace($b, '', $stripped);
             }
         }
-        $stripped = preg_replace('/--[a-z0-9-]+\s*:[^;]+;/i', '', $stripped) ?? $stripped;
+        // Deliberately NOT stripping every custom-property declaration: doing
+        // that ignored location, so `.card { --accent: #ff0000; }` at file scope
+        // was skipped and never flagged — which is precisely the rule this
+        // check exists to enforce. Only the three token blocks are exempt, and
+        // they were already removed above.
         $stripped = preg_replace('/\/\*.*?\*\//s', '', $stripped) ?? $stripped;
         if (preg_match_all('/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i', $stripped, $m)) {
             $problems[] = 'color literal(s) outside token blocks: ' . count($m[0]) . ' occurrence(s)';
@@ -178,14 +182,29 @@ foreach ($themes as $name => $dir) {
     $post   = (string) @file_get_contents($dir . '/post.php');
     $nf     = (string) @file_get_contents($dir . '/404.php');
 
-    if (!str_contains($header, 'fn_skip_link(')) {
-        $problems[] = 'header.php missing fn_skip_link()';
+    // Eleven helpers appear in every installed theme; the gate used to check
+    // three of them, and the README filed six of the rest under "Optional
+    // helpers" while its own prose said every theme calls them. A theme could
+    // drop fn_render_head — and with it the shared a11y baseline that supplies
+    // the focus ring this very script checks for — and still pass.
+    //
+    // One table, so the contract is a list rather than a habit.
+    $requiredCalls = [
+        'header.php' => ['fn_render_head(', 'fn_skip_link(', 'fn_utility_bar('],
+        'home.php'   => ['fn_search_status(', 'fn_pagination(', 'fn_post_url('],
+        'post.php'   => ['fn_post_admin('],
+        'footer.php' => ['fn_footer_copyright(', 'fn_social_links(', 'fn_a11y_badge('],
+    ];
+    foreach ($requiredCalls as $themeFile => $calls) {
+        $body = (string) @file_get_contents("$dir/$themeFile");
+        foreach ($calls as $call) {
+            if (!str_contains($body, $call)) {
+                $problems[] = "$themeFile missing " . rtrim($call, '(') . '()';
+            }
+        }
     }
     if (!str_contains($header, 'id="main"')) {
         $problems[] = 'header.php missing id="main" on main element';
-    }
-    if (!str_contains($home, 'fn_pagination(')) {
-        $problems[] = 'home.php missing fn_pagination()';
     }
     if (str_contains($post, 'imageUrl') && !str_contains($post, 'fn_image_alt(')) {
         $problems[] = 'post.php missing fn_image_alt() on hero image';

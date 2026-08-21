@@ -125,7 +125,7 @@ with a `publicKey.publicKeyPem`.
 ## 8. Sanity checks
 
 ```bash
-php bin/audit-themes.php   # 70/70 themes pass the WCAG gate
+php bin/audit-themes.php   # every theme passes the WCAG gate
 php bin/smoke-test.php     # full end-to-end suite (needs ext-zip)
 ```
 

@@ -90,7 +90,32 @@ Pagination gets a 24 px floor from the baseline. Any other standalone link
 (footer RSS, back-links, 404 button) needs enough padding to reach 24 × 24 px,
 unless it genuinely sits inline in a sentence (WCAG 2.5.8 inline exception).
 
-## Optional helpers
+## Required in every theme
+
+Eleven helpers appear in all 85 installed themes, and `bin/audit-themes.php`
+now enforces them by file. Six of them used to sit under "Optional helpers"
+below while the prose beside each one said every theme calls it — the word
+was marking exactly the calls an author is most likely to skip.
+
+| File | Calls |
+|---|---|
+| `header.php` | `fn_render_head` · `fn_skip_link` · `fn_utility_bar` |
+| `home.php` | `fn_search_status` · `fn_pagination` · `fn_post_url` |
+| `post.php` | `fn_post_admin` · `fn_image_alt` (when the post has an image) |
+| `footer.php` | `fn_footer_copyright` · `fn_social_links` · `fn_a11y_badge` |
+
+Dropping `fn_render_head` is the one that bites hardest: it emits the shared
+a11y baseline that supplies the `:focus-visible` ring, the skip-link styling
+and the `prefers-reduced-motion` kill switch — all of which the auditor's own
+focus check assumes are already there.
+
+Each of these is self-guarding: a helper whose feature is switched off emits
+nothing, so call them unconditionally and place them where your layout wants.
+
+## Genuinely optional helpers
+
+Two, and the counts say so: `fn_tag_links` (2 of 85) and `fn_excerpt`
+(16 of 85).
 
 `Fieldnote\fn_tag_links($router, $post)` renders the post's tags as an
 aria-labelled nav of links to `/tag/<name>` pages (nothing when untagged).

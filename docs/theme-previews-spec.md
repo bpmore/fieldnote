@@ -7,7 +7,7 @@ cookie, and the auth-gated preview would render the login page instead.
 
 ## Problem
 
-Settings offers 70 themes as a bare `<select>` of names. Names like `riso`
+Settings offers every theme as a bare `<select>` of names. Names like `riso`
 or `clay` say nothing; the only way to evaluate a theme is to apply it to
 the live site and look — disruptive on a public blog, and it takes 70
 round-trips to see them all. Admins need to *see* each theme (in both color
@@ -59,7 +59,7 @@ POST /admin/themes/apply               -> set config['template'] (auth + CSRF)
   `fn_render_home(string $templateDir)` helper from the `/` closure so the
   two stay in lockstep), with two differences:
   - `$postsPerPage` capped at 3 — previews only need a taste, and the page
-    weight of 70 iframes × full grid matters
+    weight of one iframe per theme × full grid matters
   - response carries `X-Robots-Tag: noindex` and
     `Content-Security-Policy: frame-ancestors 'self'` (preview pages are
     admin-only plumbing)
@@ -135,14 +135,14 @@ explicit.
 
 ## Acceptance criteria
 
-1. `/admin/themes` (logged in) lists all 70 themes with visibly distinct
+1. `/admin/themes` (logged in) lists every installed theme with visibly distinct
    light and dark miniatures; logged out → redirect to login
 2. `?scheme=dark` preview of `liquid-new` shows the dark palette on a
    light-OS machine; `?scheme=light` flips `terminal` to hardcopy mode
 3. Applying a theme from the gallery changes the live site and badges the
    card; CSRF-less POST is rejected
 4. `/admin/themes/preview/../../etc` and unknown names → 404
-5. `php bin/audit-themes.php` still passes 70/70 (no theme files change)
+5. `php bin/audit-themes.php` still passes clean (no theme files change)
 6. Lighthouse a11y pass on the gallery page: iframe titles, button labels,
    focus order
 

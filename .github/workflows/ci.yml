@@ -19,7 +19,7 @@ jobs:
       - run: composer install --no-interaction --no-progress
 
       # Theme contract: 8 tokens, WCAG 2.2 AA contrast in both schemes,
-      # skip links, focus visibility, exactly one h1 — all 70 themes.
+      # skip links, focus visibility, exactly one h1 — every theme.
       - run: php bin/audit-themes.php
 
       # Route matrix against a disposable instance: rendering, draft and

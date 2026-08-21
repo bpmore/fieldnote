@@ -126,7 +126,7 @@ passkey does not rotate the epoch (the password didn't change).
 5. Smoke test: endpoints return well-formed options JSON; verify path
    unit-tested against fixture assertions (full WebAuthn can't be driven
    by curl — use the library's test vectors)
-6. Public pages still ship zero JS; `php bin/audit-themes.php` 70/70
+6. Public pages still ship zero JS; `php bin/audit-themes.php` clean
 
 ## Implementation order
 

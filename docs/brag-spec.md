@@ -132,7 +132,7 @@ separate `pages` SleekDB collection (structural exclusion from feed/home/
 search/sitemap); public route renders the markdown through the active theme;
 admin editor at `/admin/profile` reuses the EasyMDE editor and the ContentLint
 gate with last-10 revisions; header nav link via `fn_profile_link` injected
-into all 70 themes; dashboard + settings edit links.
+into every theme; dashboard + settings edit links.
 
 Recommendation: build phase 1 with storage option (B); ship it as a calm
 personal page (default Off, on-tone labels), and leave directory coupling for
