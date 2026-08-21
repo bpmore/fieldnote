@@ -1,6 +1,6 @@
 /* embroidery — cross-stitch sampler: linen ground, thread colors, dotted stitch borders. */
 :root {
-    color-scheme: light;
+    color-scheme: light dark;
     --bg: #efe7d6; --surface: #efe7d6; --text: #3a2d22; --muted: #6b5742;
     --accent: #2f6e46; --accent-contrast: #efe7d6; --line: #8a7659; --focus: #2f6e46;
 }
@@ -11,7 +11,6 @@
     }
 }
 * { box-sizing: border-box; }
-html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.65;
     font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; }
 .col { max-width: 44rem; margin: 0 auto; padding: 1.5rem 1.4rem 5rem; }

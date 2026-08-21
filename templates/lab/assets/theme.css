@@ -1,6 +1,6 @@
 /* lab — engineering notebook: faint graph grid, ink-blue accents, clean sans. */
 :root {
-    color-scheme: light;
+    color-scheme: light dark;
     --bg: #fbfcf7; --surface: #fbfcf7; --text: #1b1d1a; --muted: #565950;
     --accent: #1565a0; --accent-contrast: #ffffff; --line: #3a3d36; --focus: #1565a0;
 }
@@ -11,7 +11,6 @@
     }
 }
 * { box-sizing: border-box; }
-html { color-scheme: light dark; }
 body { margin: 0; color: var(--text); line-height: 1.6;
     background-color: var(--bg);
     background-image: linear-gradient(color-mix(in srgb, var(--accent) 14%, transparent) 1px, transparent 1px),

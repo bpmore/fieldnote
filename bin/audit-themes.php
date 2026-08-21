@@ -106,8 +106,47 @@ foreach ($themes as $name => $dir) {
             }
         }
 
-        if (!preg_match('/color-scheme\s*:/', $css)) {
-            $problems[] = 'missing color-scheme declaration';
+        // color-scheme tells the UA how to render what the theme does not:
+        // form controls, scrollbars, the canvas behind the page. The old check
+        // here was dead — it grepped for "color-scheme:", which every
+        // "prefers-color-scheme:" media query already satisfies, and a theme
+        // with no :root declaration at all sailed past it.
+        //
+        // Read it out of the :root block only. `html { color-scheme: … }`
+        // does not override it: :root is a pseudo-class (0,1,0) and beats a
+        // type selector (0,0,1) whatever the source order, so a theme carrying
+        // both was quietly running whichever value sat in :root.
+        $declared = preg_match('/(?<!prefers-)color-scheme\s*:\s*([a-z ]+?)\s*[;}]/i', (string) $rootBody, $csMatch)
+            ? trim($csMatch[1])
+            : '';
+        if ($declared === '') {
+            $problems[] = 'no color-scheme in :root';
+        } elseif ($darkBody !== null && $lightBody === null && $declared !== 'light dark') {
+            // Light by default with a dark override: both schemes render.
+            $problems[] = "color-scheme is '$declared', expected 'light dark' (light theme with a dark override)";
+        } elseif ($lightBody !== null && $darkBody === null && !in_array($declared, ['dark light', 'dark'], true)) {
+            // Dark by default. 'dark light' when the override is a real light
+            // scheme; plain 'dark' when it is a variation that stays dark —
+            // six themes ship that deliberately, and claiming 'light' there
+            // would have the UA render light widgets on a dark page.
+            $problems[] = "color-scheme is '$declared', expected 'dark light' or 'dark' (dark theme)";
+        }
+        // CssTokens reads the FIRST prefers-color-scheme block and nothing else,
+        // so a second one defining tokens is invisible to the contrast pass above
+        // and to the admin preview. Counted on comment-stripped CSS and only
+        // where tokens are actually defined: a second block carrying ordinary
+        // rules is a README matter, not a hole in the gate.
+        $noComments = (string) preg_replace('#/\*.*?\*/#s', '', $css);
+        $tokenBlocks = 0;
+        if (preg_match_all('/@media\s*\(prefers-color-scheme:[^)]*\)\s*\{/', $noComments, $blockAt, PREG_OFFSET_CAPTURE)) {
+            foreach ($blockAt[0] as [$blockText, $blockOffset]) {
+                if (preg_match('/--[a-z0-9-]+\s*:\s*[^;]+;/i', substr($noComments, $blockOffset, 400))) {
+                    $tokenBlocks++;
+                }
+            }
+        }
+        if ($tokenBlocks > 1) {
+            $problems[] = "$tokenBlocks prefers-color-scheme blocks define tokens (only the first is read)";
         }
         if (preg_match('/outline\s*:\s*(none|0)\b/', $css)) {
             $problems[] = 'outline:none/0 found (kills focus visibility)';

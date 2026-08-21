@@ -1,6 +1,6 @@
 /* isotype — Neurath pictogram: flat blocks, heavy geometric sans, one strong blue. */
 :root {
-    color-scheme: light;
+    color-scheme: light dark;
     --bg: #f4f3ef; --surface: #f4f3ef; --text: #18181a; --muted: #545458;
     --accent: #1f3fd6; --accent-contrast: #ffffff; --line: #18181a; --focus: #1f3fd6;
 }
@@ -11,7 +11,6 @@
     }
 }
 * { box-sizing: border-box; }
-html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.55;
     font-family: "Futura", "Avenir Next", "Century Gothic", "Trebuchet MS", system-ui, sans-serif;
     font-weight: 500; }

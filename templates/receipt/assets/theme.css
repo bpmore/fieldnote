@@ -1,6 +1,6 @@
 /* receipt — thermal POS slip: narrow column, monospace, dashed rules. */
 :root {
-    color-scheme: light;
+    color-scheme: light dark;
     --bg: #ffffff; --surface: #ffffff; --text: #1a1a1a; --muted: #565656;
     --accent: #b00020; --accent-contrast: #ffffff; --line: #333333; --focus: #b00020;
 }
@@ -11,7 +11,6 @@
     }
 }
 * { box-sizing: border-box; }
-html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.6;
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 14px; }
 .col { max-width: 34rem; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }

@@ -1,6 +1,6 @@
 /* almanac — old reference book: warm cream, oxblood + ink, dense serif, double rules. */
 :root {
-    color-scheme: light;
+    color-scheme: light dark;
     --bg: #f3ecd8; --surface: #f3ecd8; --text: #2a2018; --muted: #685a43;
     --accent: #7c1d12; --accent-contrast: #f3ecd8; --line: #7a6a4c; --focus: #7c1d12;
 }
@@ -11,7 +11,6 @@
     }
 }
 * { box-sizing: border-box; }
-html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.6;
     font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif; }
 .col { max-width: 44rem; margin: 0 auto; padding: 1.5rem 1.5rem 4rem; }
