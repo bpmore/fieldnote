@@ -40,15 +40,33 @@ All colors live in CSS custom properties, declared in exactly two places:
 Decorative extras (`--shadow`, `--glow`, gradient stops) are fine but must
 be defined inside the token blocks too.
 
-Light-default themes: light values in `:root`, dark overrides in
-`@media (prefers-color-scheme: dark)`, and `color-scheme: light dark`.
-Dark-identity themes (terminal, noir, midnight, neon) invert: dark in
-`:root`, light overrides in `@media (prefers-color-scheme: light)`, and
-`color-scheme: dark light`.
+`color-scheme` in `:root` tells the browser how to render what the theme
+does not — form controls, scrollbars, the canvas behind the page. Three
+shapes are legal, and the auditor enforces the match:
+
+| Shape | `:root` | Override block | `color-scheme` |
+|---|---|---|---|
+| Light-default | light values | `prefers-color-scheme: dark` | `light dark` |
+| Dark-identity | dark values | `prefers-color-scheme: light` | `dark light` |
+| Dark-only | dark values | `prefers-color-scheme: light`, still dark | `dark` |
+
+The third is the one worth explaining. Six themes (blueprint, marquee,
+microfiche, observatory, tape, wayfinding) shift to a slightly lifted dark
+for readers who prefer light, rather than to an actual light scheme — their
+"light" backgrounds sit at 0.5–3% luminance. Declaring `dark light` there
+would tell the browser to draw light form controls on a dark page, so they
+declare `dark` and mean it.
+
+Put the declaration in `:root`, not `html`. `:root` is a pseudo-class and
+outranks a type selector whatever the source order, so a theme carrying both
+silently runs whichever value sits in `:root` — which is how nine themes came
+to advertise `light` while shipping a dark override.
 
 Keep every scheme difference inside the `:root` token blocks: the admin
 theme gallery forces a scheme by replaying the matching token block, so
-rules placed elsewhere in the media query won't flip in previews.
+rules placed elsewhere in the media query won't flip in previews. Only the
+first `prefers-color-scheme` block is read, so a second one defining tokens
+is invisible to both the preview and the contrast gate.
 
 Required tokens and the contrast matrix the auditor checks in both schemes:
 

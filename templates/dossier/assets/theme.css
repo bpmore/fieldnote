@@ -1,6 +1,6 @@
 /* dossier — manila file: buff stock, typewriter mono, ink black, redaction + stamp red. */
 :root {
-    color-scheme: light;
+    color-scheme: light dark;
     --bg: #e7ddc4; --surface: #e7ddc4; --text: #211f1a; --muted: #5b5446;
     --accent: #8a1c1c; --accent-contrast: #e7ddc4; --line: #6b6354; --focus: #8a1c1c;
 }
@@ -11,7 +11,6 @@
     }
 }
 * { box-sizing: border-box; }
-html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.65;
     font-family: "Courier New", "Courier Prime", ui-monospace, Menlo, monospace; }
 .col { max-width: 44rem; margin: 0 auto; padding: 1.5rem 1.4rem 5rem; }

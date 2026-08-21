@@ -1,6 +1,6 @@
 /* cairn — stacked stone: warm stone ground, charcoal type, generous air, thin lines. */
 :root {
-    color-scheme: light;
+    color-scheme: light dark;
     --bg: #e8e6e1; --surface: #e8e6e1; --text: #2b2a27; --muted: #5d5b55;
     --accent: #5e564a; --accent-contrast: #e8e6e1; --line: #6f6a5f; --focus: #5e564a;
 }
@@ -11,7 +11,6 @@
     }
 }
 * { box-sizing: border-box; }
-html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.8;
     font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; }
 .col { max-width: 40rem; margin: 0 auto; padding: 4rem 1.5rem 6rem; }

@@ -1,6 +1,6 @@
 /* telegram — wire copy: pale stock, uppercase monospace, postal red, STOP rules. */
 :root {
-    color-scheme: light;
+    color-scheme: light dark;
     --bg: #efeae0; --surface: #efeae0; --text: #201d17; --muted: #5e5848;
     --accent: #99281b; --accent-contrast: #efeae0; --line: #6f6856; --focus: #99281b;
 }
@@ -11,7 +11,6 @@
     }
 }
 * { box-sizing: border-box; }
-html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.7;
     font-family: ui-monospace, "Courier New", Menlo, monospace; }
 .col { max-width: 42rem; margin: 0 auto; padding: 1.5rem 1.25rem 5rem; }
