@@ -23,6 +23,26 @@ final class Federation
         $this->dir = rtrim($dataDir, '/') . '/activitypub';
     }
 
+    /**
+     * The actor's key id. The '#main-key' fragment was written out at the
+     * signing site here and in the actor document, and undone by a strtok in
+     * the verifier — three copies of one format decision across two files.
+     */
+    public function keyId(): string
+    {
+        return $this->actorUrl . '#main-key';
+    }
+
+    /**
+     * The actor a keyId belongs to. The inverse of keyId(), kept beside it so
+     * the two cannot drift. A keyId with no fragment is its own owner.
+     */
+    public static function ownerOfKeyId(string $keyId): string
+    {
+        $hash = strpos($keyId, '#');
+        return $hash === false ? $keyId : substr($keyId, 0, $hash);
+    }
+
     // ---------------------------------------------------------------- keys --
 
     /** @return array{private:string,public:string} generated on first use */
@@ -102,7 +122,7 @@ final class Federation
         }
 
         openssl_sign($signing, $signature, $this->keys()['private'], OPENSSL_ALGO_SHA256);
-        $headers[] = 'Signature: keyId="' . $this->actorUrl . '#main-key",algorithm="rsa-sha256"'
+        $headers[] = 'Signature: keyId="' . $this->keyId() . '",algorithm="rsa-sha256"'
             . ',headers="' . $signed . '",signature="' . base64_encode($signature) . '"';
         return $headers;
     }
@@ -173,19 +193,26 @@ final class Federation
 
         // Key confusion guard: the key must belong to the actor the
         // activity claims to be from.
-        $keyOwner = strtok($params['keyid'], '#');
+        $keyOwner = self::ownerOfKeyId((string) $params['keyid']);
         if ($keyOwner !== $activity['actor']) {
             return null;
         }
 
         // Verify against the cached actor key; one fresh refetch on failure
         // covers key rotation.
-        foreach ([false, true] as $fresh) {
-            $actor = $this->fetchActor($keyOwner, $fresh);
-            $pem   = (string) ($actor['publicKey']['publicKeyPem'] ?? '');
-            if ($pem !== '' && openssl_verify($signingString, $signature, $pem, OPENSSL_ALGO_SHA256) === 1) {
-                return $activity;
-            }
+        // Try the cached key, then at most one fresh fetch — which is what
+        // "one refetch covers key rotation" was always meant to mean. The old
+        // [false, true] loop asked fetchActor twice without ever learning
+        // whether the first answer came from cache, so a cold cache produced
+        // two identical network requests milliseconds apart, each up to the
+        // SafeHttp timeout, against a host named by the request body.
+        $cached = $this->cachedActor($keyOwner);
+        if ($cached !== null && self::verifiedBy($cached, $signingString, $signature)) {
+            return $activity;
+        }
+        $fresh = $this->fetchActor($keyOwner, true);
+        if ($fresh !== null && self::verifiedBy($fresh, $signingString, $signature)) {
+            return $activity;
         }
         return null;
     }
@@ -198,12 +225,29 @@ final class Federation
      *
      * @return array<string,mixed>|null
      */
+    /** A live cached actor document, or null when there is no usable one. */
+    private function cachedActor(string $id): ?array
+    {
+        $cacheFile = $this->dir . '/actors/' . sha1($id) . '.json';
+        if (!is_file($cacheFile) || time() - (int) filemtime($cacheFile) >= self::ACTOR_CACHE_TTL) {
+            return null;
+        }
+        $cached = json_decode((string) file_get_contents($cacheFile), true);
+        return is_array($cached) ? $cached : null;
+    }
+
+    /** Does this actor document's key verify the signature? */
+    private static function verifiedBy(array $actor, string $signingString, string $signature): bool
+    {
+        $pem = (string) ($actor['publicKey']['publicKeyPem'] ?? '');
+        return $pem !== '' && openssl_verify($signingString, $signature, $pem, OPENSSL_ALGO_SHA256) === 1;
+    }
     public function fetchActor(string $id, bool $fresh = false): ?array
     {
         $cacheFile = $this->dir . '/actors/' . sha1($id) . '.json';
-        if (!$fresh && is_file($cacheFile) && time() - (int) filemtime($cacheFile) < self::ACTOR_CACHE_TTL) {
-            $cached = json_decode((string) file_get_contents($cacheFile), true);
-            if (is_array($cached)) {
+        if (!$fresh) {
+            $cached = $this->cachedActor($id);
+            if ($cached !== null) {
                 return $cached;
             }
         }

@@ -1302,30 +1302,41 @@ $router->map('POST', '/admin/themes/apply', function () use ($requireConfig, $re
 // ---------------------------------------------------------------------------
 
 $fnApBase    = rtrim((string) $siteConfig['domain'], '/') ?: fn_request_base();
-$fnActorUrl  = $fnApBase . '/ap/actor';
+// One builder for every actor URL, so basePath lands on all of them or
+// none. 'url' below already used $router->generate() while id, inbox,
+// outbox and followers concatenated a literal path — so under a non-empty
+// basePath the actor advertised an id and an inbox that 404, and follows
+// were dropped, because the inbox compares a Follow's object against this
+// value. Built from basePath rather than generate() because these are
+// needed before the AP routes are registered; the CSRF exemption in the
+// dispatch block already derives /ap/inbox the same way.
+$fnApPath    = static fn (string $path): string => rtrim((string) $siteConfig['basePath'], '/') . $path;
+$fnActorUrl  = $fnApBase . $fnApPath('/ap/actor');
 $fnApHandle  = (string) ($siteConfig['apHandle'] ?: 'blog');
 $fnFedOn     = !empty($siteConfig['federationEnabled']);
 $federation  = new Federation(FN_DATA_DIR, $fnActorUrl);
+// One acct: string, built where the host is already known. The webfinger
+// route used to re-parse it out of the base it had just been handed.
+$fnApHost    = (string) parse_url($fnApBase, PHP_URL_HOST)
+    . (parse_url($fnApBase, PHP_URL_PORT) ? ':' . parse_url($fnApBase, PHP_URL_PORT) : '');
+$fnApAcct    = "acct:$fnApHandle@$fnApHost";
 
-$router->map('GET', '/.well-known/webfinger', function () use ($fnFedOn, $fnApBase, $fnActorUrl, $fnApHandle, $notFound) {
+$router->map('GET', '/.well-known/webfinger', function () use ($fnFedOn, $fnApAcct, $fnActorUrl, $notFound) {
     if (!$fnFedOn) {
         $notFound();
     }
-    $host = (string) parse_url($fnApBase, PHP_URL_HOST)
-        . (parse_url($fnApBase, PHP_URL_PORT) ? ':' . parse_url($fnApBase, PHP_URL_PORT) : '');
-    $acct = "acct:$fnApHandle@$host";
-    if (!in_array((string) ($_GET['resource'] ?? ''), [$acct, $fnActorUrl], true)) {
+    if (!in_array((string) ($_GET['resource'] ?? ''), [$fnApAcct, $fnActorUrl], true)) {
         $notFound();
     }
     header('Content-Type: application/jrd+json');
     echo json_encode([
-        'subject' => $acct,
+        'subject' => $fnApAcct,
         'links'   => [['rel' => 'self', 'type' => 'application/activity+json', 'href' => $fnActorUrl]],
     ], JSON_UNESCAPED_SLASHES);
     exit;
 }, 'webfinger');
 
-$router->map('GET', '/ap/actor', function () use ($fnFedOn, $siteConfig, $federation, $fnApBase, $fnActorUrl, $fnApHandle, $router, $notFound) {
+$router->map('GET', '/ap/actor', function () use ($fnFedOn, $siteConfig, $federation, $fnApBase, $fnApPath, $fnActorUrl, $fnApHandle, $router, $notFound) {
     if (!$fnFedOn) {
         $notFound();
     }
@@ -1337,12 +1348,12 @@ $router->map('GET', '/ap/actor', function () use ($fnFedOn, $siteConfig, $federa
         'name'              => $siteConfig['name'] !== '' ? (string) $siteConfig['name'] : 'Fieldnote',
         'summary'           => (string) $siteConfig['info'],
         'url'               => $fnApBase . $router->generate('home'),
-        'inbox'             => $fnApBase . '/ap/inbox',
-        'outbox'            => $fnApBase . '/ap/outbox',
-        'followers'         => $fnApBase . '/ap/followers',
+        'inbox'             => $fnApBase . $fnApPath('/ap/inbox'),
+        'outbox'            => $fnApBase . $fnApPath('/ap/outbox'),
+        'followers'         => $fnApBase . $fnApPath('/ap/followers'),
         'manuallyApprovesFollowers' => false,
         'publicKey' => [
-            'id'           => $fnActorUrl . '#main-key',
+            'id'           => $federation->keyId(),
             'owner'        => $fnActorUrl,
             'publicKeyPem' => $federation->keys()['public'],
         ],
@@ -1741,7 +1752,7 @@ $router->map('GET', '/dashboard', function () use ($requireConfig, $requireAuth,
 // on purpose: with federation off the handler itself answers 404.
 $fnIsApInbox = ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST'
     && (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH)
-        === rtrim((string) $siteConfig['basePath'], '/') . '/ap/inbox';
+        === $fnApPath('/ap/inbox');
 
 // A FORM post whose body exceeded post_max_size reaches PHP with $_POST and
 // $_FILES completely empty. Without this check the user would get a baffling
