@@ -693,6 +693,29 @@ check('actor document is well-formed', $s === 200
     && str_contains((string) ($actor['publicKey']['publicKeyPem'] ?? ''), 'BEGIN PUBLIC KEY')
     && str_contains($h['content-type'] ?? '', 'activity+json'), "status $s");
 
+// Every URL in the document has to agree with the one the actor is published
+// at. They were built two different ways — 'url' through the router, the rest
+// by concatenating a literal path — so under a non-empty basePath the actor
+// advertised an id and an inbox that 404, and follows were dropped because the
+// inbox compares a Follow's object against the id.
+check(
+    'the actor agrees with itself about where it lives',
+    ($actor['id'] ?? '') === "$base/ap/actor"
+        && ($actor['inbox'] ?? '') === "$base/ap/inbox"
+        && ($actor['outbox'] ?? '') === "$base/ap/outbox"
+        && ($actor['followers'] ?? '') === "$base/ap/followers"
+        && ($actor['publicKey']['owner'] ?? '') === "$base/ap/actor"
+        && ($actor['publicKey']['id'] ?? '') === "$base/ap/actor#main-key",
+    'id ' . ($actor['id'] ?? '?') . ', inbox ' . ($actor['inbox'] ?? '?') . ', key ' . ($actor['publicKey']['id'] ?? '?')
+);
+// And webfinger has to point at that same id, or a remote server looking the
+// handle up never reaches the actor at all.
+check(
+    'webfinger points at the actor id',
+    ($json['links'][0]['href'] ?? '') === ($actor['id'] ?? 'x'),
+    'webfinger ' . ($json['links'][0]['href'] ?? '?') . ' vs id ' . ($actor['id'] ?? '?')
+);
+
 [$s] = req('POST', "$base/ap/inbox", [
     'headers' => ['Content-Type: application/activity+json'],
     'body'    => json_encode(['type' => 'Follow', 'actor' => 'https://elsewhere.example/u/x', 'object' => "$base/ap/actor"]),
