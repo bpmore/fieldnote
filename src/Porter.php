@@ -230,6 +230,50 @@ final class Porter
     //               markdown?, featuredImageUrl?, source?}
 
     /**
+     * Read one converter entry into the fields both passes need.
+     *
+     * The contract used to be this comment and nothing else, re-read by each
+     * pass with its own defaults: the dry run showed a missing title as blank
+     * while the import titled the post with its slug. Tags were read as
+     * fn_parse_tags() on the markdown path and a bare (array) cast here, so
+     * "a, b" arrived as one tag named "a, b" on one route and two tags on the
+     * other. Neither divergence was visible from either side alone.
+     *
+     * @param  array<string,mixed> $entry
+     * @return array{slug:string, title:string, author:string, date:int, tags:list<string>, markdown:string, image:string, source:string}
+     */
+    private function readEntry(array $entry): array
+    {
+        $slug = $this->entrySlug($entry);
+        $tags = $entry['tags'] ?? [];
+        // A converter may hand tags over as a list or as one comma string.
+        $tags = is_string($tags) ? fn_parse_tags($tags) : (array) $tags;
+
+        $image = (string) ($entry['featuredImageUrl'] ?? '');
+        // Only absolute http(s) URLs are fetchable. Three of the ten importers
+        // checked this for themselves and two did not; SafeHttp rejects the
+        // rest anyway, but rejecting here means the dry run and the import
+        // agree about whether an entry has an image at all.
+        if ($image !== '' && !preg_match('#^https?://#i', $image)) {
+            $image = '';
+        }
+
+        return [
+            'slug'     => $slug,
+            'title'    => ((string) ($entry['title'] ?? '')) !== '' ? (string) $entry['title'] : $slug,
+            'author'   => (string) ($entry['author'] ?? ''),
+            'date'     => (int) ($entry['date'] ?? time()),
+            'tags'     => array_slice(array_values(array_unique(array_map(
+                static fn ($t): string => fn_slugify((string) $t),
+                $tags
+            ))), 0, 8),
+            'markdown' => $this->entryMarkdown($entry),
+            'image'    => $image,
+            'source'   => (string) ($entry['source'] ?? $entry['title'] ?? $slug),
+        ];
+    }
+
+    /**
      * Dry-run for converter entries: title/slug/collision plus a per-post
      * accessibility report (run on the converted Markdown), nothing written.
      *
@@ -240,15 +284,15 @@ final class Porter
     {
         $posts = [];
         foreach (array_slice($entries, 0, self::MAX_ENTRIES) as $e) {
-            $slug = $this->entrySlug($e);
+            $entry = $this->readEntry($e);
             $posts[] = [
-                'file'      => (string) ($e['source'] ?? $e['title'] ?? $slug),
-                'title'     => (string) ($e['title'] ?? ''),
-                'slug'      => $slug,
+                'file'      => $entry['source'],
+                'title'     => $entry['title'],
+                'slug'      => $entry['slug'],
                 'draft'     => true, // imports always land as drafts
-                'collision' => $this->blogStore->findOneBy(['slug', '=', $slug]) !== null,
-                'image'     => (string) ($e['featuredImageUrl'] ?? ''),
-                'a11y'      => ContentLint::check($this->entryMarkdown($e)),
+                'collision' => $this->blogStore->findOneBy(['slug', '=', $entry['slug']]) !== null,
+                'image'     => $entry['image'],
+                'a11y'      => ContentLint::check($entry['markdown']),
             ];
         }
         return ['posts' => $posts, 'errors' => $posts === [] ? ['Nothing importable found.'] : []];
@@ -268,41 +312,38 @@ final class Porter
         $created = $skipped = $images = 0;
         $errors  = [];
         foreach (array_slice($entries, 0, self::MAX_ENTRIES) as $e) {
-            $slug = $this->entrySlug($e);
-            if ($this->blogStore->findOneBy(['slug', '=', $slug]) !== null) {
+            $entry = $this->readEntry($e);
+            if ($this->blogStore->findOneBy(['slug', '=', $entry['slug']]) !== null) {
                 $skipped++;
                 continue;
             }
-            [$body, $inlined] = $this->localizeInlineImages($this->entryMarkdown($e));
+            // Inline images are localized on the write pass only, so the dry
+            // run's accessibility report reads the same markdown the writer
+            // pasted rather than one with rewritten image URLs.
+            [$body, $inlined] = $this->localizeInlineImages($entry['markdown']);
             $images += $inlined;
 
-            $tags = array_slice(array_values(array_unique(array_map(
-                static fn ($t): string => fn_slugify((string) $t),
-                (array) ($e['tags'] ?? [])
-            ))), 0, 8);
-
             $record = [
-                'title'        => (string) ($e['title'] ?? $slug),
-                'slug'         => $slug,
-                'date'         => (int) ($e['date'] ?? time()),
+                'title'        => $entry['title'],
+                'slug'         => $entry['slug'],
+                'date'         => $entry['date'],
                 'publishedAt'  => 0,
                 'draft'        => true,
-                'author'       => ((string) ($e['author'] ?? '')) !== '' ? (string) $e['author'] : (string) ($siteConfig['author'] ?? ''),
-                'tags'         => $tags,
+                'author'       => $entry['author'] !== '' ? $entry['author'] : (string) ($siteConfig['author'] ?? ''),
+                'tags'         => $entry['tags'],
                 'content'      => $body,
                 'password'     => '',
                 'scheduledFor' => 0,
             ];
 
-            $featured = (string) ($e['featuredImageUrl'] ?? '');
-            if ($featured !== '') {
-                $stored = $this->images->storeFromUrl($featured);
+            if ($entry['image'] !== '') {
+                $stored = $this->images->storeFromUrl($entry['image']);
                 if ($stored !== null) {
                     $rec = $this->imageStore->insert(['url' => $stored[0], 'path' => $stored[1]]);
                     $record['image'] = $rec['_id'];
                     $images++;
                 } else {
-                    $errors[] = ($e['title'] ?? $slug) . ': featured image could not be fetched';
+                    $errors[] = $entry['title'] . ': featured image could not be fetched';
                 }
             }
 

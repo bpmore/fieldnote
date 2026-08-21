@@ -71,6 +71,6 @@ final class WriteFreelyImporter
     private static function hashtags(string $body): array
     {
         preg_match_all('/(?:^|\s)#([a-z0-9][a-z0-9_-]{1,30})\b/i', $body, $m);
-        return array_values(array_unique(array_slice($m[1] ?? [], 0, 8)));
+        return $m[1] ?? [];
     }
 }

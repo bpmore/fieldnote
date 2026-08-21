@@ -68,12 +68,13 @@ final class HashnodeImporter
                 'title'    => $title !== '' ? $title : ($slug !== '' ? $slug : 'post'),
                 'slug'     => $slug !== '' ? $slug : $title,
                 'date'     => ($date !== '' ? strtotime($date) : false) ?: time(),
-                'tags'     => array_slice(array_values(array_unique($tags)), 0, 8),
+                'tags'     => $tags,
                 'author'   => trim((string) ($p['author']['name'] ?? '')),
                 'markdown' => trim($body),
                 'source'   => $title !== '' ? $title : ($slug !== '' ? $slug : 'post'),
             ];
-            if ($cover !== '' && preg_match('#^https?://#i', $cover)) {
+            // Porter::readEntry applies the http(s) rule to every importer.
+            if ($cover !== '') {
                 $entry['featuredImageUrl'] = $cover;
             }
             $entries[] = $entry;
