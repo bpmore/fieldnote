@@ -341,6 +341,25 @@ check('search box hidden when search is disabled', !str_contains($b, 'role="sear
 check('disabled search route 404s', $s === 404, "status $s");
 fn_smoke_write_cfg($cfgFile, $config);
 
+// With both bar items switched off the wrapper must not render at all. An
+// empty labelled landmark is its own accessibility failure, and nothing
+// asserted its absence — which is how the wrapper came to decide on config
+// rather than on whether it had anything to put inside.
+$patchCfgEarly = static function (array $over) use ($tmp): void {
+    $path = $tmp . '/data/config.php';
+    fn_smoke_write_cfg($path, array_merge((array) (require $path), $over));
+};
+$patchCfgEarly(['profilePage' => 'off', 'searchEnabled' => false]);
+[, , $b] = req('GET', "$base/");
+check(
+    'the utility bar is absent when it would be empty',
+    !str_contains($b, 'fn-utility'),
+    'empty landmark rendered'
+);
+$patchCfgEarly(['searchEnabled' => true]);
+[, , $b] = req('GET', "$base/");
+check('the utility bar returns when one item is enabled', str_contains($b, 'fn-utility-inner') && str_contains($b, 'search-form'));
+
 // --------------------------------------------------------- profile page --
 [$s] = req('GET', "$base/about");
 check('profile route 404s when off', $s === 404, "status $s");
