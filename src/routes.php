@@ -104,7 +104,6 @@ $router->map('GET', '/[i:page]', function ($page) use ($requireConfig, $siteConf
     if ($page > $numPages) {
         $notFound();
     }
-    $limit = $postsPerPage;
     $skip  = ($page - 1) * $postsPerPage;
     $allPosts = array_map(
         fn ($p) => fn_with_image($p, $imageStore),
@@ -547,7 +546,6 @@ $router->map('GET', '/search', function () use ($requireConfig, $siteConfig, $bl
     $allPosts = array_map(fn ($r) => fn_with_image($r['post'], $imageStore), $results);
     $page      = 1;
     $numPages  = 1;
-    $limit     = count($allPosts);
     // Drives fn_search_status() in the theme's home.php — set only here, so the
     // status line never appears on the homepage or tag pages.
     $searchQuery = $q !== '' ? $q : null;
@@ -570,7 +568,6 @@ $router->map('GET', '/tag/[:tag]', function ($tag) use ($requireConfig, $siteCon
     $allPosts = array_map(fn ($p) => fn_with_image($p, $imageStore), array_slice($matching, 0, 50));
     $page     = 1;
     $numPages = 1; // fn_pagination renders nothing for a single page
-    $limit    = count($allPosts);
     $pageTitle = 'Tagged: ' . $tag;
     require fn_template_dir(fn_effective_template($siteConfig)) . '/home.php';
 }, 'tag');

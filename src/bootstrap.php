@@ -55,7 +55,7 @@ $pagesStore = new Store('pages', FN_DB_DIR, $dbOptions);
 // One-time migration: give pre-3.1 posts a URL slug. Marker file keeps this
 // from scanning the store on every request.
 $slugMarker = FN_DATA_DIR . '/.slugs-v1';
-if (!is_file($slugMarker) && is_dir(FN_DB_DIR . '/blog')) {
+if (!is_file($slugMarker)) {
     foreach ($blogStore->findAll() as $existingPost) {
         if (empty($existingPost['slug'])) {
             $blogStore->updateById(
@@ -70,7 +70,7 @@ if (!is_file($slugMarker) && is_dir(FN_DB_DIR . '/blog')) {
 // One-time migration: posts published before publishedAt existed keep their
 // current date as the publish date, so hide/re-publish never moves their URL.
 $pubMarker = FN_DATA_DIR . '/.pubdate-v1';
-if (!is_file($pubMarker) && is_dir(FN_DB_DIR . '/blog')) {
+if (!is_file($pubMarker)) {
     foreach ($blogStore->findBy(['draft', '=', false]) as $existingPost) {
         if (empty($existingPost['publishedAt'])) {
             $blogStore->updateById(
@@ -87,7 +87,7 @@ if (!is_file($pubMarker) && is_dir(FN_DB_DIR . '/blog')) {
 // file caps the draft scan at once per minute; everything between scans is
 // a single stat() call.
 $schedMarker = FN_DATA_DIR . '/.schedule-check';
-if ((!is_file($schedMarker) || (int) filemtime($schedMarker) < time() - 60) && is_dir(FN_DB_DIR . '/blog')) {
+if (!is_file($schedMarker) || (int) filemtime($schedMarker) < time() - 60) {
     @touch($schedMarker);
     foreach ($blogStore->findBy(['draft', '=', true]) as $scheduledPost) {
         $at = (int) ($scheduledPost['scheduledFor'] ?? 0);
@@ -118,7 +118,7 @@ if ((!is_file($schedMarker) || (int) filemtime($schedMarker) < time() - 60) && i
 // image. Re-store both relative: URL relative to the site root, path
 // relative to public/uploads/.
 $imgMarker = FN_DATA_DIR . '/.imgrel-v1';
-if (!is_file($imgMarker) && is_dir(FN_DB_DIR . '/images')) {
+if (!is_file($imgMarker)) {
     foreach ($imageStore->findAll() as $imageRecord) {
         $update = [];
         $url = (string) ($imageRecord['url'] ?? '');
@@ -322,15 +322,20 @@ function fn_search_status(?string $query, int $count): void
  */
 function fn_utility_bar(\AltoRouter $router, array $siteConfig): void
 {
-    $hasProfile = in_array((string) ($siteConfig['profilePage'] ?? 'off'), Config::PROFILE_SLUGS, true);
-    $hasSearch  = !empty($siteConfig['searchEnabled']);
-    if (!$hasProfile && !$hasSearch) {
+    // Ask the children rather than re-deriving their conditions here. The
+    // wrapper used to hard-code which items exist, so adding a third would
+    // have been silently suppressed whenever the first two were off — and
+    // extending the guard without the body would emit an empty labelled
+    // landmark, which is its own accessibility failure. fn_social_links
+    // already works this way.
+    $inner = fn_profile_link_html($router, $siteConfig)
+        . fn_search_form_html($router, $siteConfig, (string) ($_GET['q'] ?? ''));
+    if ($inner === '') {
         return;
     }
-    echo '<nav class="fn-utility" aria-label="Site">' . "\n" . '<div class="fn-utility-inner">' . "\n";
-    fn_profile_link($router, $siteConfig);
-    fn_search_form($router, $siteConfig, (string) ($_GET['q'] ?? ''));
-    echo '</div>' . "\n" . '</nav>' . "\n";
+    echo '<nav class="fn-utility" aria-label="Site">' . "\n" . '<div class="fn-utility-inner">' . "\n"
+        . $inner
+        . '</div>' . "\n" . '</nav>' . "\n";
 }
 
 /**
@@ -340,20 +345,32 @@ function fn_utility_bar(\AltoRouter $router, array $siteConfig): void
  */
 function fn_profile_link(\AltoRouter $router, array $siteConfig): void
 {
+    echo fn_profile_link_html($router, $siteConfig);
+}
+
+/** The markup, so the utility bar can ask whether there is any. */
+function fn_profile_link_html(\AltoRouter $router, array $siteConfig): string
+{
     $slug = (string) ($siteConfig['profilePage'] ?? 'off');
     if (!in_array($slug, Config::PROFILE_SLUGS, true)) {
-        return;
+        return '';
     }
-    echo '<a class="profile-link" href="' . e($router->generate('profilePage')) . '">'
+    return '<a class="profile-link" href="' . e($router->generate('profilePage')) . '">'
         . e(ucfirst($slug)) . '</a>' . "\n";
 }
 
 function fn_search_form(\AltoRouter $router, array $siteConfig, string $value = ''): void
 {
+    echo fn_search_form_html($router, $siteConfig, $value);
+}
+
+/** The markup, so the utility bar can ask whether there is any. */
+function fn_search_form_html(\AltoRouter $router, array $siteConfig, string $value = ''): string
+{
     if (empty($siteConfig['searchEnabled'])) {
-        return;
+        return '';
     }
-    echo '<form role="search" method="get" action="' . e($router->generate('search')) . '" class="search-form">' . "\n"
+    return '<form role="search" method="get" action="' . e($router->generate('search')) . '" class="search-form">' . "\n"
         . '<label class="sr-only" for="fn-search-q">Search</label>' . "\n"
         . '<input type="search" id="fn-search-q" name="q" value="' . e($value) . '" placeholder="Search&hellip;">' . "\n"
         . '<button type="submit">Search</button>' . "\n"
@@ -817,7 +834,6 @@ function fn_render_home(
     int $numPages
 ): void {
     $page  = 1;
-    $limit = $postsPerPage;
     $allPosts = array_map(
         fn ($p) => fn_with_image($p, $imageStore),
         $blogStore->findBy(['draft', '=', false], ['date' => 'desc'], $postsPerPage)
