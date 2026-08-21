@@ -88,7 +88,13 @@ final class Wcag
             $fg = self::parseColor($tokens[$fgTok]);
             $bg = self::parseColor($tokens[$bgTok]);
             if ($fg === null || $bg === null) {
-                $failures[] = ['fg' => $fgTok, 'bg' => $bgTok, 'ratio' => 0.0, 'min' => $min];
+                // Not a contrast failure, so it does not get reported as one.
+                // This used to push ratio => 0.0 -- a value contrast cannot
+                // take, since real ratios are 1 to 21 -- which the palette
+                // editor then rendered to the writer as "is 0.00:1, needs
+                // 4.5:1". Unreachable there anyway: every value it passes in
+                // is a validated #rrggbb. Callers that accept arbitrary CSS
+                // check parseColor themselves; bin/audit-themes.php does.
                 continue;
             }
             $ratio = self::contrast($fg, $bg);

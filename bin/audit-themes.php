@@ -74,13 +74,11 @@ foreach ($themes as $name => $dir) {
         } elseif ($darkBody === null && $lightBody === null) {
             $problems[] = 'no prefers-color-scheme block (need a second scheme)';
         } else {
-            // Default polarity: :root + dark override. Dark-default themes:
-            // :root + light override.
-            $override = CssTokens::extractTokens((string) ($darkBody ?? $lightBody));
-            $schemes = [
-                'default' => $light,
-                ($darkBody !== null ? 'dark' : 'light') => array_merge($light, $override),
-            ];
+            // Same resolution the palette editor uses. Labels stay light/dark
+            // rather than the old default/dark-or-light, which named :root
+            // "default" even on a dark theme and made a failure message read
+            // as the opposite scheme to the one that failed.
+            $schemes = CssTokens::schemeTokens($css) ?? ['light' => $light, 'dark' => $light];
 
             foreach ($schemes as $schemeName => $tokens) {
                 foreach (REQUIRED_TOKENS as $tok) {
