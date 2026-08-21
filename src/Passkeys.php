@@ -24,62 +24,78 @@ final class Passkeys
         return $this->list() !== [];
     }
 
-    /** @return list<array{id:string,publicKey:string,signCount:int,label:string,createdAt:int}> */
-    public function list(): array
+    /**
+     * Credentials keyed by id, which is what the id actually is: the primary
+     * key. Three methods used to walk the list looking for it, each re-reading
+     * and re-parsing the file, and each with its own idea of what "the
+     * credential with this id" meant when two shared one — find() took the
+     * first, updateSignCount() updated the first, remove() deleted both. add()
+     * appended unconditionally, so reaching that state took nothing more than
+     * registering the same authenticator twice.
+     *
+     * @return array<string, array{id:string,publicKey:string,signCount:int,label:string,createdAt:int}>
+     */
+    private function all(): array
     {
         if (!is_file($this->file)) {
             return [];
         }
-        $data = json_decode((string) file_get_contents($this->file), true);
-        return array_values((array) ($data['credentials'] ?? []));
+        $data  = json_decode((string) file_get_contents($this->file), true);
+        $keyed = [];
+        foreach ((array) ($data['credentials'] ?? []) as $credential) {
+            // Tolerate a hand-edited file the way the old scan did: a record
+            // with no usable id is skipped rather than fatal.
+            if (is_array($credential) && is_string($credential['id'] ?? null) && $credential['id'] !== '') {
+                $keyed[$credential['id']] = $credential;
+            }
+        }
+        return $keyed;
+    }
+
+    /** @return list<array{id:string,publicKey:string,signCount:int,label:string,createdAt:int}> */
+    public function list(): array
+    {
+        // Insertion order preserved, so the settings page renders unchanged.
+        return array_values($this->all());
     }
 
     /** @return array{id:string,publicKey:string,signCount:int,label:string,createdAt:int}|null */
     public function find(string $id): ?array
     {
-        foreach ($this->list() as $credential) {
-            if (hash_equals((string) $credential['id'], $id)) {
-                return $credential;
-            }
-        }
-        return null;
+        return $this->all()[$id] ?? null;
     }
 
     public function add(string $id, string $publicKeyPem, int $signCount, string $label): bool
     {
-        $credentials   = $this->list();
-        $credentials[] = [
+        $credentials      = $this->all();
+        $credentials[$id] = [
             'id'        => $id,
             'publicKey' => $publicKeyPem,
             'signCount' => $signCount,
             'label'     => $label !== '' ? $label : 'Passkey',
             'createdAt' => time(),
         ];
-        return $this->save($credentials);
+        return $this->save(array_values($credentials));
     }
 
     public function remove(string $id): bool
     {
-        $kept = array_values(array_filter(
-            $this->list(),
-            static fn (array $c): bool => !hash_equals((string) $c['id'], $id)
-        ));
-        if ($kept === []) {
+        $credentials = $this->all();
+        unset($credentials[$id]);
+        if ($credentials === []) {
             return !is_file($this->file) || unlink($this->file);
         }
-        return $this->save($kept);
+        return $this->save(array_values($credentials));
     }
 
     public function updateSignCount(string $id, int $count): bool
     {
-        $credentials = $this->list();
-        foreach ($credentials as $i => $credential) {
-            if (hash_equals((string) $credential['id'], $id)) {
-                $credentials[$i]['signCount'] = $count;
-                return $this->save($credentials);
-            }
+        $credentials = $this->all();
+        if (!isset($credentials[$id])) {
+            return false;
         }
-        return false;
+        $credentials[$id]['signCount'] = $count;
+        return $this->save(array_values($credentials));
     }
 
     public static function b64uEncode(string $binary): string

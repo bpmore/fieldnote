@@ -256,10 +256,33 @@ final class Security
         self::$sessionEpoch = $epoch;
     }
 
-    /** Stamp this session as belonging to the current epoch (call at login). */
-    public static function stampSessionEpoch(): void
+    /**
+     * Mark this session authenticated. The flag and the epoch stamp are one
+     * fact and are written together: a session carrying the flag without the
+     * stamp is logged out the moment an epoch exists, or — on a pre-epoch
+     * install, where isAuthenticated() short-circuits — authenticated
+     * indefinitely. Four call sites used to spell this out in four different
+     * orders, and none of them owned the flag: it was written from the routes
+     * while the check lived here.
+     */
+    public static function completeLogin(string $dataDir): void
     {
-        $_SESSION['sessionEpoch'] = self::$sessionEpoch;
+        self::regenerate();
+        self::clearLoginFailures($dataDir);
+        $_SESSION['isAuthenticated'] = true;
+        $_SESSION['sessionEpoch']    = self::$sessionEpoch;
+    }
+
+    /**
+     * Move to a new epoch and keep the current session with it. Every other
+     * session dies, which is what a password change is for. The two halves
+     * have to happen together: stamping before the epoch moves records the
+     * OLD one and logs the admin out of their own password change.
+     */
+    public static function rotateEpoch(string $epoch): void
+    {
+        self::$sessionEpoch       = $epoch;
+        $_SESSION['sessionEpoch'] = $epoch;
     }
 
     /**

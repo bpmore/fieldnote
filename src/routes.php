@@ -950,12 +950,12 @@ $router->map('GET|POST', '/settings', function () use ($configStore, $siteConfig
         }
         // First-run setup: the visitor just chose the admin password, so log
         // them straight in instead of bouncing them to the login form.
+        // The epoch moves on every save that rotates the password; the login
+        // only happens on first run, where the visitor just chose it.
+        Security::rotateEpoch($sessionEpoch);
         if ($firstRun) {
-            Security::regenerate();
-            $_SESSION['isAuthenticated'] = true;
+            Security::completeLogin(FN_DATA_DIR);
         }
-        Security::setSessionEpoch($sessionEpoch);
-        Security::stampSessionEpoch();
         $redirect('dashboard');
     }
 
@@ -994,9 +994,7 @@ $router->map('GET|POST', '/login', function () use ($configStore, $siteConfig, $
                 $_SESSION['pending_2fa'] = time();
                 $redirect('loginVerify');
             }
-            Security::clearLoginFailures(FN_DATA_DIR);
-            $_SESSION['isAuthenticated'] = true;
-            Security::stampSessionEpoch();
+            Security::completeLogin(FN_DATA_DIR);
             $redirect('dashboard');
         }
         // Generic failure: do not reveal whether the password was close.
@@ -1036,12 +1034,9 @@ $router->map('GET|POST', '/login/verify', function () use ($siteConfig, $twoFact
         }
 
         $code = (string) ($_POST['code'] ?? '');
-        if ($twoFactor->verifyTotp($code) || $twoFactor->useRecoveryCode($code)) {
+        if ($twoFactor->verify($code)) {
             unset($_SESSION['pending_2fa']);
-            Security::clearLoginFailures(FN_DATA_DIR);
-            Security::regenerate();
-            $_SESSION['isAuthenticated'] = true;
-            Security::stampSessionEpoch();
+            Security::completeLogin(FN_DATA_DIR);
             $redirect('dashboard');
         }
         Security::recordLoginFailure(FN_DATA_DIR);
@@ -1072,12 +1067,8 @@ $router->map('GET|POST', '/settings/2fa', function () use ($requireConfig, $requ
             // lock yourself out with a mis-scanned QR.
             $secret = (string) ($_SESSION['totp_setup_secret'] ?? '');
             if ($secret !== '' && Totp::verify($secret, (string) ($_POST['code'] ?? '')) !== null) {
-                $plain  = TwoFactor::generateRecoveryCodes();
-                $hashes = array_map(
-                    static fn (string $c) => password_hash(TwoFactor::normalizeRecoveryCode($c), PASSWORD_DEFAULT),
-                    $plain
-                );
-                if ($twoFactor->enable($secret, $hashes)) {
+                $plain = $twoFactor->enable($secret);
+                if ($plain !== null) {
                     unset($_SESSION['totp_setup_secret']);
                     $justEnabledCodes = $plain; // shown exactly once
                 } else {
@@ -1088,7 +1079,7 @@ $router->map('GET|POST', '/settings/2fa', function () use ($requireConfig, $requ
             }
         } elseif ($action === 'disable' && $twoFactor->enabled()) {
             $code = (string) ($_POST['code'] ?? '');
-            if ($twoFactor->verifyTotp($code) || $twoFactor->useRecoveryCode($code)) {
+            if ($twoFactor->verify($code)) {
                 $twoFactor->disable();
                 $redirect('settings');
             }
@@ -1690,11 +1681,9 @@ $router->map('POST', '/login/passkey/verify', function () use ($requireConfig, $
         );
         $passkeys->updateSignCount((string) $credential['id'], (int) $wa->getSignatureCounter());
 
-        // The same ritual as every other successful login.
-        Security::regenerate();
-        Security::clearLoginFailures(FN_DATA_DIR);
-        $_SESSION['isAuthenticated'] = true;
-        Security::stampSessionEpoch();
+        // The same call as every other successful login, rather than the same
+        // four lines written again.
+        Security::completeLogin(FN_DATA_DIR);
         echo json_encode(['ok' => true, 'redirect' => $router->generate('dashboard')]);
     } catch (\Throwable $e) {
         Security::recordLoginFailure(FN_DATA_DIR);

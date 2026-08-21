@@ -31,14 +31,31 @@ final class TwoFactor
         return is_file($this->file);
     }
 
-    /** @param string[] $recoveryHashes password_hash()es of normalized codes */
-    public function enable(string $secretB32, array $recoveryHashes): bool
+    /**
+     * Turn 2FA on and return the recovery codes to show the admin once.
+     *
+     * The codes are generated, normalized and hashed here rather than by the
+     * caller. The old signature took ready-made hashes and asked a docblock to
+     * enforce that they were hashes, of normalized codes, from the same batch
+     * just shown to the admin. Nothing checked any of it: hashing an
+     * un-normalized code left a recovery code that could never match, and the
+     * failure only surfaced years later, on the day someone had lost their
+     * phone and reached for it.
+     *
+     * @return string[]|null plain codes, or null when the write failed
+     */
+    public function enable(string $secretB32, int $recoveryCount = 8): ?array
     {
+        $plain  = self::generateRecoveryCodes($recoveryCount);
+        $hashes = array_map(
+            static fn (string $code): string => password_hash(self::normalizeRecoveryCode($code), PASSWORD_DEFAULT),
+            $plain
+        );
         return $this->save([
             'secret'      => $secretB32,
             'lastCounter' => 0,
-            'recovery'    => array_values($recoveryHashes),
-        ]);
+            'recovery'    => $hashes,
+        ]) ? $plain : null;
     }
 
     public function disable(): bool
@@ -46,8 +63,23 @@ final class TwoFactor
         return !$this->enabled() || unlink($this->file);
     }
 
+    /**
+     * Accept a current TOTP code or an unspent recovery code, consuming
+     * whichever matched.
+     *
+     * Callers used to compose this themselves as verifyTotp() || useRecovery(),
+     * at every call site, with the order load-bearing and stated nowhere: one
+     * that checked only half would silently drop the other. Each half also
+     * loaded and saved the file independently, so two branches of one logical
+     * operation raced over a document that is written whole.
+     */
+    public function verify(string $code): bool
+    {
+        return $this->verifyTotp($code) || $this->useRecoveryCode($code);
+    }
+
     /** Replay-protected TOTP check; persists the consumed counter. */
-    public function verifyTotp(string $code): bool
+    private function verifyTotp(string $code): bool
     {
         $state = $this->load();
         if ($state === null) {
@@ -62,7 +94,7 @@ final class TwoFactor
     }
 
     /** Check a one-time recovery code and consume it on success. */
-    public function useRecoveryCode(string $code): bool
+    private function useRecoveryCode(string $code): bool
     {
         $state = $this->load();
         if ($state === null) {
@@ -88,7 +120,7 @@ final class TwoFactor
     }
 
     /** @return string[] plain codes to show the admin exactly once */
-    public static function generateRecoveryCodes(int $count = 8): array
+    private static function generateRecoveryCodes(int $count = 8): array
     {
         $codes = [];
         for ($i = 0; $i < $count; $i++) {
@@ -98,7 +130,7 @@ final class TwoFactor
         return $codes;
     }
 
-    public static function normalizeRecoveryCode(string $code): string
+    private static function normalizeRecoveryCode(string $code): string
     {
         return strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $code) ?? '');
     }
