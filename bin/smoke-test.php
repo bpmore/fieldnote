@@ -977,6 +977,39 @@ if (!class_exists(ZipArchive::class)) {
     check('substack body and subtitle deck rendered', $s === 200 && str_contains($b, 'A short deck') && str_contains($b, '<strong>Substack</strong>'), "status $s");
 
     // Ghost: a single JSON export, auto-detected; tags + author joined by id.
+    // An entry with no title: the dry run listed it blank while the import
+    // titled the post with its slug, because each pass read the entry with its
+    // own defaults. Whatever the dry run promises, the import has to deliver.
+    $untitledJson = "$tmp/ghost-untitled.json";
+    file_put_contents($untitledJson, json_encode(['db' => [['meta' => ['exported_on' => 1700000000000, 'version' => '5.0'], 'data' => [
+        'posts' => [
+            ['id' => '9', 'slug' => 'untitled-entry', 'type' => 'post', 'status' => 'published',
+             'published_at' => '2025-02-02T08:00:00.000Z', 'html' => '<p>No title on this one.</p>'],
+        ],
+    ]]]]));
+    [, , $b] = req('GET', "$base/admin/import", $authed);
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+    [$s, , $b] = req('POST', "$base/admin/import", $authed + ['body' => [
+        'csrf_token'   => $m[1],
+        'importSource' => 'ghost',
+        'importZip'    => new CURLFile($untitledJson, 'application/json', 'ghost-untitled.json'),
+    ]]);
+    // The TITLE cell, not the slug cell — the slug column shows the same
+    // string either way, so matching the page anywhere proves nothing.
+    preg_match('#<td>([^<]*)<span class="badge#', $b, $dryTitle);
+    check(
+        'an untitled entry gets its slug as a title in the dry run',
+        $s === 200 && trim($dryTitle[1] ?? '') === 'untitled-entry',
+        'dry-run title cell was "' . trim($dryTitle[1] ?? '') . '"'
+    );
+    preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+    req('POST', "$base/admin/import/confirm", $authed + ['body' => 'csrf_token=' . $m[1]]);
+    [, , $b] = req('GET', "$base/dashboard", $authed);
+    check(
+        'the import titles it the same way the dry run did',
+        str_contains($b, trim($dryTitle[1] ?? '')) && trim($dryTitle[1] ?? '') !== '',
+        'dashboard does not list the created post as "' . trim($dryTitle[1] ?? '') . '"'
+    );
     $ghostJson = "$tmp/ghost.json";
     file_put_contents($ghostJson, json_encode(['db' => [['meta' => ['exported_on' => 1700000000000, 'version' => '5.0'], 'data' => [
         'posts' => [

@@ -107,7 +107,7 @@ final class NotionImporter
             'title'    => $title,
             'slug'     => $slugBase,
             'date'     => $date ?: time(),
-            'tags'     => array_slice(array_values(array_unique($tags)), 0, 8),
+            'tags'     => $tags,
             'author'   => '',
             'markdown' => $body,
             'source'   => $title,

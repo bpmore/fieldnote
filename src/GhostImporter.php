@@ -73,12 +73,13 @@ final class GhostImporter
                 'title'  => $title,
                 'slug'   => (string) ($post['slug'] ?? ''),
                 'date'   => ($date !== '' ? strtotime($date) : false) ?: time(),
-                'tags'   => array_values(array_unique($postTags[$pid] ?? [])),
+                'tags'   => $postTags[$pid] ?? [],
                 'author' => $userName[$postAuthor[$pid] ?? ''] ?? '',
                 'html'   => (string) ($post['html'] ?? ''),
                 'source' => $title !== '' ? $title : (string) ($post['slug'] ?? ''),
             ];
-            if ($feature !== '' && preg_match('#^https?://#i', $feature)) {
+            // Porter::readEntry applies the http(s) rule to every importer.
+            if ($feature !== '') {
                 $entry['featuredImageUrl'] = $feature;
             }
             $entries[] = $entry;

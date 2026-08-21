@@ -64,7 +64,7 @@ final class BloggerImporter
                 'title'  => $title,
                 'slug'   => self::slug($link, $title),
                 'date'   => ($date !== '' ? strtotime($date) : false) ?: time(),
-                'tags'   => array_values(array_unique($tags)),
+                'tags'   => $tags,
                 'author' => trim((string) $a->author->name),
                 'html'   => $body,
                 'source' => $title !== '' ? $title : $link,

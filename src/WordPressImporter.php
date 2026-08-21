@@ -83,7 +83,7 @@ final class WordPressImporter
                 'title'             => trim((string) $item->title),
                 'slug'              => (string) $wp->post_name,
                 'date'              => $ts,
-                'tags'              => array_values(array_unique($tags)),
+                'tags'              => $tags,
                 'author'            => trim((string) $dc->creator),
                 'html'              => (string) $content->encoded,
                 'status'            => (string) $wp->status,
