@@ -174,7 +174,68 @@ final class ImageHandler
         // and project-folder moves; absolute values rot the moment either
         // happens (callers re-anchor the path against FN_UPLOAD_DIR).
         $relative = substr($path, strlen($this->uploadDir));
-        return [$this->publicBase . $relative, ltrim($relative, '/')];
+        return [$this->publicUrl(ltrim($relative, '/')), ltrim($relative, '/')];
+    }
+
+    /**
+     * The public URL for a stored path.
+     *
+     * A record's `url` is this function of its `path`, and always was — the
+     * two were written together and could disagree afterwards. The migration
+     * that made them relative rewrote each with its own condition, so an
+     * install with FN_UPLOAD_DIR outside public/uploads got a relativized URL
+     * and an untouched absolute path. A basePath change rots every stored URL
+     * while leaving every path correct.
+     *
+     * Deriving it at render time is how the codebase already treats the domain
+     * one level up, in fn_render_head.
+     */
+    public function publicUrl(string $storedPath): string
+    {
+        $storedPath = (string) $storedPath;
+        if ($storedPath === '') {
+            return '';
+        }
+        // A pre-migration record holds an absolute disk path. Only one under
+        // the uploads dir can be expressed as a URL at all.
+        if (str_starts_with($storedPath, '/')) {
+            $inside = $this->relativeToUploads($storedPath);
+            if ($inside === null) {
+                return '';
+            }
+            $storedPath = $inside;
+        }
+        return $this->publicBase . '/' . $storedPath;
+    }
+
+    /**
+     * The disk path for a stored path, or null when it names nothing this
+     * install owns. Three call sites used to re-decide the relative/absolute
+     * question and reached three different answers — the export skipped an
+     * absolute path while deletion and pruning happily resolved it, so a
+     * legacy record's image was silently dropped from an export zip.
+     */
+    public function absolutePath(string $storedPath): ?string
+    {
+        $storedPath = (string) $storedPath;
+        if ($storedPath === '') {
+            return null;
+        }
+        if (!str_starts_with($storedPath, '/')) {
+            return $this->uploadDir . '/' . $storedPath;
+        }
+        return $this->relativeToUploads($storedPath) === null
+            ? null
+            : $storedPath;
+    }
+
+    /** Strip the uploads prefix, or null when the path sits outside it. */
+    private function relativeToUploads(string $absolute): ?string
+    {
+        $prefix = rtrim($this->uploadDir, '/') . '/';
+        return str_starts_with($absolute, $prefix)
+            ? substr($absolute, strlen($prefix))
+            : null;
     }
 
     // Target validation lives in Fieldnote\SafeHttp, shared with the

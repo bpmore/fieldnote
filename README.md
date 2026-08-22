@@ -53,6 +53,15 @@ frontmatter â€” with a dry-run screen first and a no-duplicates guarantee
 (existing slugs are always skipped, never overwritten). Your writing is
 never locked in.
 
+**Move in from anywhere.** Import understands the native export of
+WordPress (and Squarespace, which uses the same format), Substack, Ghost,
+Medium, Blogger, Notion, WriteFreely / Write.as, DEV, and Hashnode â€” plus
+any RSS or Atom feed as a last resort. Upload the file the old platform
+gave you; Fieldnote works out which it is, shows you what it would create,
+and writes nothing until you confirm. Remote images are pulled down and
+stored locally, and everything lands as a **draft** so the accessibility
+check runs before any of it goes public.
+
 **Hardened where it counts.** CSRF tokens on every form, markdown rendered
 in safe mode (raw HTML and `javascript:` URLs neutralized), SSRF-safe
 remote image fetching with DNS pinning, destructive actions POST-only,
@@ -121,6 +130,15 @@ The **theme gallery** (`/admin/themes`) shows live light + dark previews of
 every installed theme with one-click apply, and links to the **palette
 customizer** (`/admin/palette`) for recoloring the active theme under WCAG
 enforcement.
+
+### A new theme on a schedule (optional)
+
+Settings â†’ "Rotate themes on a schedule". The public site then cycles
+through a set of themes on its own â€” daily or weekly, your pick â€” instead of
+using your one fixed theme. Choose which themes are in the rotation, or
+leave the list empty to use all of them. Every visitor sees the same theme
+within a period, so pages stay cacheable, and the admin screens keep using
+your fixed pick so previews stay predictable.
 
 ### Two-factor login (optional)
 
@@ -270,21 +288,21 @@ prefer one.
 | `velvet` | Lounge: jewel tones, gilt-edged panels (dark-identity) |
 | `ember` | Fireside: smoldering rules, rising glow (dark-identity) |
 | `orbit` | Astronomy: star field, mission-log cards (dark-identity) |
-| `almanac` | €” old reference book: warm cream, oxblood + ink, dense serif, double rules |
-| `blueprint` | €” architect's drawing: navy paper, cyan ink, faint grid, mono labels |
-| `cairn` | €” stacked stone: warm stone ground, charcoal type, generous air, thin lines |
-| `dossier` | €” manila file: buff stock, typewriter mono, ink black, redaction + stamp red |
-| `embroidery` | €” cross-stitch sampler: linen ground, thread colors, dotted stitch borders |
-| `isotype` | €” Neurath pictogram: flat blocks, heavy geometric sans, one strong blue |
-| `kraft` | €” brown kraft paper: warm tan stock, rubber-stamp red, taped labels |
-| `lab` | €” engineering notebook: faint graph grid, ink-blue accents, clean sans |
-| `marquee` | €” theatre playbill: dark house, gold lights, cream display serif, dotted bulbs |
-| `microfiche` | €” amber CRT reader: warm black, phosphor amber, film-frame borders, mono |
-| `observatory` | €” celestial chart: deep night, starlight type, gold, thin planisphere lines |
-| `receipt` | €” thermal POS slip: narrow column, monospace, dashed rules |
-| `tape` | €” cassette j-card: dark shell, orange band, condensed uppercase labels |
-| `telegram` | €” wire copy: pale stock, uppercase monospace, postal red, STOP rules |
-| `wayfinding` | €” transit signage: dark panels, bold sans, signal-yellow bars, arrows |
+| `almanac` | Old reference book: warm cream, oxblood + ink, dense serif, double rules |
+| `blueprint` | Architect's drawing: navy paper, cyan ink, faint grid, mono labels |
+| `cairn` | Stacked stone: warm stone ground, charcoal type, generous air, thin lines |
+| `dossier` | Manila file: buff stock, typewriter mono, ink black, redaction + stamp red |
+| `embroidery` | Cross-stitch sampler: linen ground, thread colors, dotted stitch borders |
+| `isotype` | Neurath pictogram: flat blocks, heavy geometric sans, one strong blue |
+| `kraft` | Brown kraft paper: warm tan stock, rubber-stamp red, taped labels |
+| `lab` | Engineering notebook: faint graph grid, ink-blue accents, clean sans |
+| `marquee` | Theatre playbill: dark house, gold lights, cream display serif, dotted bulbs |
+| `microfiche` | Amber CRT reader: warm black, phosphor amber, film-frame borders, mono |
+| `observatory` | Celestial chart: deep night, starlight type, gold, thin planisphere lines |
+| `receipt` | Thermal POS slip: narrow column, monospace, dashed rules |
+| `tape` | Cassette j-card: dark shell, orange band, condensed uppercase labels |
+| `telegram` | Wire copy: pale stock, uppercase monospace, postal red, STOP rules |
+| `wayfinding` | Transit signage: dark panels, bold sans, signal-yellow bars, arrows |
 
 `puddle`, `typewriter`, `bink`, and `benlk` are original reinterpretations of
 community themes made for the original Dropplets (by jacksondc, judges119, and
@@ -312,7 +330,7 @@ These variables are available:
 - `$siteConfig` is the site configuration array
 - `$allPosts` is the array of posts for the current page (each includes a resolved `imageUrl`)
 - `$page` is the current page number
-- `$limit` is the posts-per-page count
+- `$numPages` is the total page count (pass it to `fn_pagination()`)
 - `$post` is the single post array (on `post.php`, also with `imageUrl`)
 - `$router` is the AltoRouter instance for generating URLs
 

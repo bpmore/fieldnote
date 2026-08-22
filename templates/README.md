@@ -6,7 +6,11 @@ nothing to register. All themes are zero-JS, mobile-first, and must meet
 WCAG 2.2 AA in **both** color schemes. `php bin/audit-themes.php` is the
 gate — it must be green before a theme ships.
 
-## Required helper calls
+## Where the fiddly calls go
+
+Placement notes for the calls that have to sit somewhere specific. This is
+not the full required list — that's "Required in every theme" below, and the
+auditor checks against it, not against this table.
 
 | Where | Call | Why |
 |---|---|---|
@@ -93,9 +97,11 @@ unless it genuinely sits inline in a sentence (WCAG 2.5.8 inline exception).
 ## Required in every theme
 
 Eleven helpers appear in all 85 installed themes, and `bin/audit-themes.php`
-now enforces them by file. Six of them used to sit under "Optional helpers"
-below while the prose beside each one said every theme calls it — the word
-was marking exactly the calls an author is most likely to skip.
+enforces them by file. Six of them were once filed as optional while the prose
+beside each one said every theme calls it — the word was marking exactly the
+calls an author is most likely to skip. What each one does is written up under
+"What each required helper does"; only `fn_tag_links` and `fn_excerpt` are
+genuinely yours to take or leave.
 
 | File | Calls |
 |---|---|
@@ -112,15 +118,10 @@ focus check assumes are already there.
 Each of these is self-guarding: a helper whose feature is switched off emits
 nothing, so call them unconditionally and place them where your layout wants.
 
-## Genuinely optional helpers
+## What each required helper does
 
-Two, and the counts say so: `fn_tag_links` (2 of 85) and `fn_excerpt`
-(16 of 85).
-
-`Fieldnote\fn_tag_links($router, $post)` renders the post's tags as an
-aria-labelled nav of links to `/tag/<name>` pages (nothing when untagged).
-Opt in from `post.php` the way `gazette` and `liquid-new` do; base layout
-for `.tag-list` ships in the shared a11y CSS, visual styling is yours.
+The five below are on the required list above. Read this section for where
+each one goes and what it emits — not as a menu of things you may skip.
 
 `Fieldnote\fn_a11y_badge($router, $siteConfig)` renders a small WCAG 2.2 AA
 badge linking to `/accessibility`, or nothing when the owner hasn't enabled
@@ -159,3 +160,18 @@ yourself if a theme wants them elsewhere: `Fieldnote\fn_profile_link($router,
 $siteConfig)` (the profile link, config `profilePage`, `.profile-link`) and
 `Fieldnote\fn_search_form($router, $siteConfig, $value)` (the search box,
 `role="search"`, config `searchEnabled`, `.search-form`).
+
+
+## Genuinely optional helpers
+
+Two, and the counts say so: `fn_tag_links` (2 of 85) and `fn_excerpt`
+(16 of 85).
+
+`Fieldnote\fn_tag_links($router, $post)` renders the post's tags as an
+aria-labelled nav of links to `/tag/<name>` pages (nothing when untagged).
+Opt in from `post.php` the way `gazette` and `liquid-new` do; base layout
+for `.tag-list` ships in the shared a11y CSS, visual styling is yours.
+
+`Fieldnote\fn_excerpt($post)` returns a safe plain-text excerpt, trimmed to
+160 characters by default and empty for a password-protected post — so a
+card grid can print it without leaking protected bodies.

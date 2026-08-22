@@ -63,9 +63,14 @@ final class Porter
             if (isset($post['image']) && is_numeric($post['image'])) {
                 $record = $this->imageStore->findById((int) $post['image']);
                 $rel    = (string) ($record['path'] ?? '');
-                if ($rel !== '' && !str_starts_with($rel, '/') && is_file($this->uploadDir . '/' . $rel)) {
-                    $imageZipPath = 'uploads/' . $rel;
-                    $zip->addFile($this->uploadDir . '/' . $rel, $imageZipPath);
+                // Through ImageHandler, so a legacy absolute path inside the
+                // uploads dir exports instead of being silently skipped —
+                // which dropped the featured image from the zip, and with it
+                // from any re-import.
+                $disk   = $this->images->absolutePath($rel);
+                if ($disk !== null && is_file($disk)) {
+                    $imageZipPath = 'uploads/' . ltrim(str_replace($this->uploadDir, '', $disk), '/');
+                    $zip->addFile($disk, $imageZipPath);
                 }
             }
             $meta = [
