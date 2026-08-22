@@ -52,10 +52,9 @@ $imageStore = new Store('images', FN_DB_DIR, $dbOptions);
 // read 'blog', so the exclusion is structural, not a filter to maintain.
 $pagesStore = new Store('pages', FN_DB_DIR, $dbOptions);
 
-// One-time migration: give pre-3.1 posts a URL slug. Marker file keeps this
+// One-time migration: give pre-3.1 posts a URL slug. The watermark keeps this
 // from scanning the store on every request.
-$slugMarker = FN_DATA_DIR . '/.slugs-v1';
-if (!is_file($slugMarker)) {
+fn_migrate_once('slugs-v1', function () use ($blogStore): void {
     foreach ($blogStore->findAll() as $existingPost) {
         if (empty($existingPost['slug'])) {
             $blogStore->updateById(
@@ -64,13 +63,11 @@ if (!is_file($slugMarker)) {
             );
         }
     }
-    @touch($slugMarker);
-}
+});
 
 // One-time migration: posts published before publishedAt existed keep their
 // current date as the publish date, so hide/re-publish never moves their URL.
-$pubMarker = FN_DATA_DIR . '/.pubdate-v1';
-if (!is_file($pubMarker)) {
+fn_migrate_once('pubdate-v1', function () use ($blogStore): void {
     foreach ($blogStore->findBy(['draft', '=', false]) as $existingPost) {
         if (empty($existingPost['publishedAt'])) {
             $blogStore->updateById(
@@ -79,8 +76,7 @@ if (!is_file($pubMarker)) {
             );
         }
     }
-    @touch($pubMarker);
-}
+});
 
 // Scheduled publishing without cron: drafts whose scheduledFor time has
 // passed are published by the first request to arrive afterward. The marker
@@ -117,8 +113,7 @@ if (!is_file($schedMarker) || (int) filemtime($schedMarker) < time() - 60) {
 // the project folder), so renaming either silently broke every existing
 // image. Re-store both relative: URL relative to the site root, path
 // relative to public/uploads/.
-$imgMarker = FN_DATA_DIR . '/.imgrel-v1';
-if (!is_file($imgMarker)) {
+fn_migrate_once('imgrel-v1', function () use ($imageStore): void {
     foreach ($imageStore->findAll() as $imageRecord) {
         $update = [];
         $url = (string) ($imageRecord['url'] ?? '');
@@ -134,8 +129,7 @@ if (!is_file($imgMarker)) {
             $imageStore->updateById((int) $imageRecord['_id'], $update);
         }
     }
-    @touch($imgMarker);
-}
+});
 
 /**
  * Parse a php.ini shorthand size ("2M", "512K") into bytes.
@@ -995,6 +989,35 @@ function fn_rendered_theme(string $themeCssHref): string
     }
     $name = rawurldecode($m[1]);
     return $name === basename($name) ? $name : '';
+}
+
+/**
+ * Run a one-time store migration, once ever.
+ *
+ * The watermark lives inside FN_DB_DIR, beside the records it describes. It
+ * states a fact about this store — "these records have been migrated" — and
+ * keeping it a directory up meant the fact could be separated from the thing
+ * it was about. Restore siteDatabase/ from a backup taken before the upgrade
+ * and the watermarks in data/ stay put, so the un-migrated store is never
+ * migrated: posts come back without slugs, or images with absolute paths, and
+ * nothing anywhere says why. Kept together, the store carries its own history.
+ *
+ * A watermark written by an older version sits at the old path. It is honoured
+ * once — re-running a completed migration is the other way to be wrong — then
+ * removed, so the new location is the only one after the first request.
+ */
+function fn_migrate_once(string $name, callable $run): void
+{
+    $marker = FN_DB_DIR . '/.' . $name;
+    if (is_file($marker)) {
+        return;
+    }
+    $legacy = FN_DATA_DIR . '/.' . $name;
+    if (!is_file($legacy)) {
+        $run();
+    }
+    @touch($marker);
+    @unlink($legacy);
 }
 
 /**
