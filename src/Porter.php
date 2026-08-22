@@ -210,7 +210,7 @@ final class Porter
                 $stored = $this->images->storeLocalFile($tmp);
                 @unlink($tmp);
                 if ($stored !== null) {
-                    $imageRecord     = $this->imageStore->insert(['url' => $stored[0], 'path' => $stored[1]]);
+                    $imageRecord     = $this->imageStore->insert(['path' => $stored]);
                     $record['image'] = $imageRecord['_id'];
                     $importedImages++;
                 } else {
@@ -344,7 +344,7 @@ final class Porter
             if ($entry['image'] !== '') {
                 $stored = $this->images->storeFromUrl($entry['image']);
                 if ($stored !== null) {
-                    $rec = $this->imageStore->insert(['url' => $stored[0], 'path' => $stored[1]]);
+                    $rec = $this->imageStore->insert(['path' => $stored]);
                     $record['image'] = $rec['_id'];
                     $images++;
                 } else {
@@ -394,7 +394,7 @@ final class Porter
                     return $m[0]; // leave the original URL; noted as a non-fatal gap
                 }
                 $count++;
-                return '![' . $m[1] . '](' . $stored[0] . ')';
+                return '![' . $m[1] . '](' . $this->images->publicUrl($stored) . ')';
             },
             $md
         );

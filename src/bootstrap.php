@@ -1066,11 +1066,13 @@ function fn_with_image(array $post, Store $imageStore): array
     if (isset($post['image']) && is_numeric($post['image'])) {
         $record = $imageStore->findById((int) $post['image']);
         if ($record !== null) {
-            // Derived from `path`, not read from the stored `url`: the two were
-            // written together and could disagree afterwards, and a stored URL
-            // still carries the basePath in force when it was written. Falls
-            // back to the stored value for a pre-migration record whose path
-            // points outside the uploads dir, which has no derivable URL.
+            // Derived from `path`. New records carry nothing else: a `url` was
+            // stored beside it until it became clear the two could disagree,
+            // and that a stored URL keeps whatever basePath was in force when
+            // it was written. The fallback is for records written before that
+            // — specifically the ones the relativizing migration could not
+            // reach, whose path still points outside the uploads dir and so
+            // has no URL to derive.
             $images = new ImageHandler(FN_UPLOAD_DIR, fn_upload_base());
             $post['imageUrl'] = $images->publicUrl((string) ($record['path'] ?? ''))
                 ?: (string) ($record['url'] ?? '');
