@@ -2,11 +2,20 @@
 use function Fieldnote\e;
 use function Fieldnote\csrf_field;
 use function Fieldnote\fn_effective_upload_limit;
+use function Fieldnote\fn_with_image;
 
 $needsEditor = true; // footer loads the EasyMDE bundle only when this is set
 require __DIR__ . '/header.php';
 
 $isEdit   = isset($post['title']);
+// The current-image thumbnail is this view's own need, so this view resolves
+// it. It used to rely on whichever route required this file having called
+// fn_with_image() first — and the one that re-renders after refusing an
+// inaccessible save passes the raw record, so the writer lost sight of the
+// featured image at exactly the moment they were being asked to fix the post.
+if ($isEdit) {
+    $post = fn_with_image($post, $imageStore);
+}
 $action   = $isEdit
     ? $router->generate('editPost', ['id' => $post['_id']])
     : $router->generate('write');

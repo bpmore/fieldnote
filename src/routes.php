@@ -709,7 +709,6 @@ $router->map('GET|POST', '/post/[i:id]/edit', function ($id) use ($requireConfig
         $redirect('dashboard');
     }
 
-    $post = fn_with_image($post, $imageStore);
     $pageTitle = 'Edit Post';
     require FN_INTERNAL_DIR . '/write.php';
 }, 'editPost');
