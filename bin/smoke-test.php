@@ -445,6 +445,35 @@ $views = $statFiles ? (array) json_decode((string) file_get_contents($statFiles[
 check('views dedupe per visitor per day', ($views['hello-world'] ?? 0) === 2, 'got ' . var_export($views, true));
 $leaks = (string) shell_exec('grep -rl "127.0.0.1\|SmokeTest" ' . escapeshellarg($tmp . '/data/stats') . ' 2>/dev/null');
 check('no IP or UA ever written to stats', trim($leaks) === '');
+
+// The salt and the dedup set are one fact with one lifetime, so they live in
+// one file. They used to be two, with two prune arms that did not match.
+$statsDir = $tmp . '/data/stats';
+$dayFile  = $statsDir . '/.day-' . date('Y-m-d') . '.json';
+$dayState = is_file($dayFile) ? (array) json_decode((string) file_get_contents($dayFile), true) : [];
+check(
+    'one file holds the day salt and its dedup set',
+    ($dayState['salt'] ?? '') !== '' && ($dayState['seen'] ?? []) !== [],
+    'day file holds: ' . implode(', ', array_keys($dayState))
+);
+
+// Minting a new salt sweeps every older day file — including the two legacy
+// shapes, whose salts this class no longer reads and must not leave lying
+// around. Unconditional, so a mid-day rollover cannot strand one.
+$stale = [
+    $statsDir . '/.day-' . date('Y-m-d', time() - 86400) . '.json',
+    $statsDir . '/.salt-' . date('Y-m-d', time() - 86400),
+    $statsDir . '/.seen-' . date('Y-m-d', time() - 86400) . '.json',
+    $statsDir . '/.salt-' . date('Y-m-d'),
+    $statsDir . '/.seen-' . date('Y-m-d') . '.json',
+];
+foreach ($stale as $f) {
+    file_put_contents($f, '{}');
+}
+unlink($dayFile); // the next view has no salt, so it mints one and prunes
+req('GET', $base . $postPath, ['headers' => ['User-Agent: Mozilla/5.0 (SmokeTest C)']]);
+$left = array_map('basename', array_values(array_filter($stale, 'is_file')));
+check('minting a new salt sweeps every older day file', $left === [], 'left behind: ' . implode(', ', $left));
 [, , $b] = req('GET', "$base/dashboard", $authed);
 check('dashboard shows view counts', str_contains($b, 'cookie-less') && str_contains($b, 'Hello World'));
 
