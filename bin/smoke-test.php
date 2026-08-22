@@ -146,11 +146,14 @@ $base = "http://127.0.0.1:$port";
 // into a 302-to-login, sixty failures pointing at sixty unrelated routes
 // instead of at the one broken fixture. It also means `rm -rf $tmp` is the
 // whole cleanup: nothing of ours survives a crash outside that directory.
+// display_errors=stderr sends the server's warnings to server.log instead of
+// into the response body, where they were invisible to a failing run and a
+// stray belch inside someone's HTML besides.
 $sessionDir = $tmp . '/sessions';
 mkdir($sessionDir, 0700, true);
 
 $pid  = (int) shell_exec(sprintf(
-    'FN_AP_ALLOW_PRIVATE=1 PHP_CLI_SERVER_WORKERS=4 FN_DATA_DIR=%s FN_UPLOAD_DIR=%s php -d session.save_path=%s -d session.serialize_handler=php -S 127.0.0.1:%d -t %s %s > %s 2>&1 & echo $!',
+    'FN_AP_ALLOW_PRIVATE=1 PHP_CLI_SERVER_WORKERS=4 FN_DATA_DIR=%s FN_UPLOAD_DIR=%s php -d display_errors=stderr -d log_errors=1 -d session.save_path=%s -d session.serialize_handler=php -S 127.0.0.1:%d -t %s %s > %s 2>&1 & echo $!',
     escapeshellarg($tmp . '/data'),
     escapeshellarg($tmp . '/uploads'),
     escapeshellarg($sessionDir),
@@ -1914,6 +1917,42 @@ check('a spent recovery code is refused', $s === 302 && !str_contains($h['locati
 $clearThrottle();
 
 // ---------------------------------------------------------------- summary --
+
+if ($failures > 0) {
+    // The server's own stderr is the one piece of evidence a failing run threw
+    // away: the fixture directory, log included, is deleted on exit, and the
+    // log was read only when the server failed to start. A rare CI failure
+    // showed sixty config-dependent checks failing as a block — the server
+    // answering from a config minutes old — with nothing on hand to say why
+    // the writes stopped landing. A warning out of file_put_contents() or
+    // rename() would have said it outright.
+    $log   = (string) @file_get_contents($tmp . '/server.log');
+    // Filter OUT routine access lines rather than looking for known error
+    // shapes: the built-in server reports a fatal on the access line itself
+    // ("[500]: GET /x - Uncaught ..."), and anything unrecognised is exactly
+    // what a diagnostic should not be dropping.
+    $noisy = array_values(array_filter(
+        explode("\n", $log),
+        static fn (string $line): bool => trim($line) !== ''
+            && preg_match('/\] \[(?:2|3|4)\d\d\]: /', $line) !== 1
+            && !str_contains($line, 'Development Server (http')
+            && !str_contains($line, 'Accepted')
+            && !str_contains($line, 'Closing')
+            && !str_contains($line, 'speculative preconnection')
+    ));
+    fwrite(STDERR, "\n--- server log: " . count($noisy) . " diagnostic line(s) ---\n");
+    fwrite(STDERR, $noisy === [] ? "(the server logged none)\n" : implode("\n", array_slice($noisy, -40)) . "\n");
+
+    // Config-dependent checks fail as a block when a save stops landing, so
+    // say whether the file moved at all and whether it still could.
+    $cfgFile = $tmp . '/data/config.php';
+    fwrite(STDERR, sprintf(
+        "--- config.php: %s, %d bytes, last written %s ---\n",
+        is_writable($cfgFile) ? 'writable' : 'NOT writable',
+        (int) @filesize($cfgFile),
+        ($mt = @filemtime($cfgFile)) ? date('H:i:s', $mt) . ' (' . (time() - $mt) . 's ago)' : 'never'
+    ));
+}
 
 echo "\n" . ($failures === 0 ? 'All checks passed.' : "$failures check(s) FAILED.") . "\n";
 exit($failures > 0 ? 1 : 0);
