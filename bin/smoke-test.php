@@ -115,7 +115,25 @@ $blog->insert([
 
 // ----------------------------------------------------------------- server --
 
-$port = random_int(49152, 60000);
+// A port nothing is already answering on. This used to be a random port taken
+// on faith, and the readiness probe below only asks whether the port answers —
+// so anything already sitting there satisfied it and the whole suite ran
+// against a stranger's data. That surfaces as wrong content on dozens of
+// unrelated routes, which reads like a broken fixture and is not one.
+$port = 0;
+for ($try = 0; $try < 50; $try++) {
+    $candidate = random_int(49152, 60000);
+    $probe     = @fsockopen('127.0.0.1', $candidate, $errno, $errstr, 0.2);
+    if ($probe === false) {
+        $port = $candidate;
+        break;
+    }
+    fclose($probe);
+}
+if ($port === 0) {
+    fwrite(STDERR, "No free port in 49152-60000 after 50 tries.\n");
+    exit(1);
+}
 $base = "http://127.0.0.1:$port";
 // FN_AP_ALLOW_PRIVATE lets the federation checks talk to loopback;
 // CLI_SERVER_WORKERS keeps the self-delivered Accept from deadlocking
@@ -156,12 +174,35 @@ $browser = static function () use ($tmp): array {
 $authed  = $session('isAuthenticated|b:1;');
 $pending = $session('pending_2fa|i:' . time() . ';');
 
-register_shutdown_function(static function () use ($pid, $tmp): void {
+// PHP_CLI_SERVER_WORKERS forks four children, and SIGTERM to the parent kills
+// the parent only: the workers survive and one of them keeps the listening
+// socket, so the port stays bound by a server whose data directory is about to
+// be deleted. Twenty of those were running when this was found.
+//
+// Children first, then the parent — that order is the whole trick. Once the
+// parent is gone the workers reparent to init and -P can no longer name them.
+$teardown = static function () use ($pid, $tmp): void {
     if ($pid > 0) {
+        shell_exec('pkill -P ' . $pid . ' 2>/dev/null');
         posix_kill($pid, SIGTERM) || shell_exec('kill ' . $pid . ' 2>/dev/null');
     }
     shell_exec('rm -rf ' . escapeshellarg($tmp));
-});
+};
+register_shutdown_function($teardown);
+
+// Ctrl-C and `kill` reach the shutdown handler only if the signal is handled,
+// so an interrupted run cleaned up nothing. exit() from the handler runs the
+// teardown above, keeping one path. SIGKILL is still uncatchable; the port
+// check above is what makes the next run survive that.
+if (function_exists('pcntl_async_signals')) {
+    pcntl_async_signals(true);
+    foreach ([SIGINT, SIGTERM, SIGHUP] as $signal) {
+        pcntl_signal($signal, static function (): void {
+            fwrite(STDERR, "\nInterrupted — stopping the server and clearing the fixture.\n");
+            exit(1);
+        });
+    }
+}
 
 // Wait for readiness.
 $up = false;
