@@ -77,7 +77,8 @@ file_put_contents($tmp . '/data/passkeys.json', json_encode([
     ]],
 ]));
 
-// Migration markers: fixtures are already current-format.
+// Migration watermarks, seeded at the OLD path on purpose: fixtures are
+// already current-format, and this exercises the one-boot legacy honour.
 foreach (['.slugs-v1', '.pubdate-v1', '.imgrel-v1'] as $marker) {
     touch($tmp . '/data/' . $marker);
 }
@@ -1629,6 +1630,37 @@ req('POST', "$base/post/1/publish", $authed + ['body' => 'csrf_token=' . $csrfFo
 [$s] = req('GET', "$base/$lastPage");
 check('publishing a post grows pagination immediately', $s === 200, "page $lastPage status $s");
 $patchCfg(['postsPerPage' => 6]);
+
+// --------------------------------------------------- migration watermarks --
+
+// A watermark states a fact about the store, so it lives with the store. Kept
+// a directory up, restoring siteDatabase/ from an older backup left the
+// watermarks behind and the un-migrated store was never migrated.
+$stillOld = [];
+$moved    = [];
+foreach (['.slugs-v1', '.pubdate-v1', '.imgrel-v1'] as $marker) {
+    if (is_file($tmp . '/data/' . $marker)) {
+        $stillOld[] = $marker;
+    }
+    if (is_file($tmp . '/data/siteDatabase/' . $marker)) {
+        $moved[] = $marker;
+    }
+}
+check('watermarks live with the store they describe', count($moved) === 3, 'in siteDatabase: ' . implode(', ', $moved));
+check('the old watermark is honoured once, then removed', $stillOld === [], 'left at the old path: ' . implode(', ', $stillOld));
+
+// And the store's own watermark is what gates the migration: remove it, as
+// restoring an older siteDatabase/ would, and the migration runs again.
+$rec = $blog->insert([
+    'title' => 'Unslugged Legacy Post', 'slug' => '', 'author' => 'Tester',
+    'date' => time(), 'publishedAt' => 0, 'draft' => true,
+    'content' => 'A pre-3.1 fixture.', 'password' => '', 'tags' => [],
+]);
+unlink($tmp . '/data/siteDatabase/.slugs-v1');
+req('GET', "$base/");
+$migrated = (string) ($blog->findById((int) $rec['_id'])['slug'] ?? '');
+check('a store restored without its watermark is migrated again', $migrated === 'unslugged-legacy-post', "slug is '$migrated'");
+$blog->deleteById((int) $rec['_id']);
 
 // ------------------------------------------------------- first-run setup --
 // Runs last: it takes the config away, so nothing after it can rely on one.
