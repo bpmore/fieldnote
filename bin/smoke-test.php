@@ -919,6 +919,31 @@ if (!class_exists(ZipArchive::class)) {
     [, , $b2] = req('GET', "$base/tag/imported");
     check('imported tags work', str_contains($b2, 'Imported Note'));
 
+    // An image record stores where the file is, and nothing else. A `url` was
+    // stored beside it, derivable from the path and able to disagree with it.
+    $imgStore = new Store('images', $tmp . '/data/siteDatabase', ['timeout' => false]);
+    $newest   = array_slice($imgStore->findAll(), -1)[0] ?? [];
+    check(
+        'a stored image record carries a path and no url',
+        ($newest['path'] ?? '') !== '' && !array_key_exists('url', $newest),
+        'record holds: ' . implode(', ', array_keys($newest))
+    );
+
+    // A record from before that change still renders. Its path points outside
+    // the uploads dir — the shape the relativizing migration could not reach —
+    // so there is no URL to derive and the stored one is all there is.
+    $legacy = $imgStore->insert(['url' => '/legacy/elsewhere.jpg', 'path' => '/somewhere/else/elsewhere.jpg']);
+    $target = $blog->findById(1);
+    $target['image'] = $legacy['_id'];
+    $blog->update($target);
+    [, $lh] = req('GET', "$base/post/1"); // permalink is date-derived; follow it
+    [, , $b2] = req('GET', $base . parse_url($lh['location'] ?? '/', PHP_URL_PATH));
+    $shown = str_contains($b2, '/legacy/elsewhere.jpg');
+    unset($target['image']);
+    $blog->update($target);
+    $imgStore->deleteById($legacy['_id']);
+    check('a legacy record with no derivable url falls back to its stored one', $shown, 'stored url not rendered');
+
     // The budget has to count POSTS, not archive members. exportZip writes an
     // image member before each post that has one, so on a blog with cover
     // images the old member-index ceiling was reached at roughly half the post

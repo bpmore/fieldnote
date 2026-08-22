@@ -42,9 +42,9 @@ final class ImageHandler
      * Validate and store an uploaded file.
      *
      * @param array{name:string,tmp_name:string,size:int,error:int} $file
-     * @return array{0:string,1:string}|null [siteRelativeUrl, uploadRelativePath] or null on failure
+     * @return string|null Path relative to the uploads dir, or null on failure.
      */
-    public function storeUpload(array $file): ?array
+    public function storeUpload(array $file): ?string
     {
         if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
             return null;
@@ -60,9 +60,9 @@ final class ImageHandler
      * uploads: everything is re-encoded through GD, so a zip can't smuggle
      * polyglot bytes into uploads/.
      *
-     * @return array{0:string,1:string}|null [siteRelativeUrl, uploadRelativePath] or null on failure
+     * @return string|null Path relative to the uploads dir, or null on failure.
      */
-    public function storeLocalFile(string $path): ?array
+    public function storeLocalFile(string $path): ?string
     {
         if (!is_file($path) || (int) filesize($path) > self::MAX_BYTES) {
             return null;
@@ -73,9 +73,9 @@ final class ImageHandler
     /**
      * Safely download a remote image and store it.
      *
-     * @return array{0:string,1:string}|null [siteRelativeUrl, uploadRelativePath] or null on failure
+     * @return string|null Path relative to the uploads dir, or null on failure.
      */
-    public function storeFromUrl(string $url): ?array
+    public function storeFromUrl(string $url): ?string
     {
         $pinned = SafeHttp::resolveTarget($url);
         if ($pinned === null) {
@@ -126,7 +126,7 @@ final class ImageHandler
      *
      * @return array{0:string,1:string}|null
      */
-    private function ingest(string $sourcePath): ?array
+    private function ingest(string $sourcePath): ?string
     {
         $info = @getimagesize($sourcePath);
         if ($info === false) {
@@ -169,12 +169,12 @@ final class ImageHandler
         }
         @chmod($path, 0644);
 
-        // Return both halves relative: URL relative to the site root, path
-        // relative to the uploads dir. The store must survive domain changes
-        // and project-folder moves; absolute values rot the moment either
-        // happens (callers re-anchor the path against FN_UPLOAD_DIR).
-        $relative = substr($path, strlen($this->uploadDir));
-        return [$this->publicUrl(ltrim($relative, '/')), ltrim($relative, '/')];
+        // Relative to the uploads dir, and only that. The store must survive
+        // domain changes and project-folder moves; absolute values rot the
+        // moment either happens. A URL used to come back alongside it, but a
+        // URL is publicUrl() of this path — the one caller that needs one asks
+        // for it, rather than three others carrying a value they discard.
+        return ltrim(substr($path, strlen($this->uploadDir)), '/');
     }
 
     /**

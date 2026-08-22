@@ -697,7 +697,7 @@ $router->map('GET|POST', '/post/[i:id]/edit', function ($id) use ($requireConfig
         $newImage = fn_resolve_image($images, $_FILES['imageUpload'] ?? null, $_POST['blogPostImageURL'] ?? '');
         if ($newImage !== null) {
             fn_delete_image($imageStore, $post['image'] ?? null);
-            $rec = $imageStore->insert(['url' => $newImage[0], 'path' => $newImage[1]]);
+            $rec = $imageStore->insert(['path' => $newImage]);
             $post['image'] = $rec['_id'];
         }
 
@@ -794,7 +794,7 @@ $router->map('GET|POST', '/write', function () use ($requireConfig, $requireAuth
 
         $image = fn_resolve_image($images, $_FILES['imageUpload'] ?? null, $_POST['blogPostImageURL'] ?? '');
         if ($image !== null) {
-            $rec = $imageStore->insert(['url' => $image[0], 'path' => $image[1]]);
+            $rec = $imageStore->insert(['path' => $image]);
             $post['image'] = $rec['_id'];
         }
 
@@ -1864,9 +1864,9 @@ function fn_hash_post_password(string $submitted, string $existingHash): string
  * Resolve a featured image from either an upload or a URL, upload winning.
  *
  * @param array{name:string,tmp_name:string,size:int,error:int}|null $file
- * @return array{0:string,1:string}|null
+ * @return string|null Path relative to the uploads dir, or null on failure.
  */
-function fn_resolve_image(ImageHandler $images, ?array $file, string $url): ?array
+function fn_resolve_image(ImageHandler $images, ?array $file, string $url): ?string
 {
     if ($file !== null && ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK && ($file['name'] ?? '') !== '') {
         return $images->storeUpload($file);
