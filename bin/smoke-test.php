@@ -589,6 +589,34 @@ check('editing a live post is blocked when it fails the a11y check', $s === 200 
 [, , $b] = req('GET', "$base/post/1/edit", $authed);
 check('the blocked edit did not persist', str_contains($b, 'A **published** fixture post.'));
 
+// Same refusal, on a post that has a featured image: the editor must still show
+// the current-image thumbnail. It is the one screen where the writer is being
+// asked to fix the post, so losing sight of its image there is worst.
+$imgs = new Store('images', $tmp . '/data/siteDatabase', ['timeout' => false]);
+$imgRec = $imgs->insert(['url' => '/uploads/2025/01/fixture.jpg', 'path' => '2025/01/fixture.jpg']);
+$p1 = $blog->findById(1);
+$p1['image'] = $imgRec['_id'];
+$blog->update($p1);
+[, , $b] = req('GET', "$base/post/1/edit", $authed);
+preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
+[$s, , $b] = req('POST', "$base/post/1/edit", $authed + ['body' => http_build_query([
+    'csrf_token'      => $m[1],
+    'blogPostTitle'   => 'Hello World',
+    'blogPostAuthor'  => 'Tester',
+    'blogPostContent' => "## Section\n\n#### Skips a level",
+    'blogPostTags'    => 'notes, testing',
+])]);
+check(
+    'the refused editor still shows the current featured image',
+    $s === 200 && str_contains($b, 'class="write-current-image"')
+        && str_contains($b, '/uploads/2025/01/fixture.jpg'),
+    "status $s, thumbnail " . (str_contains($b, 'write-current-image') ? 'present' : 'MISSING')
+);
+unset($p1['image']);
+$blog->update($p1);
+$imgs->deleteById($imgRec['_id']);
+[, , $b] = req('GET', "$base/post/1/edit", $authed);
+
 // A clean edit to a live post still saves (no-op content, stays published).
 preg_match('/name="csrf_token" value="([a-f0-9]{64})"/', $b, $m);
 [$s] = req('POST', "$base/post/1/edit", $authed + ['body' => http_build_query([
