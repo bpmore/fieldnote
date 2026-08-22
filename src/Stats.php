@@ -11,6 +11,13 @@ namespace Fieldnote;
  * only to deduplicate within that day. The salt and the dedup set are
  * deleted when the day ends, leaving only {slug: count} aggregates. Without
  * the salt, the hashes are not invertible or comparable to anything.
+ *
+ * Salt and dedup set live in one file, `.day-<date>.json`. They are one fact
+ * with one lifetime — hashes made under a salt mean nothing without it — and
+ * splitting them across two files meant two reads, two writes, two prune arms
+ * (which did not even match each other: one compared with str_ends_with, the
+ * other with str_contains), and a state where a seen set outlived its salt and
+ * went on deduplicating against hashes nothing could produce any more.
  */
 final class Stats
 {
@@ -34,32 +41,48 @@ final class Stats
             return;
         }
 
-        $day      = date('Y-m-d');
-        $saltFile = $this->dir . '/.salt-' . $day;
-        $salt     = is_file($saltFile) ? (string) file_get_contents($saltFile) : '';
+        $day     = date('Y-m-d');
+        $dayFile = $this->dir . '/.day-' . $day . '.json';
+        $state   = $this->readJson($dayFile);
+        $salt    = (string) ($state['salt'] ?? '');
+        $seen    = (array) ($state['seen'] ?? []);
         if ($salt === '') {
             $salt = bin2hex(random_bytes(16));
-            @file_put_contents($saltFile, $salt, LOCK_EX);
-            @chmod($saltFile, 0640);
-            $this->prune(); // first view of a new day sweeps old salts/dedup sets
+            // Any dedup keys found beside a missing salt were made under a salt
+            // that is gone, so they can never match again. Dropping them says
+            // that, instead of carrying a set that only looks meaningful.
+            $seen = [];
+            $this->prune(); // first view of a new day sweeps old day state
         }
 
-        $visitor  = substr(hash('sha256', $salt . '|' . ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . $ua), 0, 16);
-        $seenFile = $this->dir . '/.seen-' . $day . '.json';
-        $seen     = is_file($seenFile) ? (array) json_decode((string) file_get_contents($seenFile), true) : [];
-        $key      = $visitor . ':' . $slug;
+        $visitor = substr(hash('sha256', $salt . '|' . ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . $ua), 0, 16);
+        $key     = $visitor . ':' . $slug;
         if (isset($seen[$key])) {
             return;
         }
         $seen[$key] = 1;
-        @file_put_contents($seenFile, json_encode($seen), LOCK_EX);
-        @chmod($seenFile, 0640);
+        $this->writeJson($dayFile, ['salt' => $salt, 'seen' => $seen]);
 
         $countFile = $this->dir . '/' . $day . '.json';
-        $counts    = is_file($countFile) ? (array) json_decode((string) file_get_contents($countFile), true) : [];
+        $counts    = $this->readJson($countFile);
         $counts[$slug] = (int) ($counts[$slug] ?? 0) + 1;
-        @file_put_contents($countFile, json_encode($counts), LOCK_EX);
-        @chmod($countFile, 0640);
+        $this->writeJson($countFile, $counts);
+    }
+
+    /** @return array<string,mixed> */
+    private function readJson(string $file): array
+    {
+        if (!is_file($file)) {
+            return [];
+        }
+        return (array) json_decode((string) file_get_contents($file), true);
+    }
+
+    /** @param array<string,mixed> $data */
+    private function writeJson(string $file, array $data): void
+    {
+        @file_put_contents($file, json_encode($data), LOCK_EX);
+        @chmod($file, 0640);
     }
 
     /**
@@ -84,21 +107,28 @@ final class Stats
     }
 
     /**
-     * Drop salts and dedup sets from previous days (the privacy guarantee)
-     * and aggregate files older than 90 days (retention).
+     * Drop day state from previous days (the privacy guarantee) and aggregate
+     * files older than 90 days (retention).
+     *
+     * The two legacy shapes go unconditionally, today's included: a salt that
+     * lives in `.salt-<date>` is one this class no longer reads, so keeping it
+     * would be keeping a raw salt around for nothing. The visible cost is that
+     * an upgrade mid-day restarts that day's deduplication, so a reader who
+     * already visited can be counted once more. Nothing carries across days
+     * either way, which is the point of the design.
      */
     private function prune(): void
     {
         $today = date('Y-m-d');
-        foreach (glob($this->dir . '/.salt-*') ?: [] as $file) {
-            if (!str_ends_with($file, $today)) {
+        foreach (glob($this->dir . '/.day-*.json') ?: [] as $file) {
+            if (basename($file) !== '.day-' . $today . '.json') {
                 @unlink($file);
             }
         }
-        foreach (glob($this->dir . '/.seen-*.json') ?: [] as $file) {
-            if (!str_contains($file, $today)) {
-                @unlink($file);
-            }
+        // array_merge, not +: both globs are 0-indexed lists, so + would keep only
+        // the longer one's overlapping keys and silently leave files behind.
+        foreach (array_merge(glob($this->dir . '/.salt-*') ?: [], glob($this->dir . '/.seen-*.json') ?: []) as $file) {
+            @unlink($file);
         }
         $cutoff = date('Y-m-d', time() - 90 * 86400);
         foreach (glob($this->dir . '/[0-9]*.json') ?: [] as $file) {
